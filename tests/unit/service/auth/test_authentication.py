@@ -10,21 +10,18 @@ from distributedinference.service import error_responses
 from distributedinference.service.auth import authentication
 
 
-@pytest.mark.asyncio
 async def test_api_key_missing():
     with pytest.raises(error_responses.AuthorizationMissingAPIError) as e:
         await authentication._validate_api_key("", AsyncMock())
         assert e is not None
 
 
-@pytest.mark.asyncio
 async def test_api_key_invalid_format():
     with pytest.raises(error_responses.InvalidCredentialsAPIError) as e:
         await authentication._validate_api_key("asdasd", AsyncMock())
         assert e is not None
 
 
-@pytest.mark.asyncio
 async def test_api_key_not_found():
     repo = AsyncMock()
     repo.get_user_by_api_key.return_value = None
@@ -33,7 +30,6 @@ async def test_api_key_not_found():
         assert e is not None
 
 
-@pytest.mark.asyncio
 async def test_api_key_success():
     repo = AsyncMock()
     repo.get_user_by_api_key.return_value = User(
