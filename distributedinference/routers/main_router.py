@@ -1,0 +1,20 @@
+from typing import List
+
+from fastapi import APIRouter
+
+from distributedinference import api_logger
+from distributedinference.routers.routes import chat_router
+
+TAG_ROOT = "root"
+
+router = APIRouter(
+    prefix="/v1"
+)
+logger = api_logger.get()
+
+routers_to_include: List[APIRouter] = [
+    chat_router.router
+]
+
+for router_to_include in routers_to_include:
+    router.include_router(router_to_include)

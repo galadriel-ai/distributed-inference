@@ -1,0 +1,11 @@
+fastapi==0.112.2
+requests==2.32.3
+uvicorn==0.30.6
+gunicorn==23.0.0
+python-dotenv==1.0.1
+python-json-logger==2.0.7
+pytest==8.3.2
+SQLAlchemy==2.0.32
+alembic==1.13.2
+psycopg2-binary==2.9.9
+openai==1.42.0
