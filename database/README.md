@@ -1,4 +1,4 @@
-# agent-wallet-database
+# Distributed inference database
 
 Manage databases schemas and migrations
 
