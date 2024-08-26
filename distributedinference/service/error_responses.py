@@ -17,6 +17,37 @@ class APIErrorResponse(Exception):
         raise NotImplementedError
 
 
+class AuthorizationMissingAPIError(APIErrorResponse):
+    def __init__(self):
+        pass
+
+    def to_status_code(self) -> status:
+        return status.HTTP_401_UNAUTHORIZED
+
+    def to_code(self) -> str:
+        return "authorization_missing"
+
+    def to_message(self) -> str:
+        return f"Request is missing or has invalid 'Authorization' header."
+
+
+class InvalidCredentialsAPIError(APIErrorResponse):
+    def __init__(self, message_extra: str = None):
+        self.message_extra = message_extra
+
+    def to_status_code(self) -> status:
+        return status.HTTP_401_UNAUTHORIZED
+
+    def to_code(self) -> str:
+        return "invalid_credentials"
+
+    def to_message(self) -> str:
+        result = "Invalid credentials"
+        if self.message_extra:
+            result += f" - {self.message_extra}"
+        return result
+
+
 class InternalServerAPIError(APIErrorResponse):
     """Raised when an internal server error occurs"""
 
