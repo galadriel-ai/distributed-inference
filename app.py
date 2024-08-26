@@ -4,10 +4,13 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 import settings
+from distributedinference.repository import connection
 from distributedinference.routers import main_router
 from distributedinference.service.exception_handlers.exception_handlers import custom_exception_handler
 from distributedinference.service.middleware.main_middleware import MainMiddleware
 from distributedinference.service.middleware.request_enrichment_middleware import RequestEnrichmentMiddleware
+
+connection.init_defaults()
 
 app = FastAPI()
 
