@@ -1,3 +1,6 @@
+from functools import wraps
+from typing import Awaitable
+from typing import Callable
 from typing import Dict
 from typing import Optional
 
@@ -142,3 +145,19 @@ async def write(query: str, data: Dict) -> None:
         await session.commit()
     finally:
         await session.close()
+
+
+def read_session(func: Callable[..., Awaitable[...]]) -> Callable[..., Awaitable[...]]:
+    @wraps(func)
+    async def wrapper(*args, **kwargs) -> ...:
+        session: AsyncSession = get_session_provider_read().get()
+
+        kwargs['session'] = session
+        try:
+            result = await func(*args, **kwargs)
+        finally:
+            await session.close()
+
+        return result
+
+    return wrapper

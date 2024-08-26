@@ -7,4 +7,3 @@ class User:
     uid: UUID
     name: str
     email: str
-    api_key: str
