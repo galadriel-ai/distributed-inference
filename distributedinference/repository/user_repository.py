@@ -1,6 +1,3 @@
-import sqlalchemy
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from distributedinference.domain.user.entities import User
 from distributedinference.repository import connection
 from distributedinference.repository.utils import utcnow
@@ -26,11 +23,10 @@ VALUES (
 
 
 class UserRepository:
-    @connection.session
+
     async def insert_user(
         self,
         user: User,
-        session: AsyncSession
     ):
         data = {
             "id": user.uid,
@@ -40,4 +36,4 @@ class UserRepository:
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
-        await session.execute(sqlalchemy.text(SQL_INSERT), data)
+        await connection.write(SQL_INSERT, data)

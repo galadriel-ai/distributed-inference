@@ -1,10 +1,7 @@
-import contextvars
-import os
-from functools import wraps
-from typing import Awaitable
-from typing import Callable
+from typing import Dict
 from typing import Optional
 
+import sqlalchemy
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -138,39 +135,10 @@ def get_session_provider_read() -> SessionProvider:
     return session_provider_read
 
 
-db_session_context = contextvars.ContextVar("session", default=None)
-
-
-def transactional(func: Callable[..., Awaitable[...]]):
-    if os.getenv("PLATFORM_ENVIRONMENT") == "test":
-        return func
-
-    @wraps(func)
-    async def wrap_func(*args, **kwargs):
-        # Checks if already created a session for this transaction
-        db_session: Optional[AsyncSession] = db_session_context.get()
-        if db_session:
-            return await func(*args, **kwargs)
-        db_session = get_session_provider().get()
-        db_session_context.set(db_session)
-        try:
-            result = await func(*args, **kwargs)
-            await db_session.commit()
-        except Exception as e:
-            await db_session.rollback()
-            raise
-        finally:
-            await db_session.close()
-            db_session_context.set(None)
-        return result
-
-    return wrap_func
-
-
-def session(func: Callable[..., Awaitable[...]]):
-    @wraps(func)
-    async def wrap_func(*args, **kwargs):
-        db_session = db_session_context.get()
-        return await func(*args, **kwargs, session=db_session)
-
-    return wrap_func
+async def write(query: str, data: Dict) -> None:
+    session = get_session_provider().get()
+    try:
+        await session.execute(sqlalchemy.text(query), data)
+        await session.commit()
+    finally:
+        await session.close()
