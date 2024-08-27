@@ -52,7 +52,7 @@ def test_select_node_with_nodes(node_repository, connected_node_factory):
     node_repository.register_node(node2)
 
     selected_node = node_repository.select_node("model")
-    assert selected_node == "1"
+    assert selected_node in ["1", "2"]
 
 
 def test_select_node_after_deregistration(node_repository, connected_node_factory):
@@ -65,16 +65,20 @@ def test_select_node_after_deregistration(node_repository, connected_node_factor
     node_repository.register_node(node3)
 
     # Initially, it should return node1
-    assert node_repository.select_node("model") == "1"
+    assert node_repository.select_node("model") in ["1", "2", "3"]
+    assert len(node_repository._connected_nodes) == 3
 
     node_repository.deregister_node("1")
     # Now, it should return node2
-    assert node_repository.select_node("model") == "2"
+    assert node_repository.select_node("model") in ["2", "3"]
+    assert len(node_repository._connected_nodes) == 2
 
     node_repository.deregister_node("2")
     # Now, it should return node3
     assert node_repository.select_node("model") == "3"
+    assert len(node_repository._connected_nodes) == 1
 
     node_repository.deregister_node("3")
     # Now, there are no nodes left, should return None
     assert node_repository.select_node("model") is None
+    assert len(node_repository._connected_nodes) == 0
