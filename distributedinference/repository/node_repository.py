@@ -38,7 +38,9 @@ class NodeRepository:
             return True
         return False
 
-    async def receive_for_request(self, node_id: UUID, request_id: str) -> Optional[InferenceResponse]:
+    async def receive_for_request(
+        self, node_id: UUID, request_id: str
+    ) -> Optional[InferenceResponse]:
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
             data = await connected_node.request_incoming_queues[request_id].get()

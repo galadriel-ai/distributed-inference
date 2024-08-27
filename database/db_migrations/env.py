@@ -28,6 +28,7 @@ target_metadata = database.Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+
 def process_revision_directives(context, _, directives):
     migration_script = directives[0]
     head_revision = ScriptDirectory.from_config(context.config).get_current_head()
@@ -38,7 +39,7 @@ def process_revision_directives(context, _, directives):
     else:
         new_rev_id = head_revision_int + 1
 
-    migration_script.rev_id = '{0:012}'.format(new_rev_id)
+    migration_script.rev_id = "{0:012}".format(new_rev_id)
 
 
 def run_migrations_offline():
@@ -98,7 +99,7 @@ def get_urls():
             settings.DB_PASSWORD,
             settings.DB_HOST,
             settings.DB_PORT,
-            settings.DB_DATABASE
+            settings.DB_DATABASE,
         )
     ]
 
