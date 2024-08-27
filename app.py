@@ -42,8 +42,10 @@ def custom_openapi():
 def _get_servers():
     servers = []
     if settings.is_production():
-        # TODO
-        servers.append({"url": "https://example.com/"})
+        base_url = settings.API_BASE_URL
+        if base_url.endswith("/"):
+            base_url = base_url[:-1]
+        servers.append({"url": f"{base_url}:{80}"})
     else:
         base_url = settings.API_BASE_URL
         if base_url.endswith("/"):

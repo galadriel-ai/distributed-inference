@@ -1,3 +1,4 @@
+import random
 from dataclasses import asdict
 from typing import Dict
 from typing import Optional
@@ -20,12 +21,10 @@ class NodeRepository:
         if node_id in self._connected_nodes:
             del self._connected_nodes[node_id]
 
-    def select_node(self, model: str) -> Optional[str]:
-        return (
-            list(self._connected_nodes.keys())[0]
-            if len(self._connected_nodes) > 0
-            else None
-        )
+    def select_node(self, model: str) -> Optional[UUID]:
+        if not len(self._connected_nodes):
+            return None
+        return random.choice(list(self._connected_nodes.keys()))
 
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest

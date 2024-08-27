@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  web:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: docker/services/web/Dockerfile
+    volumes:
+      - ./logs:/home/appuser/logs
+      - ./prometheus:/home/appuser/prometheus
+      - ./data:/home/appuser/data
+#    command: gunicorn --log-level debug --timeout 300 --bind 0.0.0.0:3000 --worker-class=uvicorn.workers.UvicornWorker --workers=2 app:app
+    command: python wsgi.py
+    expose:
+      - "3000"
+    restart: unless-stopped
+  nginx:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: docker/services/nginx/Dockerfile
+    volumes:
+      - ./shared:/usr/share
+    ports:
+      - 80:80
+    restart: unless-stopped
+    depends_on:
+      - web
