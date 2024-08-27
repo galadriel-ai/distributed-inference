@@ -14,14 +14,14 @@ API_KEY_HEADER = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 logger = api_logger.get()
 
 
-async def validate_api_key(
+async def validate_api_key_header(
     api_key_header: str = Security(API_KEY_HEADER),
 ) -> Optional[User]:
     user_repository = UserRepository()
-    return await _validate_api_key(api_key_header, user_repository)
+    return await validate_api_key(api_key_header, user_repository)
 
 
-async def _validate_api_key(
+async def validate_api_key(
     api_key_header: str,
     user_repository: UserRepository,
 ) -> Optional[User]:
