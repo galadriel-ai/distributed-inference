@@ -1,7 +1,7 @@
 import time
-from uuid import uuid4
 from typing import List
 
+from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion import ChatCompletion
@@ -18,7 +18,7 @@ from distributedinference.service.completions.entities import ChatCompletionRequ
 
 async def execute(request: ChatCompletionRequest, node_repository: NodeRepository) -> ChatCompletion:
     inference_request = InferenceRequest(
-        id=str(uuid4()),
+        id=str(uuid7()),
         model=request.model,
         messages=_to_inference_messages(request.messages)
     )
