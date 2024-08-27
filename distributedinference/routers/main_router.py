@@ -8,9 +8,7 @@ from distributedinference.routers.routes import node_router
 
 TAG_ROOT = "root"
 
-router = APIRouter(
-    prefix="/v1"
-)
+router = APIRouter(prefix="/v1")
 logger = api_logger.get()
 
 routers_to_include: List[APIRouter] = [

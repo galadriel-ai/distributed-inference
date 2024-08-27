@@ -103,9 +103,7 @@ class Tool(BaseModel):
 
 
 class ToolChoiceFunction(BaseModel):
-    name: str = Field(
-        description="The name of the function to call."
-    )
+    name: str = Field(description="The name of the function to call.")
 
 
 class ToolChoice(BaseModel):
@@ -149,7 +147,9 @@ class ChatCompletionRequest(BaseModel):
         description="Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.",
         default=0,
     )
-    response_format: Union[ResponseFormatText, ResponseFormatText, ResponseFormatJsonSchema, None] = Field(
+    response_format: Union[
+        ResponseFormatText, ResponseFormatText, ResponseFormatJsonSchema, None
+    ] = Field(
         description="An object specifying the format that the model must output. Compatible with GPT-4o, GPT-4o mini, GPT-4 Turbo and all GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106.",
         default=None,
     )
@@ -186,7 +186,7 @@ class ChatCompletionRequest(BaseModel):
         default=[],
     )
     tool_choice: Union[str, ToolChoice, None] = Field(
-        description="Controls which (if any) tool is called by the model. none means the model will not call any tool and instead generates a message. auto means the model can pick between generating a message or calling one or more tools. required means the model must call one or more tools. Specifying a particular tool via `{\"type\": \"function\", \"function\": {\"name\": \"my_function\"}}` forces the model to call that tool.",
+        description='Controls which (if any) tool is called by the model. none means the model will not call any tool and instead generates a message. auto means the model can pick between generating a message or calling one or more tools. required means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.',
         default=None,
     )
     parallel_tool_calls: Optional[bool] = Field(

@@ -1,6 +1,7 @@
 import time
 from typing import List
 
+from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion import ChatCompletion
@@ -15,28 +16,33 @@ from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
 
-async def execute(request: ChatCompletionRequest, node_repository: NodeRepository) -> ChatCompletion:
+async def execute(
+    request: ChatCompletionRequest, node_repository: NodeRepository
+) -> ChatCompletion:
     inference_request = InferenceRequest(
+        id=str(uuid7()),
         model=request.model,
-        messages=_to_inference_messages(request.messages)
+        messages=_to_inference_messages(request.messages),
     )
     response = ""
-    async for chunk in run_inference_use_case.execute(inference_request, node_repository):
+    async for chunk in run_inference_use_case.execute(
+        inference_request, node_repository
+    ):
         response += chunk.content
     return ChatCompletion(
         id="id",
-        choices=[Choice(
-            finish_reason="stop",
-            index=0,
-            message=ChatCompletionMessage(
-                content=response,
-                role="assistant"
+        choices=[
+            Choice(
+                finish_reason="stop",
+                index=0,
+                message=ChatCompletionMessage(content=response, role="assistant"),
             )
-        )],
+        ],
         created=int(time.time()),
         model=request.model,
-        object="chat.completion"
+        object="chat.completion",
     )
+
 
 def _to_inference_messages(messages: List[Message]) -> List[InferenceMessage]:
     return [

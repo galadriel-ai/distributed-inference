@@ -41,18 +41,24 @@ async def websocket_endpoint(
     await websocket.accept()
     node_id = user.uid
     node = ConnectedNode(
-        uid=node_id, model="model", websocket=websocket, message_queue=asyncio.Queue()
+        uid=node_id, model="model", websocket=websocket, request_incoming_queues={}
     )
     logger.info(f"Node {node_id} connected")
     node_repository.register_node(node)
     try:
         while True:
             data = await websocket.receive_text()
+            request_id = None
             try:
                 parsed_data = json.loads(data)
+                # get request id
+                request_id = parsed_data["request_id"]
             except json.JSONDecodeError:
                 raise WebSocketRequestValidationError("Invalid JSON data")
-            await node.message_queue.put(parsed_data)
+            try:
+                await node.request_incoming_queues[request_id].put(parsed_data)
+            except KeyError:
+                logger.error(f"Received chunk for unknown request {request_id}")
     except WebSocketDisconnect:
         node_repository.deregister_node(node_id)
         logger.info(f"Node {node_id} disconnected")
