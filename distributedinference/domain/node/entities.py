@@ -1,4 +1,5 @@
 import asyncio
+from typing import Dict
 from dataclasses import dataclass
 from uuid import UUID
 from typing import List
@@ -16,7 +17,7 @@ class Node:
 @dataclass(frozen=True)
 class ConnectedNode(Node):
     websocket: WebSocket
-    message_queue: asyncio.Queue
+    request_incoming_queues: Dict[str, asyncio.Queue]
 
 
 @dataclass
@@ -33,11 +34,13 @@ class InferenceMessage:
 
 @dataclass
 class InferenceRequest:
+    id: str
     model: str
     messages: List[InferenceMessage]
 
 
 @dataclass
 class InferenceResponse:
+    request_id: str
     content: str
     finish_reason: Optional[str] = None

@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import asdict
 from typing import Dict
 from typing import Optional
@@ -32,13 +33,19 @@ class NodeRepository:
     ) -> bool:
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
+            connected_node.request_incoming_queues[request.id] = asyncio.Queue()
             await connected_node.websocket.send_json(asdict(request))
             return True
         return False
 
-    async def receive(self, node_id: UUID) -> Optional[InferenceResponse]:
+    async def receive_for_request(self, node_id: UUID, request_id: str) -> Optional[InferenceResponse]:
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
-            data = await connected_node.message_queue.get()
+            data = await connected_node.request_incoming_queues[request_id].get()
             return InferenceResponse(**data)
         return None
+
+    async def cleanup_request(self, node_id: UUID, request_id: str):
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            del connected_node.request_incoming_queues[request_id]
