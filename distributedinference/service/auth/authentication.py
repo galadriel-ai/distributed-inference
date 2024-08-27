@@ -37,6 +37,4 @@ async def validate_api_key(
     user = await user_repository.get_user_by_api_key(api_key_header)
     if user:
         return user
-    raise error_responses.InvalidCredentialsAPIError(
-        message_extra="API Key not found."
-    )
+    raise error_responses.InvalidCredentialsAPIError(message_extra="API Key not found.")

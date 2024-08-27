@@ -23,15 +23,15 @@ def init(
     user,
     password,
     db,
-    host='localhost',
+    host="localhost",
     port=5432,
     pool_size=DEFAULT_POOL_SIZE,
     pool_overflow=DEFAULT_POOL_OVERFLOW,
-    pool_timeout=DEFAULT_POOL_TIMEOUT
+    pool_timeout=DEFAULT_POOL_TIMEOUT,
 ):
     global connection_write
     if not connection_write:
-        url = 'postgresql+asyncpg://{}:{}@{}:{}/{}'
+        url = "postgresql+asyncpg://{}:{}@{}:{}/{}"
         url = url.format(user, password, host, port, db)
 
         # The return value of create_engine() is our connection object
@@ -43,25 +43,22 @@ def init(
             pool_recycle=1800,
         )
         session_maker = async_sessionmaker(bind=engine)
-        connection_write = {
-            "engine": engine,
-            "session_maker": session_maker
-        }
+        connection_write = {"engine": engine, "session_maker": session_maker}
 
 
 def init_read(
     user,
     password,
     db,
-    host='localhost',
+    host="localhost",
     port=5432,
     pool_size=DEFAULT_POOL_SIZE,
     pool_overflow=DEFAULT_POOL_OVERFLOW,
-    pool_timeout=DEFAULT_POOL_TIMEOUT
+    pool_timeout=DEFAULT_POOL_TIMEOUT,
 ):
     global connection_read
     if not connection_read:
-        url = 'postgresql+asyncpg://{}:{}@{}:{}/{}'
+        url = "postgresql+asyncpg://{}:{}@{}:{}/{}"
         url = url.format(user, password, host, port, db)
 
         # The return value of create_engine() is our connection object
@@ -73,10 +70,7 @@ def init_read(
             pool_recycle=1800,
         )
         session_maker = async_sessionmaker(bind=engine)
-        connection_read = {
-            "engine": engine,
-            "session_maker": session_maker
-        }
+        connection_read = {"engine": engine, "session_maker": session_maker}
 
 
 def init_defaults():
@@ -92,7 +86,7 @@ def _init_all(pool_size: int, pool_overflow: int, pool_timeout: int):
         port=settings.DB_PORT,
         pool_size=pool_size,
         pool_overflow=pool_overflow,
-        pool_timeout=pool_timeout
+        pool_timeout=pool_timeout,
     )
     init_read(
         user=settings.DB_USER_READ,
@@ -102,7 +96,7 @@ def _init_all(pool_size: int, pool_overflow: int, pool_timeout: int):
         port=settings.DB_PORT_READ,
         pool_size=pool_size,
         pool_overflow=pool_overflow,
-        pool_timeout=pool_timeout
+        pool_timeout=pool_timeout,
     )
     global session_provider
     global session_provider_read
@@ -152,7 +146,7 @@ def read_session(func: Callable[..., Awaitable[...]]) -> Callable[..., Awaitable
     async def wrapper(*args, **kwargs) -> ...:
         session: AsyncSession = get_session_provider_read().get()
 
-        kwargs['session'] = session
+        kwargs["session"] = session
         try:
             result = await func(*args, **kwargs)
         finally:

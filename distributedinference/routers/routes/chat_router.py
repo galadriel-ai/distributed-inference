@@ -11,9 +11,7 @@ from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
 TAG = "Chat"
-router = APIRouter(
-    prefix="/chat"
-)
+router = APIRouter(prefix="/chat")
 router.tags = [TAG]
 
 logger = api_logger.get()

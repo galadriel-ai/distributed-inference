@@ -71,11 +71,7 @@ class UserRepository:
         }
         await connection.write(SQL_INSERT, data)
 
-    async def insert_api_key(
-        self,
-        user_id: UUID,
-        api_key: str
-    ) -> UUID:
+    async def insert_api_key(self, user_id: UUID, api_key: str) -> UUID:
         api_key_id = uuid7()
         data = {
             "id": api_key_id,
@@ -88,10 +84,10 @@ class UserRepository:
         return api_key_id
 
     @connection.read_session
-    async def get_user_by_api_key(self, api_key: str, session: AsyncSession) -> Optional[User]:
-        data = {
-            "api_key": api_key
-        }
+    async def get_user_by_api_key(
+        self, api_key: str, session: AsyncSession
+    ) -> Optional[User]:
+        data = {"api_key": api_key}
         rows = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
         for row in rows:
             return User(
