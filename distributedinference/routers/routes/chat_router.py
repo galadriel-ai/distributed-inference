@@ -5,10 +5,12 @@ from distributedinference import api_logger
 from distributedinference.domain.user.entities import User
 from distributedinference.service.auth import authentication
 from distributedinference.service.completions import chat_completions_service
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.completions.entities import ChatCompletionRequest
 from distributedinference.service.completions.entities import ChatCompletion
+from distributedinference.dependencies import get_node_repository
 
-TAG = "Agent"
+TAG = "Chat"
 router = APIRouter(
     prefix="/chat"
 )
@@ -27,5 +29,8 @@ logger = api_logger.get()
 async def completions(
     request: ChatCompletionRequest,
     validated_user: User = Depends(authentication.validate_api_key),
+    node_repository: NodeRepository = Depends(get_node_repository),
 ):
-    return await chat_completions_service.execute(request)
+    return await chat_completions_service.execute(
+        request, node_repository=node_repository
+    )
