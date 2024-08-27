@@ -10,11 +10,12 @@ services:
       - ./logs:/home/appuser/logs
       - ./prometheus:/home/appuser/prometheus
       - ./data:/home/appuser/data
-#    command: gunicorn --log-level debug --timeout 300 --bind 0.0.0.0:3000 --worker-class=uvicorn.workers.UvicornWorker --workers=2 app:app
     command: python wsgi.py
     expose:
       - "3000"
     restart: unless-stopped
+    networks:
+      - shared_network
   nginx:
     env_file:
       - .env
@@ -28,3 +29,9 @@ services:
     restart: unless-stopped
     depends_on:
       - web
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true  # Ensure this network is externally defined
