@@ -10,8 +10,11 @@ async def execute(
 ) -> AsyncGenerator[InferenceResponse, None]:
     node_id = node_repository.select_node(request.model)
     await node_repository.send_inference_request(node_id, request)
-    while True:
-        response = await node_repository.receive(node_id)
-        if response is None or response.finish_reason == "stop":
-            break
-        yield response
+    try:
+        while True:
+            response = await node_repository.receive_for_request(node_id, request.id)
+            if response is None or response.finish_reason == "stop":
+                break
+            yield response
+    finally:
+        await node_repository.cleanup_request(node_id, request.id)
