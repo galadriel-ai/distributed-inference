@@ -212,7 +212,7 @@ class ChatCompletionRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "model": "gpt-4",
+                "model": "llama3",
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": "Hello!"},
