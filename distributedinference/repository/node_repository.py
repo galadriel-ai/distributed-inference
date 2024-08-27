@@ -1,6 +1,7 @@
+from dataclasses import asdict
 from typing import Dict
-from typing import List
 from typing import Optional
+
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
@@ -30,7 +31,7 @@ class NodeRepository:
     ) -> bool:
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
-            await connected_node.websocket.send_json(request.to_dict())
+            await connected_node.websocket.send_json(asdict(request))
             return True
         return False
 
@@ -38,5 +39,5 @@ class NodeRepository:
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
             data = await connected_node.message_queue.get()
-            return InferenceResponse.from_dict(data)
+            return InferenceResponse(**data)
         return None

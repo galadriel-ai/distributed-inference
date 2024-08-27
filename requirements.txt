@@ -12,5 +12,4 @@ psycopg2-binary==2.9.9
 asyncpg==0.29.0
 openai==1.42.0
 uuid7==0.1.0
-dataclasses-json==0.6.7
 websockets==12.0
