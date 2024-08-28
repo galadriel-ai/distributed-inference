@@ -20,10 +20,8 @@ logger = api_logger.get()
 
 registry = CollectorRegistry()
 network_nodes_gauge = Gauge(
-    'network_nodes',
-    'Nodes in network by model_name',
-    ["model_name"],
-    registry=registry)
+    "network_nodes", "Nodes in network by model_name", ["model_name"], registry=registry
+)
 
 
 @router.get("")
