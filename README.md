@@ -24,6 +24,13 @@ python -m pytest tests/unit
 PYTHONPATH=. pytest tests/unit
 ```
 
+### Linting
+
+```shell
+pip install black
+python -m black .
+```
+
 
 ## Production deployment
 

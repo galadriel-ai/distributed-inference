@@ -14,6 +14,7 @@ from distributedinference.domain.node.entities import InferenceResponse
 
 logger = api_logger.get()
 
+
 class NodeRepository:
 
     def __init__(self):
@@ -50,7 +51,7 @@ class NodeRepository:
             try:
                 return InferenceResponse(
                     request_id=data["request_id"],
-                    chunk=ChatCompletionChunk(**data["chunk"])
+                    chunk=ChatCompletionChunk(**data["chunk"]),
                 )
             except Exception as e:
                 logger.warning(f"Failed to parse chunk, request_id={request_id}")

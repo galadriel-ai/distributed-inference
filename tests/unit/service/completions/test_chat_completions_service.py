@@ -16,6 +16,7 @@ from distributedinference.service.completions.entities import Message
 
 MOCK_UUID = UUID("a2e3db51-7a7f-473c-8cd5-390e7ed1e1c7")
 
+
 def setup():
     service.uuid7 = MagicMock()
     service.uuid7.return_value = MOCK_UUID
@@ -27,38 +28,44 @@ class MockInference:
     def __init__(self, chunk_count: int):
         self.chunk_count = chunk_count
 
-    async def mock_inference(self, *args, **kwargs) -> AsyncGenerator[InferenceResponse, None]:
+    async def mock_inference(
+        self, *args, **kwargs
+    ) -> AsyncGenerator[InferenceResponse, None]:
         for i in range(3):
             yield InferenceResponse(
                 request_id=str(MOCK_UUID),
                 chunk=ChatCompletionChunk(
                     id=f"mock-{i}",
-                    choices=[Choice(
-                        delta=ChoiceDelta(
-                            content=f"{i}",
-                            role="assistant",
-                        ),
-                        index=0,
-                        finish_reason=None,
-                    )],
+                    choices=[
+                        Choice(
+                            delta=ChoiceDelta(
+                                content=f"{i}",
+                                role="assistant",
+                            ),
+                            index=0,
+                            finish_reason=None,
+                        )
+                    ],
                     created=123,
                     model="llama3",
                     object="chat.completion.chunk",
-                )
+                ),
             )
         yield InferenceResponse(
             request_id=str(MOCK_UUID),
             chunk=ChatCompletionChunk(
                 id=f"mock-{self.chunk_count}",
-                choices=[Choice(
-                    delta=ChoiceDelta(),
-                    index=0,
-                    finish_reason="stop",
-                )],
+                choices=[
+                    Choice(
+                        delta=ChoiceDelta(),
+                        index=0,
+                        finish_reason="stop",
+                    )
+                ],
                 created=123,
                 model="llama3",
                 object="chat.completion.chunk",
-            )
+            ),
         )
 
 
@@ -70,34 +77,30 @@ async def test_success():
     service.run_inference_use_case.execute = mock_inference.mock_inference
     res = await service.execute(
         ChatCompletionRequest(
-            model="llama3",
-            messages=[
-                Message(
-                    role="user",
-                    content="asd"
-                )
-            ]
+            model="llama3", messages=[Message(role="user", content="asd")]
         ),
-        MagicMock()
+        MagicMock(),
     )
     assert res == ChatCompletion(
-        id='id',
-        choices=[CompletionChoice(
-            finish_reason='stop',
-            index=0,
-            logprobs=None,
-            message=ChatCompletionMessage(
-                content='012',
-                refusal=None,
-                role='assistant',
-                function_call=None,
-                tool_calls=None
+        id="id",
+        choices=[
+            CompletionChoice(
+                finish_reason="stop",
+                index=0,
+                logprobs=None,
+                message=ChatCompletionMessage(
+                    content="012",
+                    refusal=None,
+                    role="assistant",
+                    function_call=None,
+                    tool_calls=None,
+                ),
             )
-        )],
+        ],
         created=1337,
-        model='llama3',
-        object='chat.completion',
+        model="llama3",
+        object="chat.completion",
         service_tier=None,
         system_fingerprint=None,
-        usage=None
+        usage=None,
     )

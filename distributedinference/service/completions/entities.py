@@ -57,9 +57,7 @@ class ResponseFormat(BaseModel):
     type: Literal["text", "json_object", "json_schema"] = Field(
         description="The type of response format being defined: `text`",
     )
-    json_schema: Optional[JsonSchema] = Field(
-        default=None
-    )
+    json_schema: Optional[JsonSchema] = Field(default=None)
 
 
 class StreamOptions(BaseModel):
