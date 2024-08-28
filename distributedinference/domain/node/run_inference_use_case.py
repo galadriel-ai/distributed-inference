@@ -1,8 +1,8 @@
 from typing import AsyncGenerator
 
-from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.repository.node_repository import NodeRepository
 
 
 async def execute(
@@ -13,7 +13,7 @@ async def execute(
     try:
         while True:
             response = await node_repository.receive_for_request(node_id, request.id)
-            if response is None or response.finish_reason == "stop":
+            if response is None or response.chunk.choices[0].finish_reason == "stop":
                 break
             yield response
     finally:

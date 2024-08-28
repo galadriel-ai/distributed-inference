@@ -34,19 +34,7 @@ class Message(BaseMessage):
     )
 
 
-class ResponseFormatText(BaseMessage):
-    type: Literal["text"] = Field(
-        description="The type of response format being defined: `text`",
-    )
-
-
-class ResponseFormatJson(BaseMessage):
-    type: Literal["json_object"] = Field(
-        description="The type of response format being defined: `text`",
-    )
-
-
-class JsonSchema(BaseMessage):
+class JsonSchema(BaseModel):
     description: Optional[str] = Field(
         description="A description of what the response format is for, used by the model to determine how to respond in the format.",
         default=True,
@@ -65,14 +53,16 @@ class JsonSchema(BaseMessage):
     )
 
 
-class ResponseFormatJsonSchema(BaseMessage):
-    type: Literal["json_object"] = Field(
-        description="The type of response format being defined: `json_schema`"
+class ResponseFormat(BaseModel):
+    type: Literal["text", "json_object", "json_schema"] = Field(
+        description="The type of response format being defined: `text`",
     )
-    json_schema: JsonSchema = Field()
+    json_schema: Optional[JsonSchema] = Field(
+        default=None
+    )
 
 
-class StreamOptions(BaseMessage):
+class StreamOptions(BaseModel):
     include_usage: bool = Field(
         description="If set, an additional chunk will be streamed before the `data: [DONE]` message. The usage field on this chunk shows the token usage statistics for the entire request, and the choices field will always be an empty array. All other chunks will also include a usage field, but with a null value.",
     )
@@ -96,7 +86,7 @@ class Function(BaseModel):
 
 
 class Tool(BaseModel):
-    type: str = Field(
+    type: Optional[Literal["function"]] = Field(
         description="The type of the tool. Currently, only `function` is supported."
     )
     function: Function = Field()
@@ -107,14 +97,13 @@ class ToolChoiceFunction(BaseModel):
 
 
 class ToolChoice(BaseModel):
-    type: str = Field(
+    type: Optional[Literal["function"]] = Field(
         description="The type of the tool. Currently, only `function` is supported.",
     )
     function: ToolChoiceFunction = Field()
 
 
 class ChatCompletionRequest(BaseModel):
-    # TODO: can maybe somehow use openAi package CompletionCreateParams
     messages: List[Message] = Field(
         ..., description="A list of messages comprising the conversation so far. "
     )
@@ -147,9 +136,7 @@ class ChatCompletionRequest(BaseModel):
         description="Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.",
         default=0,
     )
-    response_format: Union[
-        ResponseFormatText, ResponseFormatText, ResponseFormatJsonSchema, None
-    ] = Field(
+    response_format: Optional[ResponseFormat] = Field(
         description="An object specifying the format that the model must output. Compatible with GPT-4o, GPT-4o mini, GPT-4 Turbo and all GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106.",
         default=None,
     )
