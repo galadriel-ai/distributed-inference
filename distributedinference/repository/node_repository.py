@@ -33,8 +33,6 @@ class NodeRepository:
         return random.choice(list(self._connected_nodes.keys()))
 
     def get_nodes_count(self) -> int:
-        if not len(self._connected_nodes):
-            return 0
         return len(self._connected_nodes)
 
     async def send_inference_request(
