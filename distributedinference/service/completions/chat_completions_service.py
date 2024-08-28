@@ -1,17 +1,15 @@
 import time
-from typing import List
 
-from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionMessage
-from openai.types.chat.chat_completion import Choice
+from openai.types.chat import CompletionCreateParams
 from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat.chat_completion import Choice
+from uuid_extensions import uuid7
 
-from distributedinference.domain.node.entities import InferenceContent
-from distributedinference.domain.node.entities import InferenceMessage
-from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node import run_inference_use_case
+from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.repository.node_repository import NodeRepository
-from distributedinference.service.completions.entities import Message
+from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
@@ -19,11 +17,17 @@ from distributedinference.service.completions.entities import ChatCompletionRequ
 async def execute(
     request: ChatCompletionRequest, node_repository: NodeRepository
 ) -> ChatCompletion:
+    try:
+        chat_request: CompletionCreateParams = await request.to_openai_chat_completion()
+    except:
+        raise error_responses.ValidationError()
+
     inference_request = InferenceRequest(
         id=str(uuid7()),
         model=request.model,
-        messages=_to_inference_messages(request.messages),
+        chat_request=chat_request,
     )
+
     response = ""
     async for chunk in run_inference_use_case.execute(
         inference_request, node_repository
@@ -43,13 +47,3 @@ async def execute(
         model=request.model,
         object="chat.completion",
     )
-
-
-def _to_inference_messages(messages: List[Message]) -> List[InferenceMessage]:
-    return [
-        InferenceMessage(
-            role=message.role,
-            content=InferenceContent(type="text", value=message.content),
-        )
-        for message in messages
-    ]

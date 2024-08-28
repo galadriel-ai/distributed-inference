@@ -48,6 +48,22 @@ class InvalidCredentialsAPIError(APIErrorResponse):
         return result
 
 
+class ValidationError(APIErrorResponse):
+    """Raised when a validation error occurs"""
+
+    def __init__(self):
+        pass
+
+    def to_status_code(self) -> status:
+        return status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def to_code(self) -> str:
+        return "unprocessable_entity"
+
+    def to_message(self) -> str:
+        return "Can't process the data."
+
+
 class InternalServerAPIError(APIErrorResponse):
     """Raised when an internal server error occurs"""
 

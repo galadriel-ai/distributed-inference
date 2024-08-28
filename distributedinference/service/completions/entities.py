@@ -4,9 +4,16 @@ from typing import Literal
 from typing import Optional
 from typing import Union
 
+from openai._utils import async_maybe_transform
 from openai.types.chat import ChatCompletion as OpenAiChatCompletion
+from openai.types.chat import CompletionCreateParams
+from openai.types.chat import completion_create_params
 from pydantic import BaseModel
 from pydantic import Field
+
+from distributedinference import api_logger
+
+logger = api_logger.get()
 
 
 class FunctionCall(BaseModel):
@@ -204,6 +211,40 @@ class ChatCompletionRequest(BaseModel):
                 ],
             }
         }
+
+    async def to_openai_chat_completion(self) -> CompletionCreateParams:
+        try:
+            return await async_maybe_transform(
+                {
+                    "messages": self.messages,
+                    "model": self.model,
+                    "frequency_penalty": self.frequency_penalty,
+                    "function_call": self.function_call,
+                    "functions": self.functions,
+                    "logit_bias": self.logit_bias,
+                    "logprobs": self.logprobs,
+                    "max_tokens": self.max_tokens,
+                    "n": self.n,
+                    "parallel_tool_calls": self.parallel_tool_calls,
+                    "presence_penalty": self.presence_penalty,
+                    "response_format": self.response_format,
+                    "seed": self.seed,
+                    "service_tier": self.service_tier,
+                    "stop": self.stop,
+                    "stream": self.stream,
+                    "stream_options": self.stream_options,
+                    "temperature": self.temperature,
+                    "tool_choice": self.tool_choice,
+                    "tools": self.tools,
+                    "top_logprobs": self.top_logprobs,
+                    "top_p": self.top_p,
+                    "user": self.user,
+                },
+                completion_create_params.CompletionCreateParams,
+            )
+        except Exception as e:
+            logger.warning("Failed to convert input to openAI CompletionCreateParams")
+            raise e
 
 
 class ChatCompletion(OpenAiChatCompletion):

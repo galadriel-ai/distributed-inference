@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import WebSocket
 from openai.types.chat import ChatCompletionChunk
+from openai.types.chat import CompletionCreateParams
 
 
 @dataclass(frozen=True)
@@ -36,7 +37,7 @@ class InferenceMessage:
 class InferenceRequest:
     id: str
     model: str
-    messages: List[InferenceMessage]
+    chat_request: CompletionCreateParams
 
 
 @dataclass
