@@ -1,11 +1,11 @@
 import asyncio
-from typing import Dict
 from dataclasses import dataclass
-from uuid import UUID
+from typing import Dict
 from typing import List
-from typing import Optional
+from uuid import UUID
 
 from fastapi import WebSocket
+from openai.types.chat import ChatCompletionChunk
 
 
 @dataclass(frozen=True)
@@ -42,5 +42,4 @@ class InferenceRequest:
 @dataclass
 class InferenceResponse:
     request_id: str
-    content: str
-    finish_reason: Optional[str] = None
+    chunk: ChatCompletionChunk

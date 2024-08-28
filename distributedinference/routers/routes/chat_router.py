@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import Depends
+from starlette.responses import StreamingResponse
 
 from distributedinference import api_logger
 from distributedinference import dependencies
@@ -7,6 +8,7 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.auth import authentication
 from distributedinference.service.completions import chat_completions_service
+from distributedinference.service.completions import chat_completions_stream_service
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
@@ -29,6 +31,19 @@ async def completions(
     _: User = Depends(authentication.validate_api_key_header),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
 ):
-    return await chat_completions_service.execute(
-        request, node_repository=node_repository
-    )
+    if request.stream:
+        headers = {
+            "X-Content-Type-Options": "nosniff",
+            "Connection": "keep-alive",
+        }
+        return StreamingResponse(
+            chat_completions_stream_service.execute(
+                request, node_repository=node_repository
+            ),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+    else:
+        return await chat_completions_service.execute(
+            request, node_repository=node_repository
+        )
