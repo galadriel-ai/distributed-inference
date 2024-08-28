@@ -197,7 +197,7 @@ class ChatCompletionRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "model": "llama3",
+                "model": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": "Hello!"},
