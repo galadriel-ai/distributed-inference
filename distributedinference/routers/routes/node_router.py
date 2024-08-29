@@ -33,7 +33,7 @@ logger = api_logger.get()
 async def websocket_endpoint(
     websocket: WebSocket,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    _: User = Depends(authentication.validate_api_key_header),
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
 ):
     user = await authentication.validate_api_key(
         websocket.headers.get("Authorization"),
