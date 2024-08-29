@@ -203,7 +203,7 @@ class ChatCompletionRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "model": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+                "model": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": "Hello!"},
