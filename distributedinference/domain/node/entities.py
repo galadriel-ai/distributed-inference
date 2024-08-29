@@ -11,16 +11,29 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
 
+@dataclass
+class NodeMetrics:
+    requests_served: int = 0
+    time_to_first_token: Optional[float] = None
+
+
+@dataclass
+class NodeInfo:
+    gpu_model: Optional[str] = None
+    vram: Optional[int] = None
+    cpu_model: Optional[str] = None
+    ram: Optional[int] = None
+    network_speed: Optional[float] = None
+    operating_system: Optional[str] = None
+
+
 @dataclass(frozen=True)
-class Node:
+class ConnectedNode:
     uid: UUID
     model: str
-
-
-@dataclass(frozen=True)
-class ConnectedNode(Node):
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
+    metrics: NodeMetrics
 
     def active_requests_count(self) -> int:
         return len(self.request_incoming_queues)

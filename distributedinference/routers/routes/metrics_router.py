@@ -30,6 +30,8 @@ async def metrics(
 ):
     # TODO: replace model names with real ones
     model_name = "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4"
-    network_nodes_gauge.labels(model_name).set(node_repository.get_nodes_count())
+    network_nodes_gauge.labels(model_name).set(
+        node_repository.get_connected_nodes_count()
+    )
     metrics_data = generate_latest(registry)
     return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)
