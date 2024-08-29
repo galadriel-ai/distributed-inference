@@ -149,10 +149,10 @@ class ChatCompletionRequest(BaseModel):
         description="This feature is in Beta. If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same `seed` and parameters should return the same result. Determinism is not guaranteed, and you should refer to the `system_fingerprint` response parameter to monitor changes in the backend.",
         default=None,
     )
-    service_tier: Optional[str] = Field(
-        description="",
-        default=None,
-    )
+    # service_tier: Optional[str] = Field(
+    #     description="",
+    #     default=None,
+    # )
     stop: Union[str, List, None] = Field(
         description="Up to 4 sequences where the API will stop generating further tokens.",
         default=None,
@@ -173,33 +173,32 @@ class ChatCompletionRequest(BaseModel):
         description="An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.",
         default=1,
     )
-    tools: Optional[List[Tool]] = Field(
-        description="A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.",
-        default=[],
-    )
-    tool_choice: Union[str, ToolChoice, None] = Field(
-        description='Controls which (if any) tool is called by the model. none means the model will not call any tool and instead generates a message. auto means the model can pick between generating a message or calling one or more tools. required means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.',
-        default=None,
-    )
-    parallel_tool_calls: Optional[bool] = Field(
-        description="Whether to enable parallel function calling during tool use.",
-        default=None,
-    )
+    # tools: Optional[List[Tool]] = Field(
+    #     description="A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.",
+    #     default=None,
+    # )
+    # tool_choice: Union[str, ToolChoice, None] = Field(
+    #     description='Controls which (if any) tool is called by the model. none means the model will not call any tool and instead generates a message. auto means the model can pick between generating a message or calling one or more tools. required means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.',
+    #     default=None,
+    # )
+    # parallel_tool_calls: Optional[bool] = Field(
+    #     description="Whether to enable parallel function calling during tool use.",
+    #     default=None,
+    # )
     user: Optional[str] = Field(
         description="A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.",
         default=None,
     )
-
-    function_call: Union[str, Dict, None] = Field(
-        description='Controls how the model calls functions. "none" means the model will not call a function and instead generates a message. "auto" means the model can pick between generating a message or calling a function. Specifying a particular function via {"name": "my_function"} forces the model to call that function. "none" is the default when no functions are present. "auto" is the default if functions are present.',
-        default=None,
-        deprecated=True,
-    )
-    functions: Optional[List[Function]] = Field(
-        description="A list of functions the model may generate JSON inputs for.",
-        default=None,
-        deprecated=True,
-    )
+    # function_call: Union[str, Dict, None] = Field(
+    #     description='Controls how the model calls functions. "none" means the model will not call a function and instead generates a message. "auto" means the model can pick between generating a message or calling a function. Specifying a particular function via {"name": "my_function"} forces the model to call that function. "none" is the default when no functions are present. "auto" is the default if functions are present.',
+    #     default=None,
+    #     deprecated=True,
+    # )
+    # functions: Optional[List[Function]] = Field(
+    #     description="A list of functions the model may generate JSON inputs for.",
+    #     default=None,
+    #     deprecated=True,
+    # )
 
     class Config:
         json_schema_extra = {
@@ -219,23 +218,23 @@ class ChatCompletionRequest(BaseModel):
                     "messages": self.messages,
                     "model": self.model,
                     "frequency_penalty": self.frequency_penalty,
-                    "function_call": self.function_call,
-                    "functions": self.functions,
+                    # "function_call": self.function_call,
+                    # "functions": self.functions,
                     "logit_bias": self.logit_bias,
                     "logprobs": self.logprobs,
                     "max_tokens": self.max_tokens,
                     "n": self.n,
-                    "parallel_tool_calls": self.parallel_tool_calls,
+                    # "parallel_tool_calls": self.parallel_tool_calls,
                     "presence_penalty": self.presence_penalty,
                     "response_format": self.response_format,
                     "seed": self.seed,
-                    "service_tier": self.service_tier,
+                    # "service_tier": self.service_tier,
                     "stop": self.stop,
                     "stream": self.stream,
                     "stream_options": self.stream_options,
                     "temperature": self.temperature,
-                    "tool_choice": self.tool_choice,
-                    "tools": self.tools,
+                    # "tool_choice": self.tool_choice,
+                    # "tools": self.tools,
                     "top_logprobs": self.top_logprobs,
                     "top_p": self.top_p,
                     "user": self.user,
