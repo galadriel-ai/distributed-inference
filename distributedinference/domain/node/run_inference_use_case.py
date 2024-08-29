@@ -44,7 +44,10 @@ async def execute(
                 break
     finally:
         await node_repository.cleanup_request(node_id, request.id)
-        await _save_result(user_uid, node_id, request.model, usage, tokens_repository)
+        if usage:
+            await _save_result(
+                user_uid, node_id, request.model, usage, tokens_repository
+            )
 
 
 async def _save_result(
