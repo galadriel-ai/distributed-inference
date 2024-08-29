@@ -1,0 +1,2 @@
+class NoAvailableNodesError(Exception):
+    pass

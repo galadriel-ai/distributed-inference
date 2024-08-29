@@ -1,7 +1,8 @@
 from typing import AsyncGenerator
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 from uuid import UUID
 
+import pytest
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice as CompletionChoice
@@ -9,6 +10,8 @@ from openai.types.chat.chat_completion_chunk import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
 
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.exceptions import NoAvailableNodesError
+from distributedinference.service import error_responses
 from distributedinference.service.completions import chat_completions_service as service
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
