@@ -7,16 +7,22 @@ from distributedinference.repository import connection
 from distributedinference.repository.user_repository import UserRepository
 
 USERS = [
-    ("gpu-api-key", User(
-        uid=uuid7(),
-        name="gpu user",
-        email="gpu@user.com",
-    )),
-    ("consumer-api-key", User(
-        uid=uuid7(),
-        name="consumer user",
-        email="consumer@user.com",
-    ))
+    (
+        "gpu-api-key",
+        User(
+            uid=uuid7(),
+            name="gpu user",
+            email="gpu@user.com",
+        ),
+    ),
+    (
+        "consumer-api-key",
+        User(
+            uid=uuid7(),
+            name="consumer user",
+            email="consumer@user.com",
+        ),
+    ),
 ]
 
 
