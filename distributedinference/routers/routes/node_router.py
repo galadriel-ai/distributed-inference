@@ -9,10 +9,15 @@ from fastapi.exceptions import WebSocketRequestValidationError
 
 from distributedinference import api_logger
 from distributedinference import dependencies
+from distributedinference.domain.user.entities import User
+from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.auth import authentication
+from distributedinference.service.node.entities import NodeInfoRequest
+from distributedinference.service.node.entities import NodeInfoResponse
+from distributedinference.service.node import save_node_info_service
 
 TAG = "Node"
 router = APIRouter(prefix="/node")
@@ -28,7 +33,7 @@ logger = api_logger.get()
 async def websocket_endpoint(
     websocket: WebSocket,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    _: User = Depends(authentication.validate_api_key_header),
 ):
     user = await authentication.validate_api_key(
         websocket.headers.get("Authorization"),
@@ -41,7 +46,11 @@ async def websocket_endpoint(
     await websocket.accept()
     node_id = user.uid
     node = ConnectedNode(
-        uid=node_id, model="model", websocket=websocket, request_incoming_queues={}
+        uid=node_id,
+        model="model",
+        websocket=websocket,
+        request_incoming_queues={},
+        metrics=NodeMetrics(),
     )
     logger.info(f"Node {node_id} connected")
     node_repository.register_node(node)
@@ -62,3 +71,16 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         node_repository.deregister_node(node_id)
         logger.info(f"Node {node_id} disconnected")
+
+
+@router.post(
+    "/info",
+    name="Node Info",
+    response_model=NodeInfoResponse,
+)
+async def node_info(
+    request: NodeInfoRequest,
+    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user: User = Depends(authentication.validate_api_key_header),
+):
+    return await save_node_info_service.execute(request, user.uid, node_repository)
