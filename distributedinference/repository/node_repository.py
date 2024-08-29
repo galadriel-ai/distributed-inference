@@ -9,6 +9,7 @@ from openai.types.chat import ChatCompletionChunk
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 
@@ -51,7 +52,14 @@ class NodeRepository:
             try:
                 return InferenceResponse(
                     request_id=data["request_id"],
-                    chunk=ChatCompletionChunk(**data["chunk"]),
+                    chunk=(
+                        ChatCompletionChunk(**data["chunk"])
+                        if "chunk" in data
+                        else None
+                    ),
+                    error=(
+                        InferenceError(**data["error"]) if data.get("error") else None
+                    ),
                 )
             except Exception as e:
                 logger.warning(f"Failed to parse chunk, request_id={request_id}")

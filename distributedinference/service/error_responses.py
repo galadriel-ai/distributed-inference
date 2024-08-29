@@ -78,3 +78,35 @@ class InternalServerAPIError(APIErrorResponse):
 
     def to_message(self) -> str:
         return "The request could not be completed due to an " "internal server error."
+
+
+class InferenceError(APIErrorResponse):
+    def __init__(self, status_code, message_extra: str = None):
+        self.status_code = status_code
+        self.message_extra = message_extra
+
+    def to_status_code(self) -> status:
+        return self.status_code
+
+    def to_code(self) -> str:
+        return "inference_error"
+
+    def to_message(self) -> str:
+        result = "Inference error"
+        if self.message_extra:
+            result += f" - {self.message_extra}"
+        return result
+
+
+class NoAvailableInferenceNodesError(APIErrorResponse):
+    def __init__(self):
+        pass
+
+    def to_status_code(self) -> status:
+        return status.HTTP_503_SERVICE_UNAVAILABLE
+
+    def to_code(self) -> str:
+        return "no_available_inference_nodes"
+
+    def to_message(self) -> str:
+        return "No available inference nodes to process the request."
