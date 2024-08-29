@@ -4,6 +4,4 @@ from pydantic import Field
 
 
 class ApiResponse(BaseModel):
-    response: Literal["OK", "NOK"] = Field(
-        description="Response status, either OK or NOK."
-    )
+    response: Literal["OK"] = Field(description="Success response", default="OK")

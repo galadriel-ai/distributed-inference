@@ -32,33 +32,3 @@ async def test_execute_success():
     mock_repository.save_node_info.assert_called_once_with(node_id, expected_node_info)
 
     assert response == NodeInfoResponse(response="OK")
-
-
-@pytest.mark.asyncio
-async def test_execute_failure():
-    node_id = uuid7()
-    request = NodeInfoRequest(
-        gpu_model="NVIDIA GTX 1080",
-        vram=8,
-        cpu_model="Intel i7",
-        ram=16,
-        network_speed=1000,
-        operating_system="Linux",
-    )
-
-    mock_repository = AsyncMock(spec=NodeRepository)
-    mock_repository.save_node_info.side_effect = Exception("Database error")
-    response = await service.execute(request, node_id, mock_repository)
-
-    mock_repository.save_node_info.assert_called_once_with(
-        node_id,
-        NodeInfo(
-            gpu_model=request.gpu_model,
-            vram=request.vram,
-            cpu_model=request.cpu_model,
-            ram=request.ram,
-            network_speed=request.network_speed,
-            operating_system=request.operating_system,
-        ),
-    )
-    assert response == NodeInfoResponse(response="NOK")

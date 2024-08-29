@@ -95,7 +95,7 @@ class InternalServerAPIError(APIErrorResponse):
         return "internal_server_error"
 
     def to_message(self) -> str:
-        return "The request could not be completed due to an " "internal server error."
+        return "The request could not be completed due to an internal server error."
 
 
 class NoAvailableInferenceNodesError(APIErrorResponse):
