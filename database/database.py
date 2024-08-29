@@ -6,6 +6,7 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 from sqlalchemy import String
+from sqlalchemy import Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import declarative_base
@@ -47,6 +48,26 @@ class ApiKey(Base):
     last_updated_at = Column(
         DateTime, default=datetime.datetime.now(datetime.UTC), nullable=False
     )
+
+
+class UsageTokens(Base):
+    __tablename__ = "usage_tokens"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7, index=True)
+    consumer_user_profile_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(UserProfile.id),
+        nullable=False,
+    )
+    producer_user_profile_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(UserProfile.id),
+        nullable=False,
+    )
+    model_name = Column(String(), nullable=False)
+    completion_tokens = Column(Integer(), nullable=False)
+    prompt_tokens = Column(Integer(), nullable=False)
+    total_tokens = Column(Integer(), nullable=False)
 
 
 def init(user, password, db, host="localhost", port=5432):
