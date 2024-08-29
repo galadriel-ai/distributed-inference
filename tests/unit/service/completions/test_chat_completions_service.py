@@ -1,8 +1,7 @@
 from typing import AsyncGenerator
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock
 from uuid import UUID
 
-import pytest
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice as CompletionChoice
@@ -10,13 +9,14 @@ from openai.types.chat.chat_completion_chunk import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
 
 from distributedinference.domain.node.entities import InferenceResponse
-from distributedinference.domain.node.exceptions import NoAvailableNodesError
-from distributedinference.service import error_responses
+from distributedinference.domain.user.entities import User
 from distributedinference.service.completions import chat_completions_service as service
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 from distributedinference.service.completions.entities import Message
 
+USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
+USER = User(uid=USER_UUID, name="user", email="user@email.com")
 MOCK_UUID = UUID("a2e3db51-7a7f-473c-8cd5-390e7ed1e1c7")
 
 
@@ -79,9 +79,11 @@ async def test_success():
 
     service.run_inference_use_case.execute = mock_inference.mock_inference
     res = await service.execute(
+        USER,
         ChatCompletionRequest(
             model="llama3", messages=[Message(role="user", content="asd")]
         ),
+        MagicMock(),
         MagicMock(),
     )
     assert res == ChatCompletion(

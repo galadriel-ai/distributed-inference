@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from distributedinference.domain.node.entities import (
@@ -7,13 +9,17 @@ from distributedinference.domain.node.entities import (
 from distributedinference.domain.node import run_inference_use_case as use_case
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.completions.entities import Message
 from distributedinference.service.completions.entities import ChatCompletionRequest
 from distributedinference.service.completions.entities import StreamOptions
 
+USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
+
 
 async def test_success():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(return_value="mock_node")
     mock_node_repository.send_inference_request = AsyncMock()
     mock_node_repository.receive_for_request = AsyncMock(
@@ -42,7 +48,9 @@ async def test_success():
     )
 
     responses = []
-    async for response in use_case.execute(request, mock_node_repository):
+    async for response in use_case.execute(
+        USER_UUID, request, mock_node_repository, mock_tokens_repository
+    ):
         responses.append(response)
 
     assert len(responses) == 2
@@ -59,6 +67,7 @@ async def test_success():
 
 async def test_no_nodes():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(return_value=None)
 
     chat_input = await ChatCompletionRequest(
@@ -71,12 +80,15 @@ async def test_no_nodes():
     )
 
     with pytest.raises(NoAvailableNodesError):
-        async for response in use_case.execute(request, mock_node_repository):
+        async for response in use_case.execute(
+            USER_UUID, request, mock_node_repository, mock_tokens_repository
+        ):
             pass
 
 
 async def test_streaming_no_usage():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(return_value="mock_node")
     mock_node_repository.send_inference_request = AsyncMock()
     mock_node_repository.receive_for_request = AsyncMock(
@@ -110,7 +122,9 @@ async def test_streaming_no_usage():
     )
 
     responses = []
-    async for response in use_case.execute(request, mock_node_repository):
+    async for response in use_case.execute(
+        USER_UUID, request, mock_node_repository, mock_tokens_repository
+    ):
         responses.append(response)
 
     assert len(responses) == 2
@@ -127,6 +141,7 @@ async def test_streaming_no_usage():
 
 async def test_streaming_usage_includes_extra_chunk():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(return_value="mock_node")
     mock_node_repository.send_inference_request = AsyncMock()
     mock_node_repository.receive_for_request = AsyncMock(
@@ -163,7 +178,9 @@ async def test_streaming_usage_includes_extra_chunk():
     )
 
     responses = []
-    async for response in use_case.execute(request, mock_node_repository):
+    async for response in use_case.execute(
+        USER_UUID, request, mock_node_repository, mock_tokens_repository
+    ):
         responses.append(response)
 
     # 2 content chunks, 1 extra chunk for usage
