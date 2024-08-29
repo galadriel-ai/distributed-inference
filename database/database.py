@@ -103,8 +103,8 @@ class NodeInfo(Base):
     )
     gpu_model = Column(String(), nullable=True)
     vram = Column(Integer(), nullable=True)  # VRAM in MB
-    cpu_model = Column(String(), nullable=True)
-    ram = Column(Integer(), nullable=True)  # RAM in MB
+    cpu_model = Column(String(), nullable=False)
+    ram = Column(Integer(), nullable=False)  # RAM in MB
     network_speed = Column(Float(), nullable=True)  # Network speed in Mbps
     operating_system = Column(String(), nullable=False)
 
