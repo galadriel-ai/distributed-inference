@@ -5,15 +5,108 @@ from typing import Dict
 from typing import Optional
 from uuid import UUID
 
+from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionChunk
+import sqlalchemy
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.repository import connection
+from distributedinference.repository.utils import utcnow
 
 logger = api_logger.get()
+
+
+SQL_GET_NODE_METRICS = """
+SELECT
+    id,
+    user_profile_id,
+    requests_served,
+    time_to_first_token,
+    created_at,
+    last_updated_at
+FROM node_metrics
+WHERE user_profile_id = :user_profile_id;
+"""
+
+SQL_INSERT_OR_UPDATE_NODE_METRICS = """
+INSERT INTO node_metrics (
+    id,
+    user_profile_id,
+    requests_served,
+    time_to_first_token,
+    created_at,
+    last_updated_at
+) VALUES (
+    :id,
+    :user_profile_id,
+    :requests_served,
+    :time_to_first_token,
+    :created_at,
+    :last_updated_at
+)
+ON CONFLICT (user_profile_id) DO UPDATE SET
+    requests_served = EXCLUDED.requests_served,
+    time_to_first_token = EXCLUDED.time_to_first_token,
+    operating_system = EXCLUDED.operating_system,
+    last_updated_at = EXCLUDED.last_updated_at;
+"""
+
+SQL_GET_NODE_INFO = """
+SELECT
+    id,
+    user_profile_id,
+    gpu_model,
+    vram,
+    cpu_model,
+    ram,
+    network_speed,
+    operating_system,
+    created_at,
+    last_updated_at
+FROM node_info
+WHERE user_profile_id = :user_profile_id;
+"""
+
+SQL_INSERT_OR_UPDATE_NODE_INFO = """
+INSERT INTO node_info (
+    id,
+    user_profile_id,
+    gpu_model,
+    vram,
+    cpu_model,
+    ram,
+    network_speed,
+    operating_system,
+    created_at,
+    last_updated_at
+) VALUES (
+    :id,
+    :user_profile_id,
+    :gpu_model,
+    :vram,
+    :cpu_model,
+    :ram,
+    :network_speed,
+    :operating_system,
+    :created_at,
+    :last_updated_at
+)
+ON CONFLICT (user_profile_id) DO UPDATE SET
+    gpu_model = EXCLUDED.gpu_model,
+    vram = EXCLUDED.vram,
+    cpu_model = EXCLUDED.cpu_model,
+    ram = EXCLUDED.ram,
+    network_speed = EXCLUDED.network_speed,
+    operating_system = EXCLUDED.operating_system,
+    last_updated_at = EXCLUDED.last_updated_at;
+"""
 
 
 class NodeRepository:
@@ -33,8 +126,64 @@ class NodeRepository:
             return None
         return random.choice(list(self._connected_nodes.keys()))
 
-    def get_nodes_count(self) -> int:
+    def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)
+
+    @connection.read_session
+    async def get_node_metrics(
+        self, node_id: UUID, session: AsyncSession
+    ) -> Optional[NodeMetrics]:
+        data = {"user_profile_id": node_id}
+        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS), data)
+        for row in rows:
+            return NodeMetrics(
+                requests_served=row.requests_served,
+                time_to_first_token=row.time_to_first_token,
+            )
+        return None
+
+    async def save_node_metrics(self, node_id: UUID, metrics: NodeMetrics):
+        data = {
+            "id": str(uuid7()),
+            "user_profile_id": node_id,
+            "requests_served": metrics.requests_served,
+            "time_to_first_token": metrics.time_to_first_token,
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        await connection.write(SQL_INSERT_OR_UPDATE_NODE_METRICS, data)
+
+    @connection.read_session
+    async def get_node_info(
+        self, node_id: UUID, session: AsyncSession
+    ) -> Optional[NodeInfo]:
+        data = {"user_profile_id": node_id}
+        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_INFO), data)
+        for row in rows:
+            return NodeInfo(
+                gpu_model=row.gpu_model,
+                vram=row.vram,
+                cpu_model=row.cpu_model,
+                ram=row.ram,
+                network_speed=row.network_speed,
+                operating_system=row.operating_system,
+            )
+        return None
+
+    async def save_node_info(self, node_id: UUID, info: NodeInfo):
+        data = {
+            "id": str(uuid7()),
+            "user_profile_id": node_id,
+            "gpu_model": info.gpu_model,
+            "vram": info.vram,
+            "cpu_model": info.cpu_model,
+            "ram": info.ram,
+            "network_speed": info.network_speed,
+            "operating_system": info.operating_system,
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        await connection.write(SQL_INSERT_OR_UPDATE_NODE_INFO, data)
 
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest

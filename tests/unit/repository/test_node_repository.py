@@ -1,6 +1,14 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch, call
+from uuid_extensions import uuid7
+
+from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.repository.node_repository import (
+    SQL_INSERT_OR_UPDATE_NODE_INFO,
+    SQL_INSERT_OR_UPDATE_NODE_METRICS,
+)
 from distributedinference.repository.node_repository import NodeRepository
 
 
@@ -17,7 +25,7 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(uid, model, mock_websocket, MagicMock())
+        return ConnectedNode(uid, model, mock_websocket, MagicMock(), MagicMock())
 
     return _create_node
 
@@ -82,3 +90,58 @@ def test_select_node_after_deregistration(node_repository, connected_node_factor
     # Now, there are no nodes left, should return None
     assert node_repository.select_node("model") is None
     assert len(node_repository._connected_nodes) == 0
+
+
+async def test_save_node_info():
+    node_repo = NodeRepository()
+    node_id = uuid7()
+
+    node_info = NodeInfo(
+        gpu_model="NVIDIA GTX 1080",
+        vram=8,
+        cpu_model="Intel i7",
+        ram=16,
+        network_speed=1000,
+        operating_system="Linux",
+    )
+
+    with patch("distributedinference.repository.connection.write") as mock_write:
+        await node_repo.save_node_info(node_id, node_info)
+        mock_write.assert_called_once()
+        args, kwargs = mock_write.call_args
+
+        assert args[0] == SQL_INSERT_OR_UPDATE_NODE_INFO
+
+        data = args[1]
+        assert data["user_profile_id"] == node_id
+        assert data["gpu_model"] == node_info.gpu_model
+        assert data["vram"] == node_info.vram
+        assert data["cpu_model"] == node_info.cpu_model
+        assert data["ram"] == node_info.ram
+        assert data["network_speed"] == node_info.network_speed
+        assert data["operating_system"] == node_info.operating_system
+        assert "created_at" in data
+        assert "last_updated_at" in data
+
+
+async def test_save_node_metrics():
+    node_repo = NodeRepository()
+    node_id = uuid7()
+
+    node_metrics = NodeMetrics(requests_served=100, time_to_first_token=0.5)
+
+    with patch("distributedinference.repository.connection.write") as mock_write:
+        await node_repo.save_node_metrics(node_id, node_metrics)
+
+        mock_write.assert_called_once()
+
+        args, kwargs = mock_write.call_args
+
+        assert args[0] == SQL_INSERT_OR_UPDATE_NODE_METRICS
+
+        data = args[1]
+        assert data["user_profile_id"] == node_id
+        assert data["requests_served"] == node_metrics.requests_served
+        assert data["time_to_first_token"] == node_metrics.time_to_first_token
+        assert "created_at" in data
+        assert "last_updated_at" in data

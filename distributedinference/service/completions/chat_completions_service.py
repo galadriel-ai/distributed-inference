@@ -1,5 +1,7 @@
 import time
+from typing import Optional
 
+from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat import CompletionCreateParams
 from openai.types.chat.chat_completion import ChatCompletion
@@ -9,14 +11,20 @@ from uuid_extensions import uuid7
 from distributedinference.domain.node import run_inference_use_case
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
+from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
 
 async def execute(
-    request: ChatCompletionRequest, node_repository: NodeRepository
+    user: User,
+    request: ChatCompletionRequest,
+    node_repository: NodeRepository,
+    tokens_repository: TokensRepository,
 ) -> ChatCompletion:
     try:
         chat_request: CompletionCreateParams = await request.to_openai_chat_completion()
@@ -28,11 +36,10 @@ async def execute(
         model=request.model,
         chat_request=chat_request,
     )
-
     try:
         response = ""
         async for chunk in run_inference_use_case.execute(
-            inference_request, node_repository
+            user.uid, inference_request, node_repository, tokens_repository
         ):
             if chunk.error:
                 raise error_responses.InferenceError(
@@ -40,7 +47,8 @@ async def execute(
                 )
             if chunk.chunk and chunk.chunk.choices[0].delta.content:
                 response += chunk.chunk.choices[0].delta.content
-        return ChatCompletion(
+
+        chat_completion = ChatCompletion(
             id="id",
             choices=[
                 Choice(
@@ -53,5 +61,6 @@ async def execute(
             model=request.model,
             object="chat.completion",
         )
+        return chat_completion
     except NoAvailableNodesError:
         raise error_responses.NoAvailableInferenceNodesError()
