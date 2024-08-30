@@ -66,6 +66,20 @@ class InvalidCredentialsAPIError(APIErrorResponse):
         return result
 
 
+class NotFoundAPIError(APIErrorResponse):
+    def __init__(self, message_extra: str = None):
+        self.message_extra = message_extra
+
+    def to_status_code(self) -> status:
+        return status.HTTP_404_NOT_FOUND
+
+    def to_code(self) -> str:
+        return "not_found"
+
+    def to_message(self) -> str:
+        return "Can't find the requested resource"
+
+
 class ValidationError(APIErrorResponse):
     """Raised when a validation error occurs"""
 

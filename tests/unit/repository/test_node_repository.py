@@ -100,8 +100,10 @@ async def test_save_node_info():
         gpu_model="NVIDIA GTX 1080",
         vram=8,
         cpu_model="Intel i7",
+        cpu_count=8,
         ram=16,
-        network_speed=1000,
+        network_download_speed=1000,
+        network_upload_speed=1000,
         operating_system="Linux",
     )
 
@@ -117,8 +119,10 @@ async def test_save_node_info():
         assert data["gpu_model"] == node_info.gpu_model
         assert data["vram"] == node_info.vram
         assert data["cpu_model"] == node_info.cpu_model
+        assert data["cpu_count"] == node_info.cpu_count
         assert data["ram"] == node_info.ram
-        assert data["network_speed"] == node_info.network_speed
+        assert data["network_download_speed"] == node_info.network_download_speed
+        assert data["network_upload_speed"] == node_info.network_upload_speed
         assert data["operating_system"] == node_info.operating_system
         assert "created_at" in data
         assert "last_updated_at" in data

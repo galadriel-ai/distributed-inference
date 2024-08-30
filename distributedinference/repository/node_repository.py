@@ -65,8 +65,10 @@ SELECT
     gpu_model,
     vram,
     cpu_model,
+    cpu_count,
     ram,
-    network_speed,
+    network_download_speed,
+    network_upload_speed,
     operating_system,
     created_at,
     last_updated_at
@@ -81,8 +83,10 @@ INSERT INTO node_info (
     gpu_model,
     vram,
     cpu_model,
+    cpu_count,
     ram,
-    network_speed,
+    network_download_speed,
+    network_upload_speed,
     operating_system,
     created_at,
     last_updated_at
@@ -92,8 +96,10 @@ INSERT INTO node_info (
     :gpu_model,
     :vram,
     :cpu_model,
+    :cpu_count,
     :ram,
-    :network_speed,
+    :network_download_speed,
+    :network_upload_speed,
     :operating_system,
     :created_at,
     :last_updated_at
@@ -102,8 +108,10 @@ ON CONFLICT (user_profile_id) DO UPDATE SET
     gpu_model = EXCLUDED.gpu_model,
     vram = EXCLUDED.vram,
     cpu_model = EXCLUDED.cpu_model,
+    cpu_count = EXCLUDED.cpu_count,
     ram = EXCLUDED.ram,
-    network_speed = EXCLUDED.network_speed,
+    network_download_speed = EXCLUDED.network_download_speed,
+    network_upload_speed = EXCLUDED.network_upload_speed,
     operating_system = EXCLUDED.operating_system,
     last_updated_at = EXCLUDED.last_updated_at;
 """
@@ -155,17 +163,19 @@ class NodeRepository:
 
     @connection.read_session
     async def get_node_info(
-        self, node_id: UUID, session: AsyncSession
+        self, user_id: UUID, session: AsyncSession
     ) -> Optional[NodeInfo]:
-        data = {"user_profile_id": node_id}
+        data = {"user_profile_id": user_id}
         rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_INFO), data)
         for row in rows:
             return NodeInfo(
                 gpu_model=row.gpu_model,
                 vram=row.vram,
                 cpu_model=row.cpu_model,
+                cpu_count=row.cpu_count,
                 ram=row.ram,
-                network_speed=row.network_speed,
+                network_download_speed=row.network_download_speed,
+                network_upload_speed=row.network_upload_speed,
                 operating_system=row.operating_system,
             )
         return None
@@ -177,8 +187,10 @@ class NodeRepository:
             "gpu_model": info.gpu_model,
             "vram": info.vram,
             "cpu_model": info.cpu_model,
+            "cpu_count": info.cpu_count,
             "ram": info.ram,
-            "network_speed": info.network_speed,
+            "network_download_speed": info.network_download_speed,
+            "network_upload_speed": info.network_upload_speed,
             "operating_system": info.operating_system,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
