@@ -29,7 +29,7 @@ async def metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
 ):
     # TODO: replace model names with real ones
-    model_name = "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4"
+    model_name = "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
     network_nodes_gauge.labels(model_name).set(
         node_repository.get_connected_nodes_count()
     )
