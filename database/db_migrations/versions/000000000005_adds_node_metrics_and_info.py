@@ -1,7 +1,7 @@
 """Adds node metrics and info
 
-Revision ID: 000000000004
-Revises: 000000000003
+Revision ID: 000000000005
+Revises: 000000000004
 Create Date: 2024-08-29 14:09:51.323897
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "000000000004"
-down_revision = "000000000003"
+revision = "000000000005"
+down_revision = "000000000004"
 branch_labels = None
 depends_on = None
 
