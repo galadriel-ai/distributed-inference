@@ -23,7 +23,6 @@ async def execute(
     await websocket.accept()
     node_id = user.uid
     node_metrics = await node_repository.get_node_metrics(node_id) or NodeMetrics()
-    print(await node_metrics.get_uptime())
     node = ConnectedNode(
         uid=node_id,
         model="model",
@@ -52,8 +51,6 @@ async def execute(
     except WebSocketDisconnect:
         node_repository.deregister_node(node_id)
         uptime = int(time.time() - connect_time)
-        print("Node metrics", await node.metrics.get_uptime())
         await node.metrics.add_uptime(uptime)
-        print("Node metrics", await node.metrics.get_uptime())
         await node_repository.save_node_metrics(node_id, node.metrics)
         logger.info(f"Node {node_id} disconnected")
