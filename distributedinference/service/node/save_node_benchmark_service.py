@@ -11,6 +11,7 @@ async def execute(
     user_profile_id: UUID,
     repository: NodeRepository,
 ) -> PostNodeBenchmarkResponse:
+    # TODO: validate if tokens_per_second is enough
     node_benchmark = NodeBenchmark(
         model_name=request.model_name,
         tokens_per_second=round(request.tokens_per_second, 2),
