@@ -30,9 +30,9 @@ class NodeMetrics:
         async with self._lock:
             return self._requests_served
 
-    async def increment_requests_served(self, value: int):
+    async def increment_requests_served(self):
         async with self._lock:
-            self._requests_served = value
+            self._requests_served += 1
 
     async def get_time_to_first_token(self) -> Optional[float]:
         async with self._lock:
@@ -40,7 +40,7 @@ class NodeMetrics:
 
     async def set_time_to_first_token(self, value: float):
         async with self._lock:
-            if self._time_to_first_token > value or self._time_to_first_token is None:
+            if self._time_to_first_token is None or value < self._time_to_first_token:
                 self._time_to_first_token = value
 
     async def get_uptime(self) -> int:
