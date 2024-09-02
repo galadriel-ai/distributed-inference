@@ -9,7 +9,6 @@ from fastapi import WebSocket
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
-
 import asyncio
 from typing import Optional
 
@@ -30,9 +29,9 @@ class NodeMetrics:
         async with self._lock:
             return self._requests_served
 
-    async def increment_requests_served(self):
+    async def increment_requests_served(self, value: int = 1):
         async with self._lock:
-            self._requests_served += 1
+            self._requests_served += value
 
     async def get_time_to_first_token(self) -> Optional[float]:
         async with self._lock:
@@ -40,7 +39,7 @@ class NodeMetrics:
 
     async def set_time_to_first_token(self, value: float):
         async with self._lock:
-            if self._time_to_first_token is None or value < self._time_to_first_token:
+            if self._time_to_first_token is None or self._time_to_first_token > value:
                 self._time_to_first_token = value
 
     async def get_uptime(self) -> int:
@@ -62,6 +61,12 @@ class NodeInfo:
     network_download_speed: Optional[float] = None
     network_upload_speed: Optional[float] = None
     operating_system: Optional[str] = None
+
+
+@dataclass
+class NodeBenchmark:
+    model_name: str
+    tokens_per_second: float
 
 
 @dataclass(frozen=True)

@@ -1,10 +1,7 @@
-import json
-import time
-
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import Query
 from fastapi import WebSocket
-from fastapi import WebSocketDisconnect
 from fastapi.exceptions import WebSocketRequestValidationError
 
 from distributedinference import api_logger
@@ -13,10 +10,15 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.auth import authentication
+from distributedinference.service.node import get_node_benchmark_service
 from distributedinference.service.node import get_node_info_service
+from distributedinference.service.node import save_node_benchmark_service
 from distributedinference.service.node import save_node_info_service
 from distributedinference.service.node import websocket_service
+from distributedinference.service.node.entities import GetNodeBenchmarkResponse
 from distributedinference.service.node.entities import GetNodeInfoResponse
+from distributedinference.service.node.entities import PostNodeBenchmarkRequest
+from distributedinference.service.node.entities import PostNodeBenchmarkResponse
 from distributedinference.service.node.entities import PostNodeInfoRequest
 from distributedinference.service.node.entities import PostNodeInfoResponse
 
@@ -69,3 +71,29 @@ async def node_info(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     return await save_node_info_service.execute(request, user.uid, node_repository)
+
+
+@router.get(
+    "/benchmark",
+    name="Node Benchmark",
+    response_model=GetNodeBenchmarkResponse,
+)
+async def node_info(
+    model: str = Query(..., description="Model name"),
+    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user: User = Depends(authentication.validate_api_key_header),
+):
+    return await get_node_benchmark_service.execute(user, model, node_repository)
+
+
+@router.post(
+    "/benchmark",
+    name="Node Benchmark",
+    response_model=PostNodeBenchmarkResponse,
+)
+async def node_info(
+    request: PostNodeBenchmarkRequest,
+    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user: User = Depends(authentication.validate_api_key_header),
+):
+    return await save_node_benchmark_service.execute(request, user.uid, node_repository)
