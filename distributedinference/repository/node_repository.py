@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import InferenceError
@@ -21,7 +22,6 @@ from distributedinference.repository import connection
 from distributedinference.repository.utils import utcnow
 
 logger = api_logger.get()
-
 
 SQL_GET_NODE_METRICS = """
 SELECT
@@ -119,6 +119,40 @@ ON CONFLICT (user_profile_id) DO UPDATE SET
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
+SQL_GET_NODE_BENCHMARK = """
+SELECT
+    nb.id,
+    nb.node_id,
+    nb.model_name,
+    nb.tokens_per_second,
+    nb.created_at,
+    nb.last_updated_at
+FROM node_benchmark nb
+LEFT JOIN node_info ni on nb.node_id = ni.id
+WHERE ni.user_profile_id = :user_profile_id;
+"""
+
+SQL_INSERT_OR_UPDATE_NODE_BENCHMARK = """
+INSERT INTO node_benchmark (
+    id,
+    node_id,
+    model_name,
+    tokens_per_second,
+    created_at,
+    last_updated_at
+) VALUES (
+    :id,
+    (SELECT id FROM node_info WHERE user_profile_id = :user_profile_id LIMIT 1),
+    :model_name,
+    :tokens_per_second,
+    :created_at,
+    :last_updated_at
+)
+ON CONFLICT (node_id, model_name) DO UPDATE SET
+    tokens_per_second = EXCLUDED.tokens_per_second,
+    last_updated_at = EXCLUDED.last_updated_at;
+"""
+
 
 class NodeRepository:
 
@@ -191,10 +225,10 @@ class NodeRepository:
             )
         return None
 
-    async def save_node_info(self, node_id: UUID, info: NodeInfo):
+    async def save_node_info(self, user_profile_id: UUID, info: NodeInfo):
         data = {
             "id": str(uuid7()),
-            "user_profile_id": node_id,
+            "user_profile_id": user_profile_id,
             "gpu_model": info.gpu_model,
             "vram": info.vram,
             "cpu_model": info.cpu_model,
@@ -207,6 +241,32 @@ class NodeRepository:
             "last_updated_at": utcnow(),
         }
         await connection.write(SQL_INSERT_OR_UPDATE_NODE_INFO, data)
+
+    @connection.read_session
+    async def get_node_benchmark(
+        self, user_id: UUID, model_name: str, session: AsyncSession
+    ) -> Optional[NodeBenchmark]:
+        data = {"user_profile_id": user_id, model_name: "model_name"}
+        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_BENCHMARK), data)
+        for row in rows:
+            return NodeBenchmark(
+                model_name=row.model_name,
+                tokens_per_second=row.tokens_per_second,
+            )
+        return None
+
+    async def save_node_benchmark(
+        self, user_profile_id: UUID, benchmark: NodeBenchmark
+    ):
+        data = {
+            "id": str(uuid7()),
+            "user_profile_id": user_profile_id,
+            "model_name": benchmark.model_name,
+            "tokens_per_second": benchmark.tokens_per_second,
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        await connection.write(SQL_INSERT_OR_UPDATE_NODE_BENCHMARK, data)
 
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest

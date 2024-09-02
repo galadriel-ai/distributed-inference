@@ -7,10 +7,10 @@ from distributedinference.service.node.entities import PostNodeInfoResponse
 
 
 async def execute(
-    request: PostNodeInfoRequest, node_id: UUID, repository: NodeRepository
+    request: PostNodeInfoRequest, user_profile_id: UUID, repository: NodeRepository
 ) -> PostNodeInfoResponse:
     node_info = _request_to_node_info(request)
-    await repository.save_node_info(node_id, node_info)
+    await repository.save_node_info(user_profile_id, node_info)
     return PostNodeInfoResponse()
 
 
