@@ -1,7 +1,5 @@
 import time
-from typing import Optional
 
-from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat import CompletionCreateParams
 from openai.types.chat.chat_completion import ChatCompletion
@@ -14,7 +12,6 @@ from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
-from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest

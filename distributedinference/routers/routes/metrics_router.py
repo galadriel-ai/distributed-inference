@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from fastapi.responses import Response
 from fastapi import Depends
 
+from prometheus_client import REGISTRY
 from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client import CollectorRegistry
 from prometheus_client import generate_latest
@@ -18,9 +19,8 @@ router.tags = [TAG]
 
 logger = api_logger.get()
 
-registry = CollectorRegistry()
 network_nodes_gauge = Gauge(
-    "network_nodes", "Nodes in network by model_name", ["model_name"], registry=registry
+    "network_nodes", "Nodes in network by model_name", ["model_name"]
 )
 
 
@@ -33,5 +33,5 @@ async def metrics(
     network_nodes_gauge.labels(model_name).set(
         node_repository.get_connected_nodes_count()
     )
-    metrics_data = generate_latest(registry)
+    metrics_data = generate_latest(REGISTRY)
     return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)

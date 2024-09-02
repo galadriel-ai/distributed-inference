@@ -289,7 +289,7 @@ class NodeRepository:
                     request_id=data["request_id"],
                     chunk=(
                         ChatCompletionChunk(**data["chunk"])
-                        if "chunk" in data
+                        if data.get("chunk")
                         else None
                     ),
                     error=(
