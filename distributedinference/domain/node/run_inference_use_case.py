@@ -1,3 +1,5 @@
+import time
+from asyncio import Lock
 from typing import AsyncGenerator
 from typing import Optional
 from uuid import UUID
@@ -18,18 +20,23 @@ async def execute(
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
 ) -> AsyncGenerator[InferenceResponse, None]:
-    node_id = node_repository.select_node(request.model)
-    if not node_id:
+    node = node_repository.select_node(request.model)
+    if not node:
         raise NoAvailableNodesError()
-    await node_repository.send_inference_request(node_id, request)
+    await node_repository.send_inference_request(node.uid, request)
     is_stream = bool(request.chat_request.get("stream"))
     is_include_usage: bool = bool(
         (request.chat_request.get("stream_options") or {}).get("include_usage")
     )
     usage: Optional[CompletionUsage] = None
+    request_start_time = time.time()
+    first_token_time = None
     try:
         while True:
-            response = await node_repository.receive_for_request(node_id, request.id)
+            response = await node_repository.receive_for_request(node.uid, request.id)
+            if not first_token_time and response.error is None:
+                first_token_time = time.time() - request_start_time
+
             # overwriting the usage each time
             usage = response.chunk.usage
             yield response
@@ -43,11 +50,15 @@ async def execute(
             if response.error:
                 break
     finally:
-        await node_repository.cleanup_request(node_id, request.id)
+        await node_repository.cleanup_request(node.uid, request.id)
         if usage:
             await _save_result(
-                user_uid, node_id, request.model, usage, tokens_repository
+                user_uid, node.uid, request.model, usage, tokens_repository
             )
+        # set only if we got at least one token
+        if first_token_time:
+            await node.metrics.set_time_to_first_token(first_token_time)
+            await node.metrics.increment_requests_served()
 
 
 async def _save_result(

@@ -1,4 +1,5 @@
 import json
+import time
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -8,14 +9,13 @@ from fastapi.exceptions import WebSocketRequestValidationError
 
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.auth import authentication
 from distributedinference.service.node import get_node_info_service
 from distributedinference.service.node import save_node_info_service
+from distributedinference.service.node import websocket_service
 from distributedinference.service.node.entities import GetNodeInfoResponse
 from distributedinference.service.node.entities import PostNodeInfoRequest
 from distributedinference.service.node.entities import PostNodeInfoResponse
@@ -43,35 +43,7 @@ async def websocket_endpoint(
     if not user:
         raise WebSocketRequestValidationError("Authorization header is required")
 
-    logger.info(f"Node, with user id {user.uid}, trying to connect")
-    await websocket.accept()
-    node_id = user.uid
-    node = ConnectedNode(
-        uid=node_id,
-        model="model",
-        websocket=websocket,
-        request_incoming_queues={},
-        metrics=NodeMetrics(),
-    )
-    logger.info(f"Node {node_id} connected")
-    node_repository.register_node(node)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            request_id = None
-            try:
-                parsed_data = json.loads(data)
-                # get request id
-                request_id = parsed_data["request_id"]
-            except json.JSONDecodeError:
-                raise WebSocketRequestValidationError("Invalid JSON data")
-            try:
-                await node.request_incoming_queues[request_id].put(parsed_data)
-            except KeyError:
-                logger.error(f"Received chunk for unknown request {request_id}")
-    except WebSocketDisconnect:
-        node_repository.deregister_node(node_id)
-        logger.info(f"Node {node_id} disconnected")
+    await websocket_service.execute(websocket, user, node_repository)
 
 
 @router.get(

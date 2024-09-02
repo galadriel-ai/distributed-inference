@@ -60,7 +60,7 @@ def test_select_node_with_nodes(node_repository, connected_node_factory):
     node_repository.register_node(node2)
 
     selected_node = node_repository.select_node("model")
-    assert selected_node in ["1", "2"]
+    assert selected_node.uid in ["1", "2"]
 
 
 def test_select_node_after_deregistration(node_repository, connected_node_factory):
@@ -73,17 +73,17 @@ def test_select_node_after_deregistration(node_repository, connected_node_factor
     node_repository.register_node(node3)
 
     # Initially, it should return node1
-    assert node_repository.select_node("model") in ["1", "2", "3"]
+    assert node_repository.select_node("model").uid in ["1", "2", "3"]
     assert len(node_repository._connected_nodes) == 3
 
     node_repository.deregister_node("1")
     # Now, it should return node2
-    assert node_repository.select_node("model") in ["2", "3"]
+    assert node_repository.select_node("model").uid in ["2", "3"]
     assert len(node_repository._connected_nodes) == 2
 
     node_repository.deregister_node("2")
     # Now, it should return node3
-    assert node_repository.select_node("model") == "3"
+    assert node_repository.select_node("model").uid == "3"
     assert len(node_repository._connected_nodes) == 1
 
     node_repository.deregister_node("3")
@@ -145,7 +145,10 @@ async def test_save_node_metrics():
 
         data = args[1]
         assert data["user_profile_id"] == node_id
-        assert data["requests_served"] == node_metrics.requests_served
-        assert data["time_to_first_token"] == node_metrics.time_to_first_token
+        assert data["requests_served"] == await node_metrics.get_requests_served()
+        assert (
+            data["time_to_first_token"] == await node_metrics.get_time_to_first_token()
+        )
+        assert data["uptime"] == await node_metrics.get_uptime()
         assert "created_at" in data
         assert "last_updated_at" in data

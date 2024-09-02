@@ -20,7 +20,9 @@ USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
 async def test_success():
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value="mock_node")
+    mock_node_repository.select_node = MagicMock(
+        return_value=AsyncMock(uid="mock_node")
+    )
     mock_node_repository.send_inference_request = AsyncMock()
     mock_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -89,7 +91,9 @@ async def test_no_nodes():
 async def test_streaming_no_usage():
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value="mock_node")
+    mock_node_repository.select_node = MagicMock(
+        return_value=AsyncMock(uid="mock_node")
+    )
     mock_node_repository.send_inference_request = AsyncMock()
     mock_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -142,7 +146,9 @@ async def test_streaming_no_usage():
 async def test_streaming_usage_includes_extra_chunk():
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value="mock_node")
+    mock_node_repository.select_node = MagicMock(
+        return_value=AsyncMock(uid="mock_node")
+    )
     mock_node_repository.send_inference_request = AsyncMock()
     mock_node_repository.receive_for_request = AsyncMock(
         side_effect=[
