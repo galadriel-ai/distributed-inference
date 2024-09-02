@@ -12,10 +12,10 @@ class NodeInfoRequest(BaseModel):
     cpu_model: str = Field(description="CPU model")
     cpu_count: int = Field(description="CPU cores count")
     ram: int = Field(description="RAM in MB")
-    network_download_speed: int = Field(
+    network_download_speed: float = Field(
         description="Network download speed in Mbps", default=None
     )
-    network_upload_speed: int = Field(
+    network_upload_speed: float = Field(
         description="Network upload speed in Mbps", default=None
     )
     operating_system: str = Field(description="Operating system")
