@@ -5,7 +5,7 @@ from uuid import UUID
 
 from openai.types import CompletionUsage
 from prometheus_client import Counter
-from prometheus_client import Summary
+from prometheus_client import Histogram
 
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.entities import InferenceRequest
@@ -18,8 +18,10 @@ total_tokens_gauge = Counter("tokens", "Total tokens by model_name", ["model_nam
 total_requests_gauge = Counter(
     "requests", "Total requests by model_name", ["model_name"]
 )
-time_to_first_token_summary = Summary(
-    "time_to_first_token", "Time to first token in seconds", ["model_name"]
+time_to_first_token_histogram = Histogram(
+    "time_to_first_token",
+    "Time to first token in seconds",
+    ["model_name"],
 )
 
 
@@ -71,7 +73,7 @@ async def execute(
         if first_token_time:
             await node.metrics.set_time_to_first_token(first_token_time)
             await node.metrics.increment_requests_served()
-            time_to_first_token_summary.labels(node.model).observe(first_token_time)
+            time_to_first_token_histogram.labels(node.model).observe(first_token_time)
             total_requests_gauge.labels(node.model).inc()
 
 

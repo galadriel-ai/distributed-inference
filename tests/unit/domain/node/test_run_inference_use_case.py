@@ -3,7 +3,7 @@ from uuid import UUID
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from openai.types import CompletionUsage
-from prometheus_client import CollectorRegistry, Counter, Summary
+from prometheus_client import CollectorRegistry, Counter, Histogram
 
 from distributedinference.domain.node.entities import (
     InferenceRequest,
@@ -224,16 +224,16 @@ async def test_inference_metrics():
             registry=registry,
         ),
     ), patch(
-        "distributedinference.domain.node.run_inference_use_case.time_to_first_token_summary",
-        Summary(
+        "distributedinference.domain.node.run_inference_use_case.time_to_first_token_histogram",
+        Histogram(
             "time_to_first_token",
             "Time to first token in seconds",
             ["model_name"],
             registry=registry,
         ),
-    ) as mock_summary:
+    ) as mock_histogram:
         mock_observe = MagicMock()
-        mock_summary.labels = MagicMock(return_value=MagicMock(observe=mock_observe))
+        mock_histogram.labels = MagicMock(return_value=MagicMock(observe=mock_observe))
 
         mock_node_repository = MagicMock(NodeRepository)
         mock_tokens_repository = MagicMock(TokensRepository)
@@ -297,4 +297,4 @@ async def test_inference_metrics():
             registry.get_sample_value("requests_total", {"model_name": "mock_model"})
             == 1
         )
-        mock_summary.labels("mock_model").observe.assert_called_once()
+        mock_histogram.labels("mock_model").observe.assert_called_once()
