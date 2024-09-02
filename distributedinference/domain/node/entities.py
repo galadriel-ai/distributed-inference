@@ -9,7 +9,6 @@ from fastapi import WebSocket
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
-
 import asyncio
 from typing import Optional
 
@@ -62,6 +61,12 @@ class NodeInfo:
     network_download_speed: Optional[float] = None
     network_upload_speed: Optional[float] = None
     operating_system: Optional[str] = None
+
+
+@dataclass
+class NodeBenchmark:
+    model_name: str
+    tokens_per_second: float
 
 
 @dataclass(frozen=True)

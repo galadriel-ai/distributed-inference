@@ -31,3 +31,24 @@ class PostNodeInfoRequest(NodeInfoRequest):
 
 class PostNodeInfoResponse(ApiResponse):
     pass
+
+
+class NodeBenchmarkRequest(BaseModel):
+    model_name: str = Field(description="Model name")
+    tokens_per_second: float = Field(description="Tokens per second")
+
+    class Config:
+        # to allow `model_name` field without warnings
+        protected_namespaces = ()
+
+
+class GetNodeBenchmarkResponse(NodeBenchmarkRequest):
+    pass
+
+
+class PostNodeBenchmarkRequest(NodeBenchmarkRequest):
+    pass
+
+
+class PostNodeBenchmarkResponse(ApiResponse):
+    pass
