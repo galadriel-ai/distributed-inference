@@ -1,5 +1,4 @@
 import asyncio
-import random
 from dataclasses import asdict
 from typing import Dict
 from typing import Optional
@@ -158,7 +157,8 @@ ON CONFLICT (node_id, model_name) DO UPDATE SET
 
 class NodeRepository:
 
-    def __init__(self):
+    def __init__(self, max_parallel_requests_per_node: int):
+        self._max_parallel_requests_per_node = max_parallel_requests_per_node
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
     def register_node(self, connected_node: ConnectedNode) -> bool:
@@ -177,7 +177,10 @@ class NodeRepository:
     def select_node(self, model: str) -> Optional[ConnectedNode]:
         if not len(self._connected_nodes):
             return None
-        return random.choice(list(self._connected_nodes.values()))
+        for node in self._connected_nodes.values():
+            if node.active_requests_count() <= self._max_parallel_requests_per_node:
+                return node
+        return None
 
     def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)

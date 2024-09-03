@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from unittest.mock import MagicMock, patch, call
 from uuid_extensions import uuid7
@@ -14,7 +15,7 @@ from distributedinference.repository.node_repository import NodeRepository
 
 @pytest.fixture
 def node_repository():
-    return NodeRepository()
+    return NodeRepository(10)
 
 
 @pytest.fixture
@@ -25,7 +26,7 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(uid, model, mock_websocket, MagicMock(), MagicMock())
+        return ConnectedNode(uid, model, mock_websocket, {}, MagicMock())
 
     return _create_node
 
@@ -92,8 +93,26 @@ def test_select_node_after_deregistration(node_repository, connected_node_factor
     assert len(node_repository._connected_nodes) == 0
 
 
-async def test_save_node_info():
-    node_repo = NodeRepository()
+def test_select_node_after_reaching_maximum_parallel_requests(
+    node_repository, connected_node_factory
+):
+    node = connected_node_factory("1")
+    node_repository.register_node(node)
+
+    for i in range(10):
+        node.request_incoming_queues[i] = asyncio.Queue()
+
+    # Initially, it should return the node
+    assert node_repository.select_node("model").uid == "1"
+
+    # Add one more request
+    node.request_incoming_queues[10] = asyncio.Queue()
+
+    # Now, there are no nodes left, should return None
+    assert node_repository.select_node("model") is None
+
+
+async def test_save_node_info(node_repository):
     node_id = uuid7()
 
     node_info = NodeInfo(
@@ -108,7 +127,7 @@ async def test_save_node_info():
     )
 
     with patch("distributedinference.repository.connection.write") as mock_write:
-        await node_repo.save_node_info(node_id, node_info)
+        await node_repository.save_node_info(node_id, node_info)
         mock_write.assert_called_once()
         args, kwargs = mock_write.call_args
 
@@ -128,14 +147,13 @@ async def test_save_node_info():
         assert "last_updated_at" in data
 
 
-async def test_save_node_metrics():
-    node_repo = NodeRepository()
+async def test_save_node_metrics(node_repository):
     node_id = uuid7()
 
     node_metrics = NodeMetrics(requests_served=100, time_to_first_token=0.5)
 
     with patch("distributedinference.repository.connection.write") as mock_write:
-        await node_repo.save_node_metrics(node_id, node_metrics)
+        await node_repository.save_node_metrics(node_id, node_metrics)
 
         mock_write.assert_called_once()
 
