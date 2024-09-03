@@ -26,6 +26,11 @@ DB_DATABASE_READ = os.getenv("DB_DATABASE", "inference")
 DB_HOST_READ = os.getenv("DB_HOST", "localhost")
 DB_PORT_READ = os.getenv("DB_PORT", "5432")
 
+# Rough estimate for 70% of lowest 3090 GPU node benchmark test
+MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = os.getenv(
+    "MINIMUM_COMPLETIONS_TOKENS_PER_SECOND", 264
+)
+
 
 def is_production():
     return ENVIRONMENT == "production"

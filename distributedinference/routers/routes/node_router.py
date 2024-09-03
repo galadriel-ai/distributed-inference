@@ -45,7 +45,9 @@ async def websocket_endpoint(
     if not user:
         raise WebSocketRequestValidationError("Authorization header is required")
 
-    await websocket_service.execute(websocket, user, node_repository)
+    await websocket_service.execute(
+        websocket, user, websocket.headers.get("Model"), node_repository
+    )
 
 
 @router.get(

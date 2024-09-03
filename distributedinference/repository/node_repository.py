@@ -129,7 +129,9 @@ SELECT
     nb.last_updated_at
 FROM node_benchmark nb
 LEFT JOIN node_info ni on nb.node_id = ni.id
-WHERE ni.user_profile_id = :user_profile_id;
+WHERE 
+    ni.user_profile_id = :user_profile_id
+    AND nb.model_name = :model_name;
 """
 
 SQL_INSERT_OR_UPDATE_NODE_BENCHMARK = """
@@ -246,7 +248,7 @@ class NodeRepository:
     async def get_node_benchmark(
         self, user_id: UUID, model_name: str, session: AsyncSession
     ) -> Optional[NodeBenchmark]:
-        data = {"user_profile_id": user_id, model_name: "model_name"}
+        data = {"user_profile_id": user_id, "model_name": model_name}
         rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_BENCHMARK), data)
         for row in rows:
             return NodeBenchmark(
