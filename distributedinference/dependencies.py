@@ -1,8 +1,10 @@
+import settings
+
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 
-_node_repository_instance = NodeRepository()
+_node_repository_instance = NodeRepository(settings.MAX_PARALLEL_REQUESTS_PER_NODE)
 _user_repository = UserRepository()
 _tokens_repository = TokensRepository()
 
