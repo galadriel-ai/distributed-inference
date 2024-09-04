@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import asdict
 from typing import Dict
+from typing import List
 from typing import Optional
 from uuid import UUID
 
@@ -169,6 +170,19 @@ WHERE nm.user_profile_id = :user_profile_id
 LIMIT 1;
 """
 
+SQL_GET_NODES_COUNT = """
+SELECT COUNT(id) AS node_count
+FROM node_info;
+"""
+
+SQL_GET_BENCHMARK_TOKENS_SUM = """
+SELECT
+    sum(nb.tokens_per_second) AS benchmark_sum
+FROM node_benchmark nb
+LEFT JOIN node_info ni on nb.node_id = ni.id
+WHERE ni.user_profile_id = ANY(:user_profile_ids);
+"""
+
 
 class NodeRepository:
 
@@ -200,6 +214,9 @@ class NodeRepository:
 
     def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)
+
+    def get_connected_node_ids(self) -> List[UUID]:
+        return [k for k, _ in self._connected_nodes.items()]
 
     def get_connected_node_info(self, user_id: UUID) -> Optional[ConnectedNode]:
         return self._connected_nodes.get(user_id)
@@ -295,6 +312,27 @@ class NodeRepository:
                 benchmark_created_at=row.benchmark_created_at,
             )
         return None
+
+    @connection.read_session
+    async def get_nodes_count(self, session: AsyncSession) -> int:
+        data = {}
+        rows = await session.execute(sqlalchemy.text(SQL_GET_NODES_COUNT), data)
+        for row in rows:
+            return row.node_count
+        return 0
+
+    @connection.read_session
+    async def get_network_throughput(self, session: AsyncSession) -> float:
+        connected_user_profile_ids = self.get_connected_node_ids()
+        if not connected_user_profile_ids:
+            return 0
+        data = {"user_profile_ids": tuple([str(i) for i in connected_user_profile_ids])}
+        rows = await session.execute(
+            sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_SUM), data
+        )
+        for row in rows:
+            return row.benchmark_sum
+        return 0
 
     async def save_node_benchmark(
         self, user_profile_id: UUID, benchmark: NodeBenchmark
