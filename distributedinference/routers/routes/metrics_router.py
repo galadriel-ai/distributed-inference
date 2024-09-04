@@ -1,3 +1,4 @@
+import settings
 from fastapi import APIRouter
 from fastapi.responses import Response
 from fastapi import Depends
@@ -7,6 +8,7 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client import CollectorRegistry
 from prometheus_client import generate_latest
 from prometheus_client import Gauge
+from prometheus_client.multiprocess import MultiProcessCollector
 
 from distributedinference import api_logger
 from distributedinference.repository.node_repository import NodeRepository
@@ -28,10 +30,15 @@ network_nodes_gauge = Gauge(
 async def metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
 ):
+    if settings.PROMETHEUS_MULTIPROC_DIR:
+        registry = CollectorRegistry()
+        MultiProcessCollector(registry)
+    else:
+        registry = REGISTRY
     # TODO: replace model names with real ones
     model_name = "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
     network_nodes_gauge.labels(model_name).set(
         node_repository.get_connected_nodes_count()
     )
-    metrics_data = generate_latest(REGISTRY)
+    metrics_data = generate_latest(registry)
     return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)

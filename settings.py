@@ -33,6 +33,9 @@ MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = os.getenv(
 
 MAX_PARALLEL_REQUESTS_PER_NODE = int(os.getenv("MAX_PARALLEL_REQUESTS_PER_NODE", "10"))
 
+# if prometheus py client will be used in multiprocessing mode, needs to point to an existing dir
+PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR", None)
+
 
 def is_production():
     return ENVIRONMENT == "production"
