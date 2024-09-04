@@ -17,6 +17,7 @@ from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.entities import NodeStats
 from distributedinference.repository import connection
 from distributedinference.repository.utils import utcnow
 
@@ -154,11 +155,26 @@ ON CONFLICT (node_id, model_name) DO UPDATE SET
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
+SQL_GET_NODE_STATS = """
+SELECT
+    nm.requests_served,
+    nm.time_to_first_token,
+    nb.tokens_per_second AS benchmark_tokens_per_second,
+    nb.model_name AS benchmark_model_name,
+    nb.created_at AS benchmark_created_at
+FROM node_metrics nm
+LEFT JOIN node_info ni on nm.user_profile_id = ni.user_profile_id
+LEFT JOIN node_benchmark nb on ni.id = nb.node_id
+WHERE nm.user_profile_id = :user_profile_id
+LIMIT 1;
+"""
+
 
 class NodeRepository:
 
     def __init__(self, max_parallel_requests_per_node: int):
         self._max_parallel_requests_per_node = max_parallel_requests_per_node
+        # user_id: ConnectedNode
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
     def register_node(self, connected_node: ConnectedNode) -> bool:
@@ -184,6 +200,9 @@ class NodeRepository:
 
     def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)
+
+    def get_connected_node_info(self, user_id: UUID) -> Optional[ConnectedNode]:
+        return self._connected_nodes.get(user_id)
 
     @connection.read_session
     async def get_node_metrics(
@@ -227,6 +246,7 @@ class NodeRepository:
                 network_download_speed=row.network_download_speed,
                 network_upload_speed=row.network_upload_speed,
                 operating_system=row.operating_system,
+                created_at=row.created_at,
             )
         return None
 
@@ -257,6 +277,22 @@ class NodeRepository:
             return NodeBenchmark(
                 model_name=row.model_name,
                 tokens_per_second=row.tokens_per_second,
+            )
+        return None
+
+    @connection.read_session
+    async def get_node_stats(
+        self, user_id: UUID, session: AsyncSession
+    ) -> Optional[NodeStats]:
+        data = {"user_profile_id": user_id}
+        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATS), data)
+        for row in rows:
+            return NodeStats(
+                requests_served=row.requests_served,
+                average_time_to_first_token=row.time_to_first_token,
+                benchmark_tokens_per_second=row.benchmark_tokens_per_second,
+                benchmark_model_name=row.benchmark_model_name,
+                benchmark_created_at=row.benchmark_created_at,
             )
         return None
 

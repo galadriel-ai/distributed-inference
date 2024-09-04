@@ -38,6 +38,7 @@ async def execute(
     node = ConnectedNode(
         uid=node_id,
         model="model",
+        connected_at=int(time.time()),
         websocket=websocket,
         request_incoming_queues={},
         metrics=node_metrics,

@@ -1,3 +1,4 @@
+import time
 from typing import Optional
 
 from distributedinference.domain.node.entities import NodeInfo
@@ -11,6 +12,8 @@ async def execute(user: User, repository: NodeRepository) -> GetNodeInfoResponse
     node_info: Optional[NodeInfo] = await repository.get_node_info(user.uid)
     if not node_info:
         raise error_responses.NotFoundAPIError()
+
+    connected_node = repository.get_connected_node_info(user.uid)
     return GetNodeInfoResponse(
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
@@ -20,4 +23,9 @@ async def execute(user: User, repository: NodeRepository) -> GetNodeInfoResponse
         network_download_speed=node_info.network_download_speed,
         network_upload_speed=node_info.network_upload_speed,
         operating_system=node_info.operating_system,
+        status="online" if connected_node else "offline",
+        run_duration_seconds=(
+            0 if not connected_node else int(time.time() - connected_node.connected_at)
+        ),
+        node_created_at=int(node_info.created_at.timestamp()),
     )
