@@ -10,7 +10,7 @@ services:
       - ./logs:/home/appuser/logs
       - ./prometheus:/home/appuser/prometheus
       - ./data:/home/appuser/data
-    command: python wsgi.py
+    command: ./entrypoint.sh
     expose:
       - "3000"
     restart: unless-stopped
