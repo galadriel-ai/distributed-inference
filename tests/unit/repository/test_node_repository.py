@@ -12,10 +12,12 @@ from distributedinference.repository.node_repository import (
 )
 from distributedinference.repository.node_repository import NodeRepository
 
+MAX_PARALLEL_REQUESTS = 10
+
 
 @pytest.fixture
 def node_repository():
-    return NodeRepository(10)
+    return NodeRepository(MAX_PARALLEL_REQUESTS)
 
 
 @pytest.fixture
@@ -99,14 +101,14 @@ def test_select_node_after_reaching_maximum_parallel_requests(
     node = connected_node_factory("1")
     node_repository.register_node(node)
 
-    for i in range(10):
+    for i in range(MAX_PARALLEL_REQUESTS - 1):
         node.request_incoming_queues[i] = asyncio.Queue()
 
     # Initially, it should return the node
     assert node_repository.select_node("model").uid == "1"
 
     # Add one more request
-    node.request_incoming_queues[10] = asyncio.Queue()
+    node.request_incoming_queues[MAX_PARALLEL_REQUESTS - 1] = asyncio.Queue()
 
     # Now, there are no nodes left, should return None
     assert node_repository.select_node("model") is None
@@ -170,3 +172,45 @@ async def test_save_node_metrics(node_repository):
         assert data["uptime"] == await node_metrics.get_uptime()
         assert "created_at" in data
         assert "last_updated_at" in data
+
+
+def test_select_node_with_busy_nodes(node_repository, connected_node_factory):
+    node1 = connected_node_factory("1")
+    node2 = connected_node_factory("2")
+    node3 = connected_node_factory("3")
+
+    node_repository.register_node(node1)
+    node_repository.register_node(node2)
+    node_repository.register_node(node3)
+
+    with patch(
+        "distributedinference.domain.node.entities.ConnectedNode.active_requests_count",
+        side_effect=[
+            MAX_PARALLEL_REQUESTS,
+            MAX_PARALLEL_REQUESTS - 5,
+            MAX_PARALLEL_REQUESTS,
+        ],
+    ):
+        # Only node2 should be available since its active_requests_count is below the max
+        selected_node = node_repository.select_node("model")
+        assert selected_node.uid == "2"
+
+
+@patch("random.choice")
+def test_random_node_selection(
+    mock_random_choice, node_repository, connected_node_factory
+):
+    node1 = connected_node_factory("1")
+    node2 = connected_node_factory("2")
+    node3 = connected_node_factory("3")
+
+    node_repository.register_node(node1)
+    node_repository.register_node(node2)
+    node_repository.register_node(node3)
+
+    with patch(
+        "distributedinference.domain.node.entities.ConnectedNode.active_requests_count",
+        side_effect=[7, 3, 10],
+    ):
+        node_repository.select_node("model")
+        mock_random_choice.assert_called_once_with([node1, node2])
