@@ -1,4 +1,5 @@
 import asyncio
+import random
 from dataclasses import asdict
 from typing import Dict
 from typing import Optional
@@ -175,12 +176,26 @@ class NodeRepository:
             del self._connected_nodes[node_id]
 
     def select_node(self, model: str) -> Optional[ConnectedNode]:
-        if not len(self._connected_nodes):
+        if not self._connected_nodes:
             return None
-        for node in self._connected_nodes.values():
-            if node.active_requests_count() <= self._max_parallel_requests_per_node:
-                return node
-        return None
+
+        eligible_nodes = [
+            node
+            for node in self._connected_nodes.values()
+            if node.active_requests_count() < self._max_parallel_requests_per_node
+        ]
+
+        if not eligible_nodes:
+            return None
+
+        min_requests = min(node.active_requests_count() for node in eligible_nodes)
+        least_busy_nodes = [
+            node
+            for node in eligible_nodes
+            if node.active_requests_count() == min_requests
+        ]
+
+        return random.choice(least_busy_nodes)
 
     def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)
