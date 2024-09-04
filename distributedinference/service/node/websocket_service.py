@@ -37,7 +37,7 @@ async def execute(
     node_metrics = await node_repository.get_node_metrics(node_id) or NodeMetrics()
     node = ConnectedNode(
         uid=node_id,
-        model="model",
+        model=model_name,
         connected_at=int(time.time()),
         websocket=websocket,
         request_incoming_queues={},
