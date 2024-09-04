@@ -195,9 +195,6 @@ class NodeRepository:
             if node.active_requests_count() == min_requests
         ]
 
-        print("LLL")
-        print(least_busy_nodes)
-
         return random.choice(least_busy_nodes)
 
     def get_connected_nodes_count(self) -> int:
