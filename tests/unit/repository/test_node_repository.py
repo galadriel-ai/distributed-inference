@@ -1,16 +1,21 @@
 import asyncio
+import time
+from unittest.mock import MagicMock
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import MagicMock, patch, call
 from uuid_extensions import uuid7
 
+from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
     SQL_INSERT_OR_UPDATE_NODE_INFO,
+)
+from distributedinference.repository.node_repository import (
     SQL_INSERT_OR_UPDATE_NODE_METRICS,
 )
-from distributedinference.repository.node_repository import NodeRepository
 
 MAX_PARALLEL_REQUESTS = 10
 
@@ -28,7 +33,9 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(uid, model, mock_websocket, {}, MagicMock())
+        return ConnectedNode(
+            uid, model, int(time.time()), mock_websocket, {}, MagicMock()
+        )
 
     return _create_node
 

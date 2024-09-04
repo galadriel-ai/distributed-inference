@@ -1,6 +1,7 @@
 import asyncio
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
-from dataclasses import dataclass, field
 from typing import Dict
 from typing import Optional
 from uuid import UUID
@@ -8,9 +9,6 @@ from uuid import UUID
 from fastapi import WebSocket
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
-
-import asyncio
-from typing import Optional
 
 
 class NodeMetrics:
@@ -61,6 +59,7 @@ class NodeInfo:
     network_download_speed: Optional[float] = None
     network_upload_speed: Optional[float] = None
     operating_system: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 
 @dataclass
@@ -69,10 +68,21 @@ class NodeBenchmark:
     tokens_per_second: float
 
 
+@dataclass
+class NodeStats:
+    requests_served: int
+    average_time_to_first_token: Optional[float]
+
+    benchmark_tokens_per_second: Optional[float]
+    benchmark_model_name: Optional[str]
+    benchmark_created_at: Optional[datetime]
+
+
 @dataclass(frozen=True)
 class ConnectedNode:
     uid: UUID
     model: str
+    connected_at: int
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
     metrics: NodeMetrics
