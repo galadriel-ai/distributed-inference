@@ -49,7 +49,7 @@ def _get_servers():
         base_url = settings.API_BASE_URL
         if base_url.endswith("/"):
             base_url = base_url[:-1]
-        servers.append({"url": f"{base_url}:{80}"})
+        servers.append({"url": base_url})
     else:
         base_url = settings.API_BASE_URL
         if base_url.endswith("/"):
