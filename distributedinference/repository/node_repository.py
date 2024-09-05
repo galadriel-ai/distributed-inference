@@ -30,6 +30,8 @@ SELECT
     id,
     user_profile_id,
     requests_served,
+    requests_successful,
+    requests_failed,
     time_to_first_token,
     uptime,
     created_at,
@@ -38,11 +40,28 @@ FROM node_metrics
 WHERE user_profile_id = :user_profile_id;
 """
 
+SQL_GET_NODE_METRICS_BY_IDS = """
+SELECT
+    id,
+    user_profile_id,
+    requests_served,
+    requests_successful,
+    requests_failed,
+    time_to_first_token,
+    uptime,
+    created_at,
+    last_updated_at
+FROM node_metrics
+WHERE user_profile_id = ANY(:user_profile_ids);
+"""
+
 SQL_INSERT_OR_UPDATE_NODE_METRICS = """
 INSERT INTO node_metrics (
     id,
     user_profile_id,
     requests_served,
+    requests_successful,
+    requests_failed,
     time_to_first_token,
     uptime,
     created_at,
@@ -51,6 +70,8 @@ INSERT INTO node_metrics (
     :id,
     :user_profile_id,
     :requests_served,
+    :requests_successful,
+    :requests_failed,
     :time_to_first_token,
     :uptime,
     :created_at,
@@ -58,6 +79,8 @@ INSERT INTO node_metrics (
 )
 ON CONFLICT (user_profile_id) DO UPDATE SET
     requests_served = EXCLUDED.requests_served,
+    requests_successful = EXCLUDED.requests_successful,
+    requests_failed = EXCLUDED.requests_failed,
     time_to_first_token = EXCLUDED.time_to_first_token,
     uptime = EXCLUDED.uptime,
     last_updated_at = EXCLUDED.last_updated_at;
@@ -227,6 +250,9 @@ class NodeRepository:
 
         return random.choice(least_busy_nodes)
 
+    def get_connected_nodes(self) -> List[ConnectedNode]:
+        return list(self._connected_nodes.values())
+
     def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)
 
@@ -237,6 +263,23 @@ class NodeRepository:
         return self._connected_nodes.get(user_id)
 
     @connection.read_session
+    async def get_node_metrics_by_ids(
+        self, user_profile_ids: List[UUID], session: AsyncSession
+    ) -> Dict[UUID, NodeMetrics]:
+        data = {"user_profile_ids": user_profile_ids}
+        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data)
+        result = {}
+        for row in rows:
+            result[row.user_profile_id] = NodeMetrics(
+                requests_served=row.requests_served,
+                requests_successful=row.requests_successful,
+                requests_failed=row.requests_failed,
+                time_to_first_token=row.time_to_first_token,
+                uptime=row.uptime,
+            )
+        return result
+
+    @connection.read_session
     async def get_node_metrics(
         self, node_id: UUID, session: AsyncSession
     ) -> Optional[NodeMetrics]:
@@ -245,6 +288,8 @@ class NodeRepository:
         for row in rows:
             return NodeMetrics(
                 requests_served=row.requests_served,
+                requests_successful=row.requests_successful,
+                requests_failed=row.requests_failed,
                 time_to_first_token=row.time_to_first_token,
                 uptime=row.uptime,
             )
@@ -254,9 +299,11 @@ class NodeRepository:
         data = {
             "id": str(uuid7()),
             "user_profile_id": node_id,
-            "requests_served": await metrics.get_requests_served(),
-            "time_to_first_token": await metrics.get_time_to_first_token(),
-            "uptime": await metrics.get_uptime(),
+            "requests_served": metrics.requests_served,
+            "requests_successful": metrics.requests_successful,
+            "requests_failed": metrics.requests_failed,
+            "time_to_first_token": metrics.time_to_first_token,
+            "uptime": metrics.uptime,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }

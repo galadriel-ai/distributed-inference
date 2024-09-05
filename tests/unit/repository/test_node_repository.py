@@ -172,11 +172,9 @@ async def test_save_node_metrics(node_repository):
 
         data = args[1]
         assert data["user_profile_id"] == node_id
-        assert data["requests_served"] == await node_metrics.get_requests_served()
-        assert (
-            data["time_to_first_token"] == await node_metrics.get_time_to_first_token()
-        )
-        assert data["uptime"] == await node_metrics.get_uptime()
+        assert data["requests_served"] == node_metrics.requests_served
+        assert data["time_to_first_token"] == node_metrics.time_to_first_token
+        assert data["uptime"] == node_metrics.uptime
         assert "created_at" in data
         assert "last_updated_at" in data
 

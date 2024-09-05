@@ -4,8 +4,6 @@ from typing import Optional
 from uuid import UUID
 
 from openai.types import CompletionUsage
-from prometheus_client import Counter
-from prometheus_client import Histogram
 
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.entities import InferenceRequest
@@ -13,16 +11,6 @@ from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
-
-total_tokens_gauge = Counter("tokens", "Total tokens by model_name", ["model_name"])
-total_requests_gauge = Counter(
-    "requests", "Total requests by model_name", ["model_name"]
-)
-time_to_first_token_histogram = Histogram(
-    "time_to_first_token",
-    "Time to first token in seconds",
-    ["model_name"],
-)
 
 
 async def execute(
@@ -35,6 +23,8 @@ async def execute(
     if not node:
         raise NoAvailableNodesError()
     await node_repository.send_inference_request(node.uid, request)
+    async with node.metrics.lock:
+        node.metrics.requests_served += 1
     is_stream = bool(request.chat_request.get("stream"))
     is_include_usage: bool = bool(
         (request.chat_request.get("stream_options") or {}).get("include_usage")
@@ -42,6 +32,7 @@ async def execute(
     usage: Optional[CompletionUsage] = None
     request_start_time = time.time()
     first_token_time = None
+    request_successful = False
     try:
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
@@ -60,6 +51,7 @@ async def execute(
                     break
             else:
                 if response.chunk.choices[0].finish_reason == "stop":
+                    request_successful = True
                     break
     finally:
         await node_repository.cleanup_request(node.uid, request.id)
@@ -67,14 +59,15 @@ async def execute(
             await _save_result(
                 user_uid, node.uid, request.model, usage, tokens_repository
             )
-            total_tokens_gauge.labels(node.model).inc(usage.total_tokens)
-
-        # set only if we got at least one token
-        if first_token_time:
-            await node.metrics.set_time_to_first_token(first_token_time)
-            await node.metrics.increment_requests_served()
-            time_to_first_token_histogram.labels(node.model).observe(first_token_time)
-            total_requests_gauge.labels(node.model).inc()
+        async with node.metrics.lock:
+            # set only if we got at least one token
+            if first_token_time is not None:
+                node.metrics.time_to_first_token = first_token_time
+            if request_successful:
+                node.metrics.requests_successful += 1
+            else:
+                node.metrics.requests_failed += 1
+        await node_repository.save_node_metrics(node.uid, node.metrics)
 
 
 async def _save_result(

@@ -50,6 +50,16 @@ WHERE producer_user_profile_id = :user_profile_id
 ORDER BY id DESC LIMIT :count;
 """
 
+SQL_GET_TOTAL_TOKENS_BY_NODE_IDS = """
+SELECT
+    producer_user_profile_id,
+    model_name,
+    SUM(total_tokens) AS total_tokens
+FROM usage_tokens
+WHERE producer_user_profile_id = ANY(:node_ids)
+GROUP BY producer_user_profile_id, model_name;
+"""
+
 
 @dataclass
 class UsageTokens:
@@ -60,6 +70,13 @@ class UsageTokens:
     completion_tokens: int
     total_tokens: int
     created_at: Optional[datetime] = None
+
+
+@dataclass
+class UsageNodeModelTotalTokens:
+    model_name: str
+    node_uid: UUID
+    total_tokens: int
 
 
 class TokensRepository:
@@ -97,6 +114,25 @@ class TokensRepository:
                     completion_tokens=row.completion_tokens,
                     total_tokens=row.total_tokens,
                     created_at=row.created_at,
+                )
+            )
+        return tokens
+
+    @connection.read_session
+    async def get_total_tokens_by_node_ids(
+        self, node_ids: List[UUID], session: AsyncSession
+    ) -> List[UsageNodeModelTotalTokens]:
+        data = {"node_ids": node_ids}
+        rows = await session.execute(
+            sqlalchemy.text(SQL_GET_TOTAL_TOKENS_BY_NODE_IDS), data
+        )
+        tokens = []
+        for row in rows:
+            tokens.append(
+                UsageNodeModelTotalTokens(
+                    node_uid=row.producer_user_profile_id,
+                    model_name=row.model_name,
+                    total_tokens=row.total_tokens,
                 )
             )
         return tokens
