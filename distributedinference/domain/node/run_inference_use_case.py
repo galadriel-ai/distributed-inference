@@ -4,8 +4,6 @@ from typing import Optional
 from uuid import UUID
 
 from openai.types import CompletionUsage
-from prometheus_client import Counter
-from prometheus_client import Histogram
 
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.entities import InferenceRequest
@@ -13,32 +11,6 @@ from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
-
-node_tokens_gauge = Counter(
-    "node_tokens", "Total tokens by model_name and node uid", ["model_name", "node_uid"]
-)
-
-node_requests_gauge = Counter(
-    "node_requests",
-    "Requests by model and node uid",
-    ["model_name", "node_uid"],
-)
-
-node_requests_success_gauge = Counter(
-    "node_requests_success",
-    "Successful requests by model and node uid",
-    ["model_name", "node_uid"],
-)
-node_requests_failed_gauge = Counter(
-    "node_requests_failed",
-    "Failed requests by model and node uid",
-    ["model_name", "node_uid"],
-)
-node_time_to_first_token_histogram = Histogram(
-    "node_time_to_first_token",
-    "Time to first token in seconds by model and node uid",
-    ["model_name", "node_uid"],
-)
 
 
 async def execute(
@@ -51,7 +23,8 @@ async def execute(
     if not node:
         raise NoAvailableNodesError()
     await node_repository.send_inference_request(node.uid, request)
-    node_requests_gauge.labels(node.model, node.uid).inc()
+    async with node.metrics.lock:
+        node.metrics.requests_served += 1
     is_stream = bool(request.chat_request.get("stream"))
     is_include_usage: bool = bool(
         (request.chat_request.get("stream_options") or {}).get("include_usage")
@@ -86,19 +59,17 @@ async def execute(
             await _save_result(
                 user_uid, node.uid, request.model, usage, tokens_repository
             )
-            node_tokens_gauge.labels(node.model, node.uid).inc(usage.total_tokens)
-
-        # set only if we got at least one token
-        if first_token_time:
-            await node.metrics.set_time_to_first_token(first_token_time)
-            await node.metrics.increment_requests_served()
-            node_time_to_first_token_histogram.labels(node.model, node.uid).observe(
-                first_token_time
-            )
-        if request_successful:
-            node_requests_success_gauge.labels(node.model, node.uid).inc()
-        else:
-            node_requests_failed_gauge.labels(node.model, node.uid).inc()
+            # set only if we got at least one token
+        async with node.metrics.lock:
+            if first_token_time is not None and (
+                node.metrics.time_to_first_token is None
+                or first_token_time > node.metrics.time_to_first_token
+            ):
+                node.metrics.time_to_first_token = first_token_time
+            if request_successful:
+                node.metrics.requests_successful += 1
+            else:
+                node.metrics.requests_failed += 1
 
 
 async def _save_result(

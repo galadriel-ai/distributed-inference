@@ -66,6 +66,7 @@ async def execute(
     except WebSocketDisconnect:
         node_repository.deregister_node(node_id)
         uptime = int(time.time() - connect_time)
-        await node.metrics.add_uptime(uptime)
+        async with node.metrics.lock:
+            node.metrics.uptime += uptime
         await node_repository.save_node_metrics(node_id, node.metrics)
         logger.info(f"Node {node_id} disconnected")

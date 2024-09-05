@@ -8,6 +8,7 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client import CollectorRegistry
 from prometheus_client import generate_latest
 from prometheus_client import Gauge
+from prometheus_client import Counter
 from prometheus_client.multiprocess import MultiProcessCollector
 
 from distributedinference import api_logger
@@ -24,9 +25,35 @@ logger = api_logger.get()
 network_nodes_gauge = Gauge(
     "network_nodes", "Nodes in network by model_name", ["model_name"]
 )
+node_tokens_gauge = Gauge(
+    "node_tokens",
+    "Total tokens by model_name and node uid",
+    ["model_name", "node_uid"],
+)
+
+node_requests_gauge = Gauge(
+    "node_requests",
+    "Requests by model and node uid",
+    ["model_name", "node_uid"],
+)
+node_requests_successful_gauge = Gauge(
+    "node_requests_successful",
+    "Successful requests by model and node uid",
+    ["model_name", "node_uid"],
+)
+node_requests_failed_gauge = Gauge(
+    "node_requests_failed",
+    "Failed requests by model and node uid",
+    ["model_name", "node_uid"],
+)
+node_time_to_first_token_gauge = Gauge(
+    "node_time_to_first_token",
+    "Time to first token in seconds by model and node uid",
+    ["model_name", "node_uid"],
+)
 
 
-@router.get("")
+@router.get("", include_in_schema=False)
 async def metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
 ):
@@ -35,10 +62,28 @@ async def metrics(
         MultiProcessCollector(registry)
     else:
         registry = REGISTRY
-    # TODO: replace model names with real ones
-    model_name = "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
-    network_nodes_gauge.labels(model_name).set(
-        node_repository.get_connected_nodes_count()
-    )
+
+    model_nodes_count = node_repository.get_model_node_count()
+    for model_name in model_nodes_count:
+        network_nodes_gauge.labels(model_name).set(model_nodes_count[model_name])
+    connected_node_ids = node_repository.get_connected_node_ids()
+    node_metrics = await node_repository.get_node_metrics_by_ids(connected_node_ids)
+    node_requests_gauge.clear()
+    node_requests_successful_gauge.clear()
+    node_requests_failed_gauge.clear()
+    node_time_to_first_token_gauge.clear()
+
+    for node_uid, metrics in node_metrics.items():
+        node_requests_gauge.labels(model_name, node_uid).inc(metrics.requests_served)
+        node_requests_successful_gauge.labels(model_name, node_uid).set(
+            metrics.requests_successful
+        )
+        node_requests_failed_gauge.labels(model_name, node_uid).set(
+            metrics.requests_failed
+        )
+        if metrics.time_to_first_token:
+            node_time_to_first_token_gauge.labels(model_name, node_uid).inc(
+                metrics.time_to_first_token
+            )
     metrics_data = generate_latest(registry)
     return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)

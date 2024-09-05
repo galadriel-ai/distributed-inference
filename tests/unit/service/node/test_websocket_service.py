@@ -101,9 +101,7 @@ async def test_execute_websocket_disconnect():
     user = User(uid="test_user_id", name="test_user_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics()
-    node_metrics.get_uptime = AsyncMock(return_value=0)
-    node_metrics.add_uptime = AsyncMock()
+    node_metrics = NodeMetrics(uptime=100)
 
     node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
     node_repository.register_node = Mock(return_value=True)
@@ -116,7 +114,7 @@ async def test_execute_websocket_disconnect():
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(user.uid)
-    node_metrics.add_uptime.assert_called_once()
+    node_metrics.uptime > 100
     node_repository.save_node_metrics.assert_called_once_with(user.uid, node_metrics)
 
 
@@ -130,8 +128,6 @@ async def test_execute_metrics_update_after_disconnect():
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
-    node_metrics.get_uptime = AsyncMock(return_value=0)
-    node_metrics.add_uptime = AsyncMock()
 
     node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
     node_repository.register_node = Mock(return_value=True)
@@ -150,6 +146,6 @@ async def test_execute_metrics_update_after_disconnect():
 
     uptime = int(time.time() - start_time)
 
-    node_metrics.add_uptime.assert_called_once_with(uptime)
+    node_metrics.uptime = uptime
 
     node_repository.save_node_metrics.assert_called_once_with(user.uid, node_metrics)

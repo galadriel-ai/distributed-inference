@@ -87,7 +87,11 @@ class NodeMetrics(Base):
         nullable=False,
         unique=True,
     )
-    requests_served = Column(Integer(), nullable=True)
+    requests_served = Column(Integer(), nullable=False, default=0, server_default="0")
+    requests_successful = Column(
+        Integer(), nullable=False, default=0, server_default="0"
+    )
+    requests_failed = Column(Integer(), nullable=False, default=0, server_default="0")
     time_to_first_token = Column(Float(), nullable=True)  # In seconds
     uptime = Column(
         Integer(), nullable=False, default=0, server_default="0"
