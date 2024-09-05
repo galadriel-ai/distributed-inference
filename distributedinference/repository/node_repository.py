@@ -251,8 +251,8 @@ class NodeRepository:
 
         return random.choice(least_busy_nodes)
 
-    def get_model_node_count(self) -> Dict[str, int]:
-        return dict(Counter(node.model for node in self._connected_nodes.values()))
+    def get_connected_nodes(self) -> List[ConnectedNode]:
+        return list(self._connected_nodes.values())
 
     def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)

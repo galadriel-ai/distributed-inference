@@ -64,9 +64,11 @@ async def metrics(
     else:
         registry = REGISTRY
 
-    model_nodes_count = node_repository.get_model_node_count()
-    for model_name in model_nodes_count:
-        network_nodes_gauge.labels(model_name).set(model_nodes_count[model_name])
+    network_nodes_gauge.clear()
+    nodes = node_repository.get_connected_nodes()
+    node_model_names = {node.uid: node.model for node in nodes}
+    for node in nodes:
+        network_nodes_gauge.labels(node.model).inc()
     connected_node_ids = node_repository.get_connected_node_ids()
     node_metrics = await node_repository.get_node_metrics_by_ids(connected_node_ids)
     node_usage_total_tokens = await tokens_repository.get_total_tokens_by_node_ids(
@@ -79,17 +81,19 @@ async def metrics(
     node_time_to_first_token_gauge.clear()
 
     for node_uid, metrics in node_metrics.items():
-        node_requests_gauge.labels(model_name, node_uid).inc(metrics.requests_served)
-        node_requests_successful_gauge.labels(model_name, node_uid).set(
+        node_requests_gauge.labels(node_model_names[node_uid], node_uid).inc(
+            metrics.requests_served
+        )
+        node_requests_successful_gauge.labels(node_model_names[node_uid], node_uid).set(
             metrics.requests_successful
         )
-        node_requests_failed_gauge.labels(model_name, node_uid).set(
+        node_requests_failed_gauge.labels(node_model_names[node_uid], node_uid).set(
             metrics.requests_failed
         )
         if metrics.time_to_first_token:
-            node_time_to_first_token_gauge.labels(model_name, node_uid).inc(
-                metrics.time_to_first_token
-            )
+            node_time_to_first_token_gauge.labels(
+                node_model_names[node_uid], node_uid
+            ).inc(metrics.time_to_first_token)
 
     for usage in node_usage_total_tokens:
         node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(
