@@ -59,12 +59,9 @@ async def execute(
             await _save_result(
                 user_uid, node.uid, request.model, usage, tokens_repository
             )
-            # set only if we got at least one token
         async with node.metrics.lock:
-            if first_token_time is not None and (
-                node.metrics.time_to_first_token is None
-                or first_token_time > node.metrics.time_to_first_token
-            ):
+            # set only if we got at least one token
+            if first_token_time is not None:
                 node.metrics.time_to_first_token = first_token_time
             if request_successful:
                 node.metrics.requests_successful += 1

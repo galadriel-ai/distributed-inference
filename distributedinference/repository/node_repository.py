@@ -271,7 +271,7 @@ class NodeRepository:
         rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data)
         result = {}
         for row in rows:
-            result[row.id] = NodeMetrics(
+            result[row.user_profile_id] = NodeMetrics(
                 requests_served=row.requests_served,
                 requests_successful=row.requests_successful,
                 requests_failed=row.requests_failed,
