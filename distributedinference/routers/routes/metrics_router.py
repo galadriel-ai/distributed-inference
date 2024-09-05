@@ -1,7 +1,8 @@
 import settings
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import Response
 from fastapi import Depends
+from fastapi.exceptions import HTTPException
 
 from prometheus_client import REGISTRY
 from prometheus_client import CONTENT_TYPE_LATEST
@@ -55,9 +56,12 @@ node_time_to_first_token_gauge = Gauge(
 
 @router.get("", include_in_schema=False)
 async def metrics(
+    request: Request,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
 ):
+    if request.client.host != settings.PROMETHEUS_HOSTNAME:
+        raise HTTPException(status_code=404)
     if settings.PROMETHEUS_MULTIPROC_DIR:
         registry = CollectorRegistry()
         MultiProcessCollector(registry)
