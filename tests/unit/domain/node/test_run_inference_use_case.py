@@ -208,27 +208,43 @@ async def test_streaming_usage_includes_extra_chunk():
 async def test_inference_metrics():
     registry = CollectorRegistry()
     with patch(
-        "distributedinference.domain.node.run_inference_use_case.total_tokens_gauge",
+        "distributedinference.domain.node.run_inference_use_case.node_tokens_gauge",
         Counter(
-            "tokens",
-            "Total tokens by model_name",
-            ["model_name"],
+            "node_tokens",
+            "Total tokens by model_name and node uid",
+            ["model_name", "node_uid"],
             registry=registry,
         ),
     ), patch(
-        "distributedinference.domain.node.run_inference_use_case.total_requests_gauge",
+        "distributedinference.domain.node.run_inference_use_case.node_requests_gauge",
         Counter(
-            "requests",
-            "Total requests by model_name",
-            ["model_name"],
+            "node_requests",
+            "Total requests by model_name and node uid",
+            ["model_name", "node_uid"],
             registry=registry,
         ),
     ), patch(
-        "distributedinference.domain.node.run_inference_use_case.time_to_first_token_histogram",
+        "distributedinference.domain.node.run_inference_use_case.node_requests_success_gauge",
+        Counter(
+            "node_requests_success",
+            "Total successful requests by model_name and node uid",
+            ["model_name", "node_uid"],
+            registry=registry,
+        ),
+    ), patch(
+        "distributedinference.domain.node.run_inference_use_case.node_requests_failed_gauge",
+        Counter(
+            "node_requests_failed",
+            "Total failed requests by model_name and node uid",
+            ["model_name", "node_uid"],
+            registry=registry,
+        ),
+    ), patch(
+        "distributedinference.domain.node.run_inference_use_case.node_time_to_first_token_histogram",
         Histogram(
-            "time_to_first_token",
+            "node_time_to_first_token",
             "Time to first token in seconds",
-            ["model_name"],
+            ["model_name", "node_uid"],
             registry=registry,
         ),
     ) as mock_histogram:
@@ -290,11 +306,31 @@ async def test_inference_metrics():
         )
 
         assert (
-            registry.get_sample_value("tokens_total", {"model_name": "mock_model"})
+            registry.get_sample_value(
+                "node_tokens_total",
+                {"model_name": "mock_model", "node_uid": "mock_node"},
+            )
             == 10
         )
         assert (
-            registry.get_sample_value("requests_total", {"model_name": "mock_model"})
+            registry.get_sample_value(
+                "node_requests_total",
+                {"model_name": "mock_model", "node_uid": "mock_node"},
+            )
             == 1
+        )
+        assert (
+            registry.get_sample_value(
+                "node_requests_success_total",
+                {"model_name": "mock_model", "node_uid": "mock_node"},
+            )
+            == 1
+        )
+        assert (
+            registry.get_sample_value(
+                "node_requests_failed_total",
+                {"model_name": "mock_model", "node_uid": "mock_node"},
+            )
+            == None
         )
         mock_histogram.labels("mock_model").observe.assert_called_once()

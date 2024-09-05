@@ -14,14 +14,30 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 
-total_tokens_gauge = Counter("tokens", "Total tokens by model_name", ["model_name"])
-total_requests_gauge = Counter(
-    "requests", "Total requests by model_name", ["model_name"]
+node_tokens_gauge = Counter(
+    "node_tokens", "Total tokens by model_name and node uid", ["model_name", "node_uid"]
 )
-time_to_first_token_histogram = Histogram(
-    "time_to_first_token",
-    "Time to first token in seconds",
-    ["model_name"],
+
+node_requests_gauge = Counter(
+    "node_requests",
+    "Requests by model and node uid",
+    ["model_name", "node_uid"],
+)
+
+node_requests_success_gauge = Counter(
+    "node_requests_success",
+    "Successful requests by model and node uid",
+    ["model_name", "node_uid"],
+)
+node_requests_failed_gauge = Counter(
+    "node_requests_failed",
+    "Failed requests by model and node uid",
+    ["model_name", "node_uid"],
+)
+node_time_to_first_token_histogram = Histogram(
+    "node_time_to_first_token",
+    "Time to first token in seconds by model and node uid",
+    ["model_name", "node_uid"],
 )
 
 
@@ -35,6 +51,7 @@ async def execute(
     if not node:
         raise NoAvailableNodesError()
     await node_repository.send_inference_request(node.uid, request)
+    node_requests_gauge.labels(node.model, node.uid).inc()
     is_stream = bool(request.chat_request.get("stream"))
     is_include_usage: bool = bool(
         (request.chat_request.get("stream_options") or {}).get("include_usage")
@@ -42,6 +59,7 @@ async def execute(
     usage: Optional[CompletionUsage] = None
     request_start_time = time.time()
     first_token_time = None
+    request_successful = False
     try:
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
@@ -60,6 +78,7 @@ async def execute(
                     break
             else:
                 if response.chunk.choices[0].finish_reason == "stop":
+                    request_successful = True
                     break
     finally:
         await node_repository.cleanup_request(node.uid, request.id)
@@ -67,14 +86,19 @@ async def execute(
             await _save_result(
                 user_uid, node.uid, request.model, usage, tokens_repository
             )
-            total_tokens_gauge.labels(node.model).inc(usage.total_tokens)
+            node_tokens_gauge.labels(node.model, node.uid).inc(usage.total_tokens)
 
         # set only if we got at least one token
         if first_token_time:
             await node.metrics.set_time_to_first_token(first_token_time)
             await node.metrics.increment_requests_served()
-            time_to_first_token_histogram.labels(node.model).observe(first_token_time)
-            total_requests_gauge.labels(node.model).inc()
+            node_time_to_first_token_histogram.labels(node.model, node.uid).observe(
+                first_token_time
+            )
+        if request_successful:
+            node_requests_success_gauge.labels(node.model, node.uid).inc()
+        else:
+            node_requests_failed_gauge.labels(node.model, node.uid).inc()
 
 
 async def _save_result(
