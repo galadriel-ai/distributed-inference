@@ -67,6 +67,7 @@ async def execute(
                 node.metrics.requests_successful += 1
             else:
                 node.metrics.requests_failed += 1
+        await node_repository.save_node_metrics(node.uid, node.metrics)
 
 
 async def _save_result(

@@ -81,7 +81,7 @@ async def metrics(
     node_time_to_first_token_gauge.clear()
 
     for node_uid, metrics in node_metrics.items():
-        node_requests_gauge.labels(node_model_names[node_uid], node_uid).inc(
+        node_requests_gauge.labels(node_model_names[node_uid], node_uid).set(
             metrics.requests_served
         )
         node_requests_successful_gauge.labels(node_model_names[node_uid], node_uid).set(
@@ -93,7 +93,7 @@ async def metrics(
         if metrics.time_to_first_token:
             node_time_to_first_token_gauge.labels(
                 node_model_names[node_uid], node_uid
-            ).inc(metrics.time_to_first_token)
+            ).set(metrics.time_to_first_token)
 
     for usage in node_usage_total_tokens:
         node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(
