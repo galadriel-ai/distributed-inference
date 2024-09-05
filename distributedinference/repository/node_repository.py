@@ -264,9 +264,9 @@ class NodeRepository:
 
     @connection.read_session
     async def get_node_metrics_by_ids(
-        self, node_ids: List[UUID], session: AsyncSession
+        self, user_profile_ids: List[UUID], session: AsyncSession
     ) -> Dict[UUID, NodeMetrics]:
-        data = {"user_profile_ids": node_ids}
+        data = {"user_profile_ids": user_profile_ids}
         rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data)
         result = {}
         for row in rows:
