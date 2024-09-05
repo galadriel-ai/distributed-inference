@@ -1,7 +1,6 @@
 import asyncio
 import random
 from dataclasses import asdict
-from collections import Counter
 from typing import Dict
 from typing import List
 from typing import Optional
