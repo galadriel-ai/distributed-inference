@@ -47,6 +47,7 @@ async def execute(
             yield response
             if is_stream and is_include_usage:
                 # If is_stream and is_include_usage last chunk has no choices, only usage info
+                request_successful = True
                 if not len(response.chunk.choices):
                     break
             else:
