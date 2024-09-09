@@ -1,5 +1,7 @@
 import settings
-from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository

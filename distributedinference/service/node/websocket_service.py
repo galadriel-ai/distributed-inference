@@ -12,7 +12,9 @@ from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 
 logger = api_logger.get()

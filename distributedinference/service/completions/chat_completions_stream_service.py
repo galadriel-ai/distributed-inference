@@ -7,7 +7,9 @@ from distributedinference.domain.node import run_inference_use_case
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
@@ -33,7 +35,11 @@ async def execute(
     )
     try:
         async for chunk in run_inference_use_case.execute(
-            user.uid, inference_request, node_repository, tokens_repository, metrics_queue_repository
+            user.uid,
+            inference_request,
+            node_repository,
+            tokens_repository,
+            metrics_queue_repository,
         ):
             if chunk.error:
                 raise error_responses.InferenceError(

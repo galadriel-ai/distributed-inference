@@ -27,9 +27,7 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(
-            uid, model, int(time.time()), mock_websocket, {}
-        )
+        return ConnectedNode(uid, model, int(time.time()), mock_websocket, {})
 
     return _create_node
 
@@ -96,7 +94,11 @@ async def test_no_nodes():
 
     with pytest.raises(NoAvailableNodesError):
         async for response in use_case.execute(
-            USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
+            USER_UUID,
+            request,
+            mock_node_repository,
+            mock_tokens_repository,
+            AsyncMock(),
         ):
             pass
 

@@ -12,6 +12,9 @@ class MetricsQueueRepository:
     async def push(self, increment: NodeMetricsIncrement) -> None:
         await self.queue.put(increment)
 
-    async def get(self) -> Optional[NodeMetricsIncrement]:
-        return await self.queue.get()
-
+    # Not async to aggregate the results..
+    def get(self) -> Optional[NodeMetricsIncrement]:
+        """
+        if queue is empty raises `QueueEmpty` exception
+        """
+        return self.queue.get_nowait()

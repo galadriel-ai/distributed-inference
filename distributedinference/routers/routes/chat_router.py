@@ -5,7 +5,9 @@ from starlette.responses import StreamingResponse
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.auth import authentication
@@ -33,7 +35,9 @@ async def completions(
     user: User = Depends(authentication.validate_api_key_header),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
-    metrics_queue_repository: MetricsQueueRepository = Depends(dependencies.get_metrics_queue_repository),
+    metrics_queue_repository: MetricsQueueRepository = Depends(
+        dependencies.get_metrics_queue_repository
+    ),
 ):
     if request.stream:
         headers = {

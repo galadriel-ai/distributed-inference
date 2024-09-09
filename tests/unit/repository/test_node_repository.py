@@ -33,9 +33,7 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(
-            uid, model, int(time.time()), mock_websocket, {}
-        )
+        return ConnectedNode(uid, model, int(time.time()), mock_websocket, {})
 
     return _create_node
 
@@ -159,7 +157,9 @@ async def test_save_node_info(node_repository):
 async def test_save_node_metrics(node_repository):
     node_id = uuid7()
 
-    node_metrics = NodeMetricsIncrement(node_id=node_id, requests_served_incerement=100, time_to_first_token=0.5)
+    node_metrics = NodeMetricsIncrement(
+        node_id=node_id, requests_served_incerement=100, time_to_first_token=0.5
+    )
 
     with patch("distributedinference.repository.connection.write") as mock_write:
         await node_repository.increment_node_metrics(node_metrics)
@@ -172,7 +172,9 @@ async def test_save_node_metrics(node_repository):
 
         data = args[1]
         assert data["user_profile_id"] == node_id
-        assert data["requests_served_increment"] == node_metrics.requests_served_incerement
+        assert (
+            data["requests_served_increment"] == node_metrics.requests_served_incerement
+        )
         assert data["time_to_first_token"] == node_metrics.time_to_first_token
         assert data["uptime_increment"] == node_metrics.uptime_increment
         assert "created_at" in data

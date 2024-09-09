@@ -11,7 +11,9 @@ from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
 from distributedinference.domain.node.entities import NodeMetrics
-from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 
 from distributedinference.service.node import websocket_service
@@ -30,7 +32,9 @@ async def test_execute_node_no_model_header():
     with pytest.raises(
         WebSocketRequestValidationError, match='No "Model" header provided'
     ):
-        await websocket_service.execute(websocket, user, None, node_repository, AsyncMock())
+        await websocket_service.execute(
+            websocket, user, None, node_repository, AsyncMock()
+        )
 
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
@@ -49,7 +53,9 @@ async def test_execute_node_no_benchmark():
     with pytest.raises(
         WebSocketRequestValidationError, match="Benchmarking is not completed"
     ):
-        await websocket_service.execute(websocket, user, "model", node_repository, AsyncMock())
+        await websocket_service.execute(
+            websocket, user, "model", node_repository, AsyncMock()
+        )
 
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
@@ -70,7 +76,9 @@ async def test_execute_node_benchmark_too_low():
     with pytest.raises(
         WebSocketRequestValidationError, match="Benchmarking performance is too low"
     ):
-        await websocket_service.execute(websocket, user, "model", node_repository, AsyncMock())
+        await websocket_service.execute(
+            websocket, user, "model", node_repository, AsyncMock()
+        )
 
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
@@ -92,7 +100,9 @@ async def test_execute_node_already_connected():
         WebSocketRequestValidationError,
         match="Node with same API key already connected",
     ):
-        await websocket_service.execute(websocket, user, "model", node_repository, AsyncMock())
+        await websocket_service.execute(
+            websocket, user, "model", node_repository, AsyncMock()
+        )
 
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
@@ -111,7 +121,9 @@ async def test_execute_websocket_disconnect():
         return_value=NodeBenchmark(model_name="model", tokens_per_second=10000)
     )
 
-    await websocket_service.execute(websocket, user, "model", node_repository, metrics_queue_repository)
+    await websocket_service.execute(
+        websocket, user, "model", node_repository, metrics_queue_repository
+    )
 
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
@@ -137,7 +149,9 @@ async def test_execute_metrics_update_after_disconnect():
 
     start_time = time.time()
 
-    await websocket_service.execute(websocket, user, "model", node_repository, metrics_queue_repository)
+    await websocket_service.execute(
+        websocket, user, "model", node_repository, metrics_queue_repository
+    )
 
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
