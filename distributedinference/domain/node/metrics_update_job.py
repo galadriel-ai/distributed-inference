@@ -23,6 +23,7 @@ async def execute(
     while True:
         try:
             await asyncio.sleep(TIMEOUT_BETWEEN_RUNS_SECONDS)
+            logger.debug("Running metrics update job!")
             await _handle_metrics_update(metrics_queue_repository, node_repository)
         except:
             logger.error(

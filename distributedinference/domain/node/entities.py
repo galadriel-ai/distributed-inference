@@ -28,8 +28,6 @@ class NodeMetrics:
     requests_failed: int = 0
     time_to_first_token: Optional[float] = None
     uptime: int = 0
-    # Remove?
-    lock: asyncio.Lock = asyncio.Lock()
 
 
 @dataclass
