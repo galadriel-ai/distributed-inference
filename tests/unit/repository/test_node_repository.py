@@ -1,5 +1,6 @@
 import asyncio
 import time
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -16,13 +17,20 @@ from distributedinference.repository.node_repository import (
 from distributedinference.repository.node_repository import (
     SQL_INSERT_OR_UPDATE_NODE_METRICS,
 )
+from distributedinference.repository.connection import SessionProvider
 
 MAX_PARALLEL_REQUESTS = 10
 
 
 @pytest.fixture
-def node_repository():
-    return NodeRepository(MAX_PARALLEL_REQUESTS)
+def session_provider():
+    mock_session_provider = MagicMock(spec=SessionProvider)
+    return mock_session_provider
+
+
+@pytest.fixture
+def node_repository(session_provider):
+    return NodeRepository(session_provider, MAX_PARALLEL_REQUESTS)
 
 
 @pytest.fixture
@@ -121,7 +129,7 @@ def test_select_node_after_reaching_maximum_parallel_requests(
     assert node_repository.select_node("model") is None
 
 
-async def test_save_node_info(node_repository):
+async def test_save_node_info(node_repository, session_provider):
     node_id = uuid7()
 
     node_info = NodeInfo(
@@ -135,48 +143,59 @@ async def test_save_node_info(node_repository):
         operating_system="Linux",
     )
 
-    with patch("distributedinference.repository.connection.write") as mock_write:
-        await node_repository.save_node_info(node_id, node_info)
-        mock_write.assert_called_once()
-        args, kwargs = mock_write.call_args
+    mock_session = AsyncMock()
+    session_provider.get.return_value.__aenter__.return_value = mock_session
 
-        assert args[0] == SQL_INSERT_OR_UPDATE_NODE_INFO
+    await node_repository.save_node_info(node_id, node_info)
 
-        data = args[1]
-        assert data["user_profile_id"] == node_id
-        assert data["gpu_model"] == node_info.gpu_model
-        assert data["vram"] == node_info.vram
-        assert data["cpu_model"] == node_info.cpu_model
-        assert data["cpu_count"] == node_info.cpu_count
-        assert data["ram"] == node_info.ram
-        assert data["network_download_speed"] == node_info.network_download_speed
-        assert data["network_upload_speed"] == node_info.network_upload_speed
-        assert data["operating_system"] == node_info.operating_system
-        assert "created_at" in data
-        assert "last_updated_at" in data
+    mock_session.execute.assert_called_once()
+    args, kwargs = mock_session.execute.call_args
+
+    assert args[0].text == SQL_INSERT_OR_UPDATE_NODE_INFO
+
+    data = args[1]
+    assert data["user_profile_id"] == node_id
+    assert data["gpu_model"] == node_info.gpu_model
+    assert data["vram"] == node_info.vram
+    assert data["cpu_model"] == node_info.cpu_model
+    assert data["cpu_count"] == node_info.cpu_count
+    assert data["ram"] == node_info.ram
+    assert data["network_download_speed"] == node_info.network_download_speed
+    assert data["network_upload_speed"] == node_info.network_upload_speed
+    assert data["operating_system"] == node_info.operating_system
+    assert "created_at" in data
+    assert "last_updated_at" in data
+
+    mock_session.commit.assert_called_once()
 
 
-async def test_save_node_metrics(node_repository):
+async def test_save_node_metrics(node_repository, session_provider):
     node_id = uuid7()
 
     node_metrics = NodeMetrics(requests_served=100, time_to_first_token=0.5)
 
-    with patch("distributedinference.repository.connection.write") as mock_write:
-        await node_repository.save_node_metrics(node_id, node_metrics)
+    mock_session = AsyncMock()
+    session_provider.get.return_value.__aenter__.return_value = mock_session
 
-        mock_write.assert_called_once()
+    await node_repository.save_node_metrics(node_id, node_metrics)
 
-        args, kwargs = mock_write.call_args
+    mock_session.execute.assert_called_once()
+    args, kwargs = mock_session.execute.call_args
 
-        assert args[0] == SQL_INSERT_OR_UPDATE_NODE_METRICS
+    assert args[0].text == SQL_INSERT_OR_UPDATE_NODE_METRICS
 
-        data = args[1]
-        assert data["user_profile_id"] == node_id
-        assert data["requests_served"] == node_metrics.requests_served
-        assert data["time_to_first_token"] == node_metrics.time_to_first_token
-        assert data["uptime"] == node_metrics.uptime
-        assert "created_at" in data
-        assert "last_updated_at" in data
+    data = args[1]
+    assert data["user_profile_id"] == node_id
+    assert data["requests_served"] == node_metrics.requests_served
+    assert data["requests_successful"] == node_metrics.requests_successful
+    assert data["requests_failed"] == node_metrics.requests_failed
+    assert data["time_to_first_token"] == node_metrics.time_to_first_token
+    assert data["uptime"] == node_metrics.uptime
+    assert "created_at" in data
+    assert "last_updated_at" in data
+
+    # Check if the commit was called
+    mock_session.commit.assert_called_once()
 
 
 def test_select_node_with_busy_nodes(node_repository, connected_node_factory):

@@ -9,7 +9,6 @@ from uuid import UUID
 from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionChunk
 import sqlalchemy
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
@@ -20,7 +19,7 @@ from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import NodeStats
-from distributedinference.repository import connection
+from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
 logger = api_logger.get()
@@ -210,7 +209,10 @@ WHERE ni.user_profile_id = ANY(:user_profile_ids);
 
 class NodeRepository:
 
-    def __init__(self, max_parallel_requests_per_node: int):
+    def __init__(
+        self, session_provider: SessionProvider, max_parallel_requests_per_node: int
+    ):
+        self._session_provider = session_provider
         self._max_parallel_requests_per_node = max_parallel_requests_per_node
         # user_id: ConnectedNode
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
@@ -262,38 +264,38 @@ class NodeRepository:
     def get_connected_node_info(self, user_id: UUID) -> Optional[ConnectedNode]:
         return self._connected_nodes.get(user_id)
 
-    @connection.read_session
     async def get_node_metrics_by_ids(
-        self, user_profile_ids: List[UUID], session: AsyncSession
+        self, user_profile_ids: List[UUID]
     ) -> Dict[UUID, NodeMetrics]:
         data = {"user_profile_ids": user_profile_ids}
-        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data)
-        result = {}
-        for row in rows:
-            result[row.user_profile_id] = NodeMetrics(
-                requests_served=row.requests_served,
-                requests_successful=row.requests_successful,
-                requests_failed=row.requests_failed,
-                time_to_first_token=row.time_to_first_token,
-                uptime=row.uptime,
+        async with self._session_provider.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data
             )
-        return result
+            result = {}
+            for row in rows:
+                result[row.user_profile_id] = NodeMetrics(
+                    requests_served=row.requests_served,
+                    requests_successful=row.requests_successful,
+                    requests_failed=row.requests_failed,
+                    time_to_first_token=row.time_to_first_token,
+                    uptime=row.uptime,
+                )
+            return result
 
-    @connection.read_session
-    async def get_node_metrics(
-        self, node_id: UUID, session: AsyncSession
-    ) -> Optional[NodeMetrics]:
+    async def get_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
         data = {"user_profile_id": node_id}
-        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS), data)
-        for row in rows:
-            return NodeMetrics(
-                requests_served=row.requests_served,
-                requests_successful=row.requests_successful,
-                requests_failed=row.requests_failed,
-                time_to_first_token=row.time_to_first_token,
-                uptime=row.uptime,
-            )
-        return None
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS), data)
+            for row in rows:
+                return NodeMetrics(
+                    requests_served=row.requests_served,
+                    requests_successful=row.requests_successful,
+                    requests_failed=row.requests_failed,
+                    time_to_first_token=row.time_to_first_token,
+                    uptime=row.uptime,
+                )
+            return None
 
     async def save_node_metrics(self, node_id: UUID, metrics: NodeMetrics):
         data = {
@@ -307,26 +309,28 @@ class NodeRepository:
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
-        await connection.write(SQL_INSERT_OR_UPDATE_NODE_METRICS, data)
-
-    @connection.read_session
-    async def get_node_info(
-        self, user_id: UUID, session: AsyncSession
-    ) -> Optional[NodeInfo]:
-        data = {"user_profile_id": user_id}
-        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_INFO), data)
-        for row in rows:
-            return NodeInfo(
-                gpu_model=row.gpu_model,
-                vram=row.vram,
-                cpu_model=row.cpu_model,
-                cpu_count=row.cpu_count,
-                ram=row.ram,
-                network_download_speed=row.network_download_speed,
-                network_upload_speed=row.network_upload_speed,
-                operating_system=row.operating_system,
-                created_at=row.created_at,
+        async with self._session_provider.get() as session:
+            await session.execute(
+                sqlalchemy.text(SQL_INSERT_OR_UPDATE_NODE_METRICS), data
             )
+            await session.commit()
+
+    async def get_node_info(self, user_id: UUID) -> Optional[NodeInfo]:
+        data = {"user_profile_id": user_id}
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_INFO), data)
+            for row in rows:
+                return NodeInfo(
+                    gpu_model=row.gpu_model,
+                    vram=row.vram,
+                    cpu_model=row.cpu_model,
+                    cpu_count=row.cpu_count,
+                    ram=row.ram,
+                    network_download_speed=row.network_download_speed,
+                    network_upload_speed=row.network_upload_speed,
+                    operating_system=row.operating_system,
+                    created_at=row.created_at,
+                )
         return None
 
     async def save_node_info(self, user_profile_id: UUID, info: NodeInfo):
@@ -344,56 +348,55 @@ class NodeRepository:
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
-        await connection.write(SQL_INSERT_OR_UPDATE_NODE_INFO, data)
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT_OR_UPDATE_NODE_INFO), data)
+            await session.commit()
 
-    @connection.read_session
     async def get_node_benchmark(
-        self, user_id: UUID, model_name: str, session: AsyncSession
+        self, user_id: UUID, model_name: str
     ) -> Optional[NodeBenchmark]:
         data = {"user_profile_id": user_id, "model_name": model_name}
-        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_BENCHMARK), data)
-        for row in rows:
-            return NodeBenchmark(
-                model_name=row.model_name,
-                tokens_per_second=row.tokens_per_second,
-            )
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_BENCHMARK), data)
+            for row in rows:
+                return NodeBenchmark(
+                    model_name=row.model_name,
+                    tokens_per_second=row.tokens_per_second,
+                )
         return None
 
-    @connection.read_session
-    async def get_node_stats(
-        self, user_id: UUID, session: AsyncSession
-    ) -> Optional[NodeStats]:
+    async def get_node_stats(self, user_id: UUID) -> Optional[NodeStats]:
         data = {"user_profile_id": user_id}
-        rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATS), data)
-        for row in rows:
-            return NodeStats(
-                requests_served=row.requests_served,
-                average_time_to_first_token=row.time_to_first_token,
-                benchmark_tokens_per_second=row.benchmark_tokens_per_second,
-                benchmark_model_name=row.benchmark_model_name,
-                benchmark_created_at=row.benchmark_created_at,
-            )
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATS), data)
+            for row in rows:
+                return NodeStats(
+                    requests_served=row.requests_served,
+                    average_time_to_first_token=row.time_to_first_token,
+                    benchmark_tokens_per_second=row.benchmark_tokens_per_second,
+                    benchmark_model_name=row.benchmark_model_name,
+                    benchmark_created_at=row.benchmark_created_at,
+                )
         return None
 
-    @connection.read_session
-    async def get_nodes_count(self, session: AsyncSession) -> int:
-        data = {}
-        rows = await session.execute(sqlalchemy.text(SQL_GET_NODES_COUNT), data)
-        for row in rows:
-            return row.node_count
+    async def get_nodes_count(self) -> int:
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_NODES_COUNT))
+            for row in rows:
+                return row.node_count
         return 0
 
-    @connection.read_session
-    async def get_network_throughput(self, session: AsyncSession) -> float:
+    async def get_network_throughput(self) -> float:
         connected_user_profile_ids = self.get_connected_node_ids()
         if not connected_user_profile_ids:
             return 0
         data = {"user_profile_ids": tuple([str(i) for i in connected_user_profile_ids])}
-        rows = await session.execute(
-            sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_SUM), data
-        )
-        for row in rows:
-            return row.benchmark_sum
+        async with self._session_provider.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_SUM), data
+            )
+            for row in rows:
+                return row.benchmark_sum
         return 0
 
     async def save_node_benchmark(
@@ -407,7 +410,11 @@ class NodeRepository:
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
-        await connection.write(SQL_INSERT_OR_UPDATE_NODE_BENCHMARK, data)
+        async with self._session_provider.get() as session:
+            await session.execute(
+                sqlalchemy.text(SQL_INSERT_OR_UPDATE_NODE_BENCHMARK), data
+            )
+            await session.commit()
 
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest

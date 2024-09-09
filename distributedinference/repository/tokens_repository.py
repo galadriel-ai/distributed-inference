@@ -5,10 +5,9 @@ from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid_extensions import uuid7
 
-from distributedinference.repository import connection
+from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
 SQL_INSERT_USAGE_TOKENS = """
@@ -81,6 +80,9 @@ class UsageNodeModelTotalTokens:
 
 class TokensRepository:
 
+    def __init__(self, session_provider: SessionProvider):
+        self._session_provider = session_provider
+
     async def insert_usage_tokens(self, ut: UsageTokens):
         data = {
             "id": uuid7(),
@@ -93,46 +95,48 @@ class TokensRepository:
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
-        await connection.write(SQL_INSERT_USAGE_TOKENS, data)
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT_USAGE_TOKENS), data)
+            await session.commit()
 
-    @connection.read_session
     async def get_user_latest_usage_tokens(
-        self, node_id: UUID, count: int, session: AsyncSession
+        self, node_id: UUID, count: int
     ) -> List[UsageTokens]:
         data = {"user_profile_id": node_id, "count": count}
-        rows = await session.execute(
-            sqlalchemy.text(SQL_GET_USER_LATEST_USAGE_TOKENS), data
-        )
         tokens = []
-        for row in rows:
-            tokens.append(
-                UsageTokens(
-                    consumer_user_profile_id=row.consumer_user_profile_id,
-                    producer_user_profile_id=row.producer_user_profile_id,
-                    model_name=row.model_name,
-                    prompt_tokens=row.prompt_tokens,
-                    completion_tokens=row.completion_tokens,
-                    total_tokens=row.total_tokens,
-                    created_at=row.created_at,
-                )
+        async with self._session_provider.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_USER_LATEST_USAGE_TOKENS), data
             )
+            for row in rows:
+                tokens.append(
+                    UsageTokens(
+                        consumer_user_profile_id=row.consumer_user_profile_id,
+                        producer_user_profile_id=row.producer_user_profile_id,
+                        model_name=row.model_name,
+                        prompt_tokens=row.prompt_tokens,
+                        completion_tokens=row.completion_tokens,
+                        total_tokens=row.total_tokens,
+                        created_at=row.created_at,
+                    )
+                )
         return tokens
 
-    @connection.read_session
     async def get_total_tokens_by_node_ids(
-        self, node_ids: List[UUID], session: AsyncSession
+        self, node_ids: List[UUID]
     ) -> List[UsageNodeModelTotalTokens]:
         data = {"node_ids": node_ids}
-        rows = await session.execute(
-            sqlalchemy.text(SQL_GET_TOTAL_TOKENS_BY_NODE_IDS), data
-        )
         tokens = []
-        for row in rows:
-            tokens.append(
-                UsageNodeModelTotalTokens(
-                    node_uid=row.producer_user_profile_id,
-                    model_name=row.model_name,
-                    total_tokens=row.total_tokens,
-                )
+        async with self._session_provider.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_TOTAL_TOKENS_BY_NODE_IDS), data
             )
+            for row in rows:
+                tokens.append(
+                    UsageNodeModelTotalTokens(
+                        node_uid=row.producer_user_profile_id,
+                        model_name=row.model_name,
+                        total_tokens=row.total_tokens,
+                    )
+                )
         return tokens

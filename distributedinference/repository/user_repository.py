@@ -2,11 +2,10 @@ from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid_extensions import uuid7
 
 from distributedinference.domain.user.entities import User
-from distributedinference.repository import connection
+from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
 SQL_INSERT = """
@@ -58,6 +57,9 @@ WHERE ak.api_key = :api_key;
 
 class UserRepository:
 
+    def __init__(self, session_provider: SessionProvider):
+        self._session_provider = session_provider
+
     async def insert_user(
         self,
         user: User,
@@ -69,7 +71,9 @@ class UserRepository:
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
-        await connection.write(SQL_INSERT, data)
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT), data)
+            await session.commit()
 
     async def insert_api_key(self, user_id: UUID, api_key: str) -> UUID:
         api_key_id = uuid7()
@@ -80,19 +84,19 @@ class UserRepository:
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
-        await connection.write(SQL_INSERT_API_KEY, data)
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT_API_KEY), data)
+            await session.commit()
         return api_key_id
 
-    @connection.read_session
-    async def get_user_by_api_key(
-        self, api_key: str, session: AsyncSession
-    ) -> Optional[User]:
+    async def get_user_by_api_key(self, api_key: str) -> Optional[User]:
         data = {"api_key": api_key}
-        rows = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
-        for row in rows:
-            return User(
-                uid=row.id,
-                name=row.name,
-                email=row.email,
-            )
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
+            for row in rows:
+                return User(
+                    uid=row.id,
+                    name=row.name,
+                    email=row.email,
+                )
         return None
