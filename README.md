@@ -10,6 +10,10 @@ Requirements to run:
 pip install -r requirements.txt
 ```
 
+### Setup database
+
+Check README in database/README.md
+
 ### Run
 
 ```
