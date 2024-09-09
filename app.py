@@ -1,10 +1,16 @@
+import asyncio
+
+from fastapi import Depends
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 import settings
+from distributedinference import dependencies
+from distributedinference.domain.node import metrics_update_job
 from distributedinference.repository import connection
+from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
 from distributedinference.routers import main_router
 from distributedinference.service.exception_handlers.exception_handlers import (
     custom_exception_handler,
@@ -105,3 +111,12 @@ def get_api_info() -> ApiInfo:
 )
 def root():
     return get_api_info()
+
+
+@app.on_event("startup")
+async def start_scheduler():
+    asyncio.create_task(
+        metrics_update_job.execute(
+            dependencies.get_metrics_queue_repository(),
+            dependencies.get_node_repository(),
+        ))

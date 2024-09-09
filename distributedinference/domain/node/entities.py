@@ -12,12 +12,23 @@ from openai.types.chat import CompletionCreateParams
 
 
 @dataclass
+class NodeMetricsIncrement:
+    node_id: UUID
+    requests_served_incerement: int = 0
+    requests_successful_incerement: int = 0
+    requests_failed_increment: int = 0
+    time_to_first_token: Optional[float] = None
+    uptime_increment: int = 0
+
+
+@dataclass
 class NodeMetrics:
     requests_served: int = 0
     requests_successful: int = 0
     requests_failed: int = 0
     time_to_first_token: Optional[float] = None
     uptime: int = 0
+    # Remove?
     lock: asyncio.Lock = asyncio.Lock()
 
 
@@ -57,7 +68,6 @@ class ConnectedNode:
     connected_at: int
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
-    metrics: NodeMetrics
 
     def active_requests_count(self) -> int:
         return len(self.request_incoming_queues)

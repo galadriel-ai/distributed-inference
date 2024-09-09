@@ -8,13 +8,13 @@ from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
-    SQL_INSERT_OR_UPDATE_NODE_INFO,
+    SQL_INCREMENT_NODE_METRICS,
 )
 from distributedinference.repository.node_repository import (
-    SQL_INSERT_OR_UPDATE_NODE_METRICS,
+    SQL_INSERT_OR_UPDATE_NODE_INFO,
 )
 
 MAX_PARALLEL_REQUESTS = 10
@@ -34,7 +34,7 @@ def mock_websocket():
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
         return ConnectedNode(
-            uid, model, int(time.time()), mock_websocket, {}, MagicMock()
+            uid, model, int(time.time()), mock_websocket, {}
         )
 
     return _create_node
@@ -159,22 +159,22 @@ async def test_save_node_info(node_repository):
 async def test_save_node_metrics(node_repository):
     node_id = uuid7()
 
-    node_metrics = NodeMetrics(requests_served=100, time_to_first_token=0.5)
+    node_metrics = NodeMetricsIncrement(node_id=node_id, requests_served_incerement=100, time_to_first_token=0.5)
 
     with patch("distributedinference.repository.connection.write") as mock_write:
-        await node_repository.save_node_metrics(node_id, node_metrics)
+        await node_repository.increment_node_metrics(node_metrics)
 
         mock_write.assert_called_once()
 
         args, kwargs = mock_write.call_args
 
-        assert args[0] == SQL_INSERT_OR_UPDATE_NODE_METRICS
+        assert args[0] == SQL_INCREMENT_NODE_METRICS
 
         data = args[1]
         assert data["user_profile_id"] == node_id
-        assert data["requests_served"] == node_metrics.requests_served
+        assert data["requests_served_increment"] == node_metrics.requests_served_incerement
         assert data["time_to_first_token"] == node_metrics.time_to_first_token
-        assert data["uptime"] == node_metrics.uptime
+        assert data["uptime_increment"] == node_metrics.uptime_increment
         assert "created_at" in data
         assert "last_updated_at" in data
 

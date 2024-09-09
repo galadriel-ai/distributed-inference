@@ -7,6 +7,7 @@ from fastapi.exceptions import WebSocketRequestValidationError
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
@@ -40,6 +41,7 @@ async def websocket_endpoint(
     websocket: WebSocket,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    metrics_queue_repository: MetricsQueueRepository = Depends(dependencies.get_metrics_queue_repository),
 ):
     user = await authentication.validate_api_key(
         websocket.headers.get("Authorization"),
@@ -49,7 +51,7 @@ async def websocket_endpoint(
         raise WebSocketRequestValidationError("Authorization header is required")
 
     await websocket_service.execute(
-        websocket, user, websocket.headers.get("Model"), node_repository
+        websocket, user, websocket.headers.get("Model"), node_repository, metrics_queue_repository
     )
 
 
