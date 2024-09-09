@@ -12,11 +12,7 @@ pip install -r requirements.txt
 
 ### Setup database
 
-```
-cd database
-docker-compose up --build -d
-alembic upgrade head
-```
+Check README in database/README.md
 
 ### Run
 
