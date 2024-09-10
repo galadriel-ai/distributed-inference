@@ -8,7 +8,7 @@ import settings
 
 connection = {}
 
-DEFAULT_POOL_SIZE = 10
+DEFAULT_POOL_SIZE = 50
 DEFAULT_POOL_OVERFLOW = 100
 DEFAULT_POOL_TIMEOUT = 3
 
