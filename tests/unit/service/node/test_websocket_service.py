@@ -141,7 +141,7 @@ async def test_execute_metrics_update_after_disconnect():
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_repository.register_node = Mock(return_value=True)
-    node_repository.save_node_metrics = AsyncMock()
+    node_repository.increment_node_metrics = AsyncMock()
     node_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(model_name="model", tokens_per_second=10000)
     )

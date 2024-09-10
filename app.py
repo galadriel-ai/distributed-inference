@@ -19,11 +19,11 @@ from distributedinference.service.middleware.request_enrichment_middleware impor
     RequestEnrichmentMiddleware,
 )
 
-connection.init_defaults()
-
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    connection.init_defaults()
+    dependencies.init_globals()
     asyncio.create_task(
         metrics_update_job.execute(
             dependencies.get_metrics_queue_repository(),
