@@ -92,8 +92,9 @@ class UserRepository:
     async def get_user_by_api_key(self, api_key: str) -> Optional[User]:
         data = {"api_key": api_key}
         async with self._session_provider.get() as session:
-            rows = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
-            for row in rows:
+            result = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
+            row = result.first()
+            if row:
                 return User(
                     uid=row.id,
                     name=row.name,
