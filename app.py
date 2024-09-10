@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
@@ -20,7 +21,19 @@ from distributedinference.service.middleware.request_enrichment_middleware impor
 
 connection.init_defaults()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    asyncio.create_task(
+        metrics_update_job.execute(
+            dependencies.get_metrics_queue_repository(),
+            dependencies.get_node_repository(),
+        )
+    )
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(
     main_router.router,
@@ -109,13 +122,3 @@ def get_api_info() -> ApiInfo:
 )
 def root():
     return get_api_info()
-
-
-@app.on_event("startup")
-async def start_metrics_queue_job():
-    asyncio.create_task(
-        metrics_update_job.execute(
-            dependencies.get_metrics_queue_repository(),
-            dependencies.get_node_repository(),
-        )
-    )
