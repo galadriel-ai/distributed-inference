@@ -1,0 +1,84 @@
+from unittest.mock import AsyncMock
+
+from uuid_extensions import uuid7
+
+from distributedinference.domain.node import metrics_update_job as job
+from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.repository.node_repository import NodeRepository
+
+
+class MockRepository:
+    def __init__(self, metrics):
+        self.metrics = metrics
+        self.index = 0
+
+    def get(self):
+        metrics = None
+        if self.index < len(self.metrics):
+            metrics = self.metrics[self.index]
+        self.index += 1
+        return metrics
+
+
+async def test_success_one():
+    node_id = uuid7()
+    metrics_queue_repository = MockRepository(
+        [
+            NodeMetricsIncrement(
+                node_id=node_id,
+                requests_served_incerement=12,
+                requests_successful_incerement=11,
+                requests_failed_increment=1,
+            )
+        ]
+    )
+
+    metrics_queue_repository.get = metrics_queue_repository.get
+    node_repository = AsyncMock(spec=NodeRepository)
+
+    await job._handle_metrics_update(metrics_queue_repository, node_repository)
+    node_repository.increment_node_metrics.assert_called_once_with(
+        NodeMetricsIncrement(
+            node_id=node_id,
+            requests_served_incerement=12,
+            requests_successful_incerement=11,
+            requests_failed_increment=1,
+            time_to_first_token=None,
+            uptime_increment=0,
+        )
+    )
+
+
+async def test_success_aggregates():
+    node_id = uuid7()
+    metrics_queue_repository = MockRepository(
+        [
+            NodeMetricsIncrement(
+                node_id=node_id,
+                requests_served_incerement=1,
+                requests_successful_incerement=1,
+                requests_failed_increment=0,
+            ),
+            NodeMetricsIncrement(
+                node_id=node_id,
+                requests_served_incerement=1,
+                requests_successful_incerement=0,
+                requests_failed_increment=1,
+            ),
+        ]
+    )
+
+    metrics_queue_repository.get = metrics_queue_repository.get
+    node_repository = AsyncMock(spec=NodeRepository)
+
+    await job._handle_metrics_update(metrics_queue_repository, node_repository)
+    node_repository.increment_node_metrics.assert_called_once_with(
+        NodeMetricsIncrement(
+            node_id=node_id,
+            requests_served_incerement=2,
+            requests_successful_incerement=1,
+            requests_failed_increment=1,
+            time_to_first_token=None,
+            uptime_increment=0,
+        )
+    )

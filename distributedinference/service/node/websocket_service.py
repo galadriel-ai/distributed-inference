@@ -1,6 +1,7 @@
 import json
 import time
 from typing import Optional
+from uuid import UUID
 
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -9,8 +10,11 @@ from fastapi.exceptions import WebSocketRequestValidationError
 import settings
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 
 logger = api_logger.get()
@@ -21,6 +25,7 @@ async def execute(
     user: User,
     model_name: Optional[str],
     node_repository: NodeRepository,
+    metrics_queue_repository: MetricsQueueRepository,
 ):
     logger.info(f"Node, with user id {user.uid}, trying to connect")
     await websocket.accept()
@@ -34,14 +39,12 @@ async def execute(
         raise WebSocketRequestValidationError("Benchmarking performance is too low")
 
     node_id = user.uid
-    node_metrics = await node_repository.get_node_metrics(node_id) or NodeMetrics()
     node = ConnectedNode(
         uid=node_id,
         model=model_name,
         connected_at=int(time.time()),
         websocket=websocket,
         request_incoming_queues={},
-        metrics=node_metrics,
     )
     logger.info(f"Node {node_id} connected")
     connect_time = time.time()
@@ -63,10 +66,24 @@ async def execute(
                 await node.request_incoming_queues[request_id].put(parsed_data)
             except KeyError:
                 logger.error(f"Received chunk for unknown request {request_id}")
+    except WebSocketRequestValidationError as e:
+        node_repository.deregister_node(node_id)
+        uptime = int(time.time() - connect_time)
+        await _increment_uptime(node.uid, uptime, metrics_queue_repository)
+        logger.info(f"Node {node_id} disconnected, because of invalid JSON")
+        raise e
     except WebSocketDisconnect:
         node_repository.deregister_node(node_id)
         uptime = int(time.time() - connect_time)
-        async with node.metrics.lock:
-            node.metrics.uptime += uptime
-        await node_repository.save_node_metrics(node_id, node.metrics)
+        await _increment_uptime(node.uid, uptime, metrics_queue_repository)
         logger.info(f"Node {node_id} disconnected")
+
+
+async def _increment_uptime(
+    node_id: UUID,
+    uptime: int,
+    metrics_queue_repository: MetricsQueueRepository,
+) -> None:
+    node_metrics_increment = NodeMetricsIncrement(node_id=node_id)
+    node_metrics_increment.uptime_increment += uptime
+    await metrics_queue_repository.push(node_metrics_increment)

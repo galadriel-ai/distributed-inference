@@ -54,7 +54,6 @@ async def test_execute_success():
         connected_at=1337,
         websocket=MagicMock(),
         request_incoming_queues={},
-        metrics=MagicMock(),
     )
     response = await service.execute(user, mock_repository)
     mock_repository.get_node_info.assert_called_once_with(user.uid)
