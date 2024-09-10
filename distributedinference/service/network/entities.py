@@ -1,6 +1,12 @@
-from typing import Dict
+from typing import List
+
 from pydantic import BaseModel
 from pydantic import Field
+
+
+class NetworkModelStats(BaseModel):
+    model_name: str = Field(description="Model name")
+    throughput: str = Field(description="Throughput in tokens/second")
 
 
 class NetworkStatsResponse(BaseModel):
@@ -9,6 +15,6 @@ class NetworkStatsResponse(BaseModel):
     network_throughput: str = Field(
         description="Current network throughput in tokens/second"
     )
-    network_throughput_by_model: Dict = Field(
+    network_models_stats: List[NetworkModelStats] = Field(
         description="Current network throughput per model in tokens/second"
     )
