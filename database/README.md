@@ -4,19 +4,9 @@ Manage databases schemas and migrations
 
 ## Setup
 
-Install or update
-
+(Use the same python env as the API)
 ```shell
-conda env update -f environment.yml
-```
-
-Initialise environment
-
-```shell
-pip install -r requirements.txt
-```
-
-```shell
+cd database
 cp template.env .env
 ```
 
@@ -25,7 +15,7 @@ cp template.env .env
 Postgres databases can be run in docker locally:
 
 ```shell
-docker-compose up
+docker-compose up --build -d
 ```
 
 Init databases locally:

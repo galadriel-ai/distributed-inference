@@ -1,22 +1,19 @@
-import asyncio
 import time
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
-from distributedinference.domain.node.entities import (
-    ConnectedNode,
-    NodeMetrics,
-    InferenceRequest,
-    InferenceResponse,
-)
 from distributedinference.domain.node import run_inference_use_case as use_case
+from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import InferenceRequest
+from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
-from distributedinference.service.completions.entities import Message
 from distributedinference.service.completions.entities import ChatCompletionRequest
+from distributedinference.service.completions.entities import Message
 from distributedinference.service.completions.entities import StreamOptions
 
 USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
@@ -30,9 +27,7 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(
-            uid, model, int(time.time()), mock_websocket, {}, NodeMetrics()
-        )
+        return ConnectedNode(uid, model, int(time.time()), mock_websocket, {})
 
     return _create_node
 
@@ -71,7 +66,7 @@ async def test_success(connected_node_factory):
 
     responses = []
     async for response in use_case.execute(
-        USER_UUID, request, mock_node_repository, mock_tokens_repository
+        USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
     ):
         responses.append(response)
 
@@ -99,7 +94,11 @@ async def test_no_nodes():
 
     with pytest.raises(NoAvailableNodesError):
         async for response in use_case.execute(
-            USER_UUID, request, mock_node_repository, mock_tokens_repository
+            USER_UUID,
+            request,
+            mock_node_repository,
+            mock_tokens_repository,
+            AsyncMock(),
         ):
             pass
 
@@ -143,7 +142,7 @@ async def test_streaming_no_usage(connected_node_factory):
 
     responses = []
     async for response in use_case.execute(
-        USER_UUID, request, mock_node_repository, mock_tokens_repository
+        USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
     ):
         responses.append(response)
 
@@ -197,7 +196,7 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
 
     responses = []
     async for response in use_case.execute(
-        USER_UUID, request, mock_node_repository, mock_tokens_repository
+        USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
     ):
         responses.append(response)
 

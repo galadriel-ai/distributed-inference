@@ -9,13 +9,13 @@ from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
-    SQL_INSERT_OR_UPDATE_NODE_INFO,
+    SQL_INCREMENT_NODE_METRICS,
 )
 from distributedinference.repository.node_repository import (
-    SQL_INSERT_OR_UPDATE_NODE_METRICS,
+    SQL_INSERT_OR_UPDATE_NODE_INFO,
 )
 from distributedinference.repository.connection import SessionProvider
 
@@ -41,9 +41,7 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(
-            uid, model, int(time.time()), mock_websocket, {}, MagicMock()
-        )
+        return ConnectedNode(uid, model, int(time.time()), mock_websocket, {})
 
     return _create_node
 
@@ -172,25 +170,30 @@ async def test_save_node_info(node_repository, session_provider):
 async def test_save_node_metrics(node_repository, session_provider):
     node_id = uuid7()
 
-    node_metrics = NodeMetrics(requests_served=100, time_to_first_token=0.5)
+    node_metrics = NodeMetricsIncrement(
+        node_id=node_id, requests_served_incerement=100, time_to_first_token=0.5
+    )
 
     mock_session = AsyncMock()
     session_provider.get.return_value.__aenter__.return_value = mock_session
 
-    await node_repository.save_node_metrics(node_id, node_metrics)
+    await node_repository.increment_node_metrics(node_metrics)
 
     mock_session.execute.assert_called_once()
     args, kwargs = mock_session.execute.call_args
 
-    assert args[0].text == SQL_INSERT_OR_UPDATE_NODE_METRICS
+    assert args[0].text == SQL_INCREMENT_NODE_METRICS
 
     data = args[1]
     assert data["user_profile_id"] == node_id
-    assert data["requests_served"] == node_metrics.requests_served
-    assert data["requests_successful"] == node_metrics.requests_successful
-    assert data["requests_failed"] == node_metrics.requests_failed
+    assert data["requests_served_increment"] == node_metrics.requests_served_incerement
+    assert (
+        data["requests_successful_increment"]
+        == node_metrics.requests_successful_incerement
+    )
+    assert data["requests_failed_increment"] == node_metrics.requests_failed_increment
     assert data["time_to_first_token"] == node_metrics.time_to_first_token
-    assert data["uptime"] == node_metrics.uptime
+    assert data["uptime_increment"] == node_metrics.uptime_increment
     assert "created_at" in data
     assert "last_updated_at" in data
 

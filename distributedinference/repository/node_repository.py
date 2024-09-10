@@ -18,6 +18,7 @@ from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.entities import NodeStats
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
@@ -54,7 +55,7 @@ FROM node_metrics
 WHERE user_profile_id = ANY(:user_profile_ids);
 """
 
-SQL_INSERT_OR_UPDATE_NODE_METRICS = """
+SQL_INCREMENT_NODE_METRICS = """
 INSERT INTO node_metrics (
     id,
     user_profile_id,
@@ -68,20 +69,20 @@ INSERT INTO node_metrics (
 ) VALUES (
     :id,
     :user_profile_id,
-    :requests_served,
-    :requests_successful,
-    :requests_failed,
+    :requests_served_increment,
+    :requests_successful_increment,
+    :requests_failed_increment,
     :time_to_first_token,
-    :uptime,
+    :uptime_increment,
     :created_at,
     :last_updated_at
 )
 ON CONFLICT (user_profile_id) DO UPDATE SET
-    requests_served = EXCLUDED.requests_served,
-    requests_successful = EXCLUDED.requests_successful,
-    requests_failed = EXCLUDED.requests_failed,
-    time_to_first_token = EXCLUDED.time_to_first_token,
-    uptime = EXCLUDED.uptime,
+    requests_served = node_metrics.requests_served + EXCLUDED.requests_served,
+    requests_successful = node_metrics.requests_successful + EXCLUDED.requests_successful,
+    requests_failed = node_metrics.requests_failed + EXCLUDED.requests_failed,
+    time_to_first_token = COALESCE(EXCLUDED.time_to_first_token, node_metrics.time_to_first_token),
+    uptime = node_metrics.uptime + EXCLUDED.uptime,
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
@@ -283,36 +284,20 @@ class NodeRepository:
                 )
             return result
 
-    async def get_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
-        data = {"user_profile_id": node_id}
-        async with self._session_provider.get() as session:
-            rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS), data)
-            for row in rows:
-                return NodeMetrics(
-                    requests_served=row.requests_served,
-                    requests_successful=row.requests_successful,
-                    requests_failed=row.requests_failed,
-                    time_to_first_token=row.time_to_first_token,
-                    uptime=row.uptime,
-                )
-            return None
-
-    async def save_node_metrics(self, node_id: UUID, metrics: NodeMetrics):
+    async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
         data = {
             "id": str(uuid7()),
-            "user_profile_id": node_id,
-            "requests_served": metrics.requests_served,
-            "requests_successful": metrics.requests_successful,
-            "requests_failed": metrics.requests_failed,
+            "user_profile_id": metrics.node_id,
+            "requests_served_increment": metrics.requests_served_incerement,
+            "requests_successful_increment": metrics.requests_successful_incerement,
+            "requests_failed_increment": metrics.requests_failed_increment,
             "time_to_first_token": metrics.time_to_first_token,
-            "uptime": metrics.uptime,
+            "uptime_increment": metrics.uptime_increment,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            await session.execute(
-                sqlalchemy.text(SQL_INSERT_OR_UPDATE_NODE_METRICS), data
-            )
+            await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
             await session.commit()
 
     async def get_node_info(self, user_id: UUID) -> Optional[NodeInfo]:

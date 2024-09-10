@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -7,6 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 import settings
 from distributedinference import dependencies
+from distributedinference.domain.node import metrics_update_job
 from distributedinference.repository import connection
 from distributedinference.routers import main_router
 from distributedinference.service.exception_handlers.exception_handlers import (
@@ -19,9 +21,15 @@ from distributedinference.service.middleware.request_enrichment_middleware impor
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     connection.init_defaults()
     dependencies.init_globals()
+    asyncio.create_task(
+        metrics_update_job.execute(
+            dependencies.get_metrics_queue_repository(),
+            dependencies.get_node_repository(),
+        )
+    )
     yield
 
 

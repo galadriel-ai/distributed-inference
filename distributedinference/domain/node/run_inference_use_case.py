@@ -5,9 +5,13 @@ from uuid import UUID
 
 from openai.types import CompletionUsage
 
-from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.domain.node.exceptions import NoAvailableNodesError
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
@@ -18,13 +22,16 @@ async def execute(
     request: InferenceRequest,
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
+    metrics_queue_repository: MetricsQueueRepository,
 ) -> AsyncGenerator[InferenceResponse, None]:
     node = node_repository.select_node(request.model)
     if not node:
         raise NoAvailableNodesError()
     await node_repository.send_inference_request(node.uid, request)
-    async with node.metrics.lock:
-        node.metrics.requests_served += 1
+
+    metrics_increment = NodeMetricsIncrement(node_id=node.uid)
+
+    metrics_increment.requests_served_incerement += 1
     is_stream = bool(request.chat_request.get("stream"))
     is_include_usage: bool = bool(
         (request.chat_request.get("stream_options") or {}).get("include_usage")
@@ -60,15 +67,14 @@ async def execute(
             await _save_result(
                 user_uid, node.uid, request.model, usage, tokens_repository
             )
-        async with node.metrics.lock:
-            # set only if we got at least one token
-            if first_token_time is not None:
-                node.metrics.time_to_first_token = first_token_time
-            if request_successful:
-                node.metrics.requests_successful += 1
-            else:
-                node.metrics.requests_failed += 1
-        await node_repository.save_node_metrics(node.uid, node.metrics)
+        # set only if we got at least one token
+        if first_token_time is not None:
+            metrics_increment.time_to_first_token = first_token_time
+        if request_successful:
+            metrics_increment.requests_successful_incerement += 1
+        else:
+            metrics_increment.requests_failed_increment += 1
+        await metrics_queue_repository.push(metrics_increment)
 
 
 async def _save_result(

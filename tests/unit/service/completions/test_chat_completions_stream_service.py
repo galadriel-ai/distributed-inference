@@ -1,5 +1,6 @@
 import json
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from uuid import UUID
 
@@ -83,6 +84,7 @@ async def test_success():
         ),
         MagicMock(),
         MagicMock(),
+        AsyncMock(),
     )
 
     chunks = []
