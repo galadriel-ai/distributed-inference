@@ -208,6 +208,17 @@ LEFT JOIN node_info ni on nb.node_id = ni.id
 WHERE ni.user_profile_id = ANY(:user_profile_ids);
 """
 
+SQL_GET_BENCHMARK_TOKENS_BY_MODEL = """
+SELECT 
+    nb.model_name,
+    SUM(nb.tokens_per_second) AS total_tokens_per_second
+FROM node_benchmark nb
+LEFT JOIN node_info ni ON nb.node_id = ni.id
+WHERE ni.user_profile_id = ANY(:user_profile_ids)
+GROUP BY nb.model_name
+ORDER BY total_tokens_per_second DESC;
+"""
+
 
 class NodeRepository:
 
@@ -380,6 +391,19 @@ class NodeRepository:
         for row in rows:
             return row.benchmark_sum
         return 0
+
+    @connection.read_session
+    async def get_network_throughput_by_model(
+        self, session: AsyncSession
+    ) -> Dict[str, float]:
+        connected_user_profile_ids = self.get_connected_node_ids()
+        if not connected_user_profile_ids:
+            return {}
+        data = {"user_profile_ids": tuple([str(i) for i in connected_user_profile_ids])}
+        rows = await session.execute(
+            sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_BY_MODEL), data
+        )
+        return {row.model_name: row.total_tokens_per_second for row in rows}
 
     async def save_node_benchmark(
         self, user_profile_id: UUID, benchmark: NodeBenchmark

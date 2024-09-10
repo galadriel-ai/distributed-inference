@@ -6,10 +6,14 @@ async def execute(repository: NodeRepository) -> NetworkStatsResponse:
     nodes_count = await repository.get_nodes_count()
     connected_nodes_count = repository.get_connected_nodes_count()
     throughput = 0
+    throughput_by_model = {}
     if connected_nodes_count:
         throughput = await repository.get_network_throughput()
+        throughput_by_model = await repository.get_network_throughput_by_model()
+
     return NetworkStatsResponse(
         nodes_count=nodes_count,
         connected_nodes_count=connected_nodes_count,
         network_throughput=throughput,
+        network_throughput_by_model=throughput_by_model,
     )
