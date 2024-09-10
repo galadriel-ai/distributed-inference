@@ -21,7 +21,7 @@ async def test_success():
         connected_nodes_count=1,
         network_throughput="321.123 tps",
         network_throughput_by_model={
-            "model1": "100.000 tps",
+            "model1": "100.0 tps",
             "model2": "221.123 tps",
         },
     )
