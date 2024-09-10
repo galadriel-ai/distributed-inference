@@ -19,10 +19,10 @@ async def test_success():
     expected_response = NetworkStatsResponse(
         nodes_count=2,
         connected_nodes_count=1,
-        network_throughput=321.123,
+        network_throughput="321.123 tps",
         network_throughput_by_model={
-            "model1": 100.0,
-            "model2": 221.123,
+            "model1": "100.000 tps",
+            "model2": "221.123 tps",
         },
     )
     assert response == expected_response

@@ -11,9 +11,18 @@ async def execute(repository: NodeRepository) -> NetworkStatsResponse:
         throughput = await repository.get_network_throughput()
         throughput_by_model = await repository.get_network_throughput_by_model()
 
+    formatted_throughput = format_tps(throughput)
+    formatted_throughput_by_model = {
+        model: format_tps(tps) for model, tps in throughput_by_model.items()
+    }
+
     return NetworkStatsResponse(
         nodes_count=nodes_count,
         connected_nodes_count=connected_nodes_count,
-        network_throughput=throughput,
-        network_throughput_by_model=throughput_by_model,
+        network_throughput=formatted_throughput,
+        network_throughput_by_model=formatted_throughput_by_model,
     )
+
+
+def format_tps(tps: float) -> str:
+    return f"{tps:.3f} tps"
