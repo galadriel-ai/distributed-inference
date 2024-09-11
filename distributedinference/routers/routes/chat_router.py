@@ -55,11 +55,10 @@ async def completions(
             headers=headers,
             media_type="text/event-stream",
         )
-    else:
-        return await chat_completions_service.execute(
-            user,
-            request,
-            node_repository=node_repository,
-            tokens_repository=tokens_repository,
-            metrics_queue_repository=metrics_queue_repository,
-        )
+    return await chat_completions_service.execute(
+        user,
+        request,
+        node_repository=node_repository,
+        tokens_repository=tokens_repository,
+        metrics_queue_repository=metrics_queue_repository,
+    )

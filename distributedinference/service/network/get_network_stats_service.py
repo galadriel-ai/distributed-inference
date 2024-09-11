@@ -33,5 +33,4 @@ async def execute(repository: NodeRepository) -> NetworkStatsResponse:
 def format_tps(tps: float) -> str:
     if tps.is_integer():
         return f"{tps:.1f} tps"
-    else:
-        return f"{tps:.3f} tps"
+    return f"{tps:.3f} tps"

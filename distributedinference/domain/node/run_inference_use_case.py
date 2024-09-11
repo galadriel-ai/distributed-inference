@@ -17,6 +17,7 @@ from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 
 
+# pylint: disable=R0912
 async def execute(
     user_uid: UUID,
     request: InferenceRequest,
@@ -43,24 +44,28 @@ async def execute(
     try:
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
-            if response.error:
+            if not response or response.error:
                 yield response
                 break
+
             if not first_token_time:
                 first_token_time = time.time() - request_start_time
 
             # overwriting the usage each time
-            usage = response.chunk.usage
+            if response.chunk:
+                usage = response.chunk.usage
             yield response
             if is_stream and is_include_usage:
                 # If is_stream and is_include_usage last chunk has no choices, only usage info
                 request_successful = True
-                if not len(response.chunk.choices):
+                if not response.chunk or not response.chunk.choices:
                     break
             else:
-                if response.chunk.choices[0].finish_reason == "stop":
-                    request_successful = True
-                    break
+                if response.chunk and response.chunk.choices and response.chunk.choices[
+                    0]:
+                    if response.chunk.choices[0].finish_reason == "stop":
+                        request_successful = True
+                        break
     finally:
         await node_repository.cleanup_request(node.uid, request.id)
         if usage:

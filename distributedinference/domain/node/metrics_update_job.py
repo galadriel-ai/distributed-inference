@@ -25,7 +25,7 @@ async def execute(
             await asyncio.sleep(TIMEOUT_BETWEEN_RUNS_SECONDS)
             logger.debug("Running metrics update job!")
             await _handle_metrics_update(metrics_queue_repository, node_repository)
-        except:
+        except Exception:
             logger.error(
                 f"Failed to run metrics update job, restarting in {TIMEOUT_BETWEEN_RUNS_SECONDS} seconds",
                 exc_info=True,
@@ -42,12 +42,12 @@ async def _handle_metrics_update(
             all_metrics.append(metrics)
     except QueueEmpty:
         pass
-    if len(all_metrics):
+    if all_metrics:
         aggregated_metrics = _get_aggregated_metrics(all_metrics)
         for metrics in aggregated_metrics:
             try:
                 await node_repository.increment_node_metrics(metrics)
-            except:
+            except Exception:
                 logger.error(
                     f"Error while updating node metrics, node_id={metrics.node_id}",
                     exc_info=True,
