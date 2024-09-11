@@ -26,4 +26,4 @@ jobs:
           pip install -e .
           pip install pylint==3.2.7
       - name: Run PyLint
-        run: pylint --rcfile=setup.cfg galadriel_node/*
+        run: pylint --rcfile=setup.cfg distributedinference/*
