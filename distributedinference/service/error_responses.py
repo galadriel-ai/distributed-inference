@@ -124,3 +124,18 @@ class NoAvailableInferenceNodesError(APIErrorResponse):
 
     def to_message(self) -> str:
         return "No available inference nodes to process the request."
+
+
+class UnsupportedClientError(APIErrorResponse):
+    def __init__(self, client_name: str, client_version: str):
+        self.client_name = client_name
+        self.client_version = client_version
+
+    def to_status_code(self) -> status:
+        return status.HTTP_426_UPGRADE_REQUIRED
+
+    def to_code(self) -> str:
+        return "unsupported_client_version"
+
+    def to_message(self) -> str:
+        return f"Client version is not supported. Client: {self.client_name}, Version: {self.client_version}"
