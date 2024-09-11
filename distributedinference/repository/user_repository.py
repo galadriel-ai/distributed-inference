@@ -65,18 +65,6 @@ LEFT JOIN api_key ak on up.id = ak.user_profile_id
 WHERE ak.api_key = :api_key;
 """
 
-SQL_GET_BY_EMAIL = """
-SELECT
-    up.id,
-    up.name,
-    up.email,
-    up.authentication_id,
-    up.created_at,
-    up.last_updated_at
-FROM user_profile up
-WHERE lower(up.email) = lower(:email);
-"""
-
 SQL_GET_BY_AUTHENTICATION_ID = """
 SELECT
     up.id,
@@ -143,20 +131,6 @@ class UserRepository:
         data = {"api_key": api_key}
         async with self._session_provider.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
-            row = result.first()
-            if row:
-                return User(
-                    uid=row.id,
-                    name=row.name,
-                    email=row.email,
-                    authentication_id=row.authentication_id,
-                )
-        return None
-
-    async def get_user_by_email(self, email: str) -> Optional[User]:
-        data = {"email": email}
-        async with self._session_provider.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_BY_EMAIL), data)
             row = result.first()
             if row:
                 return User(

@@ -19,7 +19,9 @@ async def execute(
         authentication_user_id = await auth_repo.signup_user(signup_request.email)
     except:
         raise error_responses.InvalidCredentialsAPIError()
-    existing_user = await user_repository.get_user_by_email(signup_request.email)
+    existing_user = await user_repository.get_user_by_authentication_id(
+        authentication_user_id
+    )
     if not existing_user:
         await user_repository.insert_user(
             User(
