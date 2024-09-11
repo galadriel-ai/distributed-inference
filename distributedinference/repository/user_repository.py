@@ -74,7 +74,7 @@ SELECT
     up.created_at,
     up.last_updated_at
 FROM user_profile up
-WHERE lower(up.email) = :email;
+WHERE lower(up.email) = lower(:email);
 """
 
 SQL_GET_BY_AUTHENTICATION_ID = """
