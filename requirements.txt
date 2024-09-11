@@ -15,3 +15,4 @@ asyncpg==0.29.0
 openai==1.42.0
 uuid7==0.1.0
 websockets==12.0
+stytch==11.4.1

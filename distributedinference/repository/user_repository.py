@@ -13,6 +13,7 @@ INSERT INTO user_profile (
     id,
     name,
     email,
+    authentication_id,
     created_at,
     last_updated_at
 )
@@ -20,9 +21,16 @@ VALUES (
     :id,
     :name,
     :email,
+    :authentication_id,
     :created_at,
     :last_updated_at
 );
+"""
+
+SQL_UPDATE_IS_PASSWORD_SET = """
+UPDATE user_profile 
+SET is_password_set = :is_password_set, last_updated_at = :last_updated_at
+WHERE authentication_id = :authentication_id; 
 """
 
 SQL_INSERT_API_KEY = """
@@ -47,11 +55,24 @@ SELECT
     up.id,
     up.name,
     up.email,
+    up.authentication_id,
     up.created_at,
     up.last_updated_at
 FROM user_profile up
 LEFT JOIN api_key ak on up.id = ak.user_profile_id
 WHERE ak.api_key = :api_key;
+"""
+
+SQL_GET_BY_AUTHENTICATION_ID = """
+SELECT
+    up.id,
+    up.name,
+    up.email,
+    up.authentication_id,
+    up.created_at,
+    up.last_updated_at
+FROM user_profile up
+WHERE up.authentication_id = :authentication_id;
 """
 
 
@@ -68,11 +89,26 @@ class UserRepository:
             "id": user.uid,
             "name": user.name,
             "email": user.email,
+            "authentication_id": user.authentication_id,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_INSERT), data)
+            await session.commit()
+
+    async def update_user_password_by_authentication_id(
+        self,
+        authentication_id: str,
+        is_password_set: bool,
+    ):
+        data = {
+            "authentication_id": authentication_id,
+            "is_password_set": is_password_set,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_IS_PASSWORD_SET), data)
             await session.commit()
 
     async def insert_api_key(self, user_id: UUID, api_key: str) -> UUID:
@@ -99,5 +135,24 @@ class UserRepository:
                     uid=row.id,
                     name=row.name,
                     email=row.email,
+                    authentication_id=row.authentication_id,
+                )
+        return None
+
+    async def get_user_by_authentication_id(
+        self, authentication_id: str
+    ) -> Optional[User]:
+        data = {"authentication_id": authentication_id}
+        async with self._session_provider.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_BY_AUTHENTICATION_ID), data
+            )
+            row = result.first()
+            if row:
+                return User(
+                    uid=row.id,
+                    name=row.name,
+                    email=row.email,
+                    authentication_id=row.authentication_id,
                 )
         return None
