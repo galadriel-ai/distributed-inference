@@ -3,8 +3,6 @@ from stytch import Client
 import settings
 from distributedinference.domain.user.entities import UserAuthenticationResponse
 
-SESSION_DURATION_MINUTES = 2 * 24 * 60
-
 
 class AuthenticationApiRepository:
 
@@ -40,7 +38,7 @@ class AuthenticationApiRepository:
         resp = await self._client.passwords.sessions.reset_async(
             password=password,
             session_token=session_token,
-            session_duration_minutes=SESSION_DURATION_MINUTES,
+            session_duration_minutes=settings.SESSION_DURATION_MINUTES,
         )
         return UserAuthenticationResponse(
             provider_user_id=resp.user_id, session_token=resp.session_token
@@ -50,7 +48,7 @@ class AuthenticationApiRepository:
         resp = await self._client.passwords.authenticate_async(
             email=email,
             password=password,
-            session_duration_minutes=SESSION_DURATION_MINUTES,
+            session_duration_minutes=settings.SESSION_DURATION_MINUTES,
         )
         return UserAuthenticationResponse(
             provider_user_id=resp.user_id, session_token=resp.session_token

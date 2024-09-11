@@ -14,7 +14,6 @@ INSERT INTO user_profile (
     name,
     email,
     authentication_id,
-    is_password_set,
     created_at,
     last_updated_at
 )
@@ -23,7 +22,6 @@ VALUES (
     :name,
     :email,
     :authentication_id,
-    false,
     :created_at,
     :last_updated_at
 );
