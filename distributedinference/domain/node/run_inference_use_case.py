@@ -61,8 +61,11 @@ async def execute(
                 if not response.chunk or not response.chunk.choices:
                     break
             else:
-                if response.chunk and response.chunk.choices and response.chunk.choices[
-                    0]:
+                if (
+                    response.chunk
+                    and response.chunk.choices
+                    and response.chunk.choices[0]
+                ):
                     if response.chunk.choices[0].finish_reason == "stop":
                         request_successful = True
                         break

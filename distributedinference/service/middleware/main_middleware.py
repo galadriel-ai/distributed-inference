@@ -68,6 +68,7 @@ class MainMiddleware(BaseHTTPMiddleware):
                 )
             raise error
 
+
 # pylint: disable=C2801
 def _set_state(request: Request, state_key: RequestStateKey, value: any):
     request.state.__setattr__(state_key.value, value)

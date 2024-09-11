@@ -15,6 +15,7 @@ from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
+
 # pylint: disable=R0801
 async def execute(
     user: User,

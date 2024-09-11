@@ -6,6 +6,7 @@ from distributedinference.service.error_responses import APIErrorResponse
 from distributedinference.service.error_responses import InternalServerAPIError
 from distributedinference.utils import http_headers
 
+
 # pylint: disable=W0613
 async def custom_exception_handler(request: Request, error: Exception):
     if not isinstance(error, APIErrorResponse):
