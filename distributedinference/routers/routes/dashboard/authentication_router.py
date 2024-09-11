@@ -57,7 +57,9 @@ async def set_user_password(
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
 ):
-    return await set_user_password_service.execute(request, auth_repository, user_repository)
+    return await set_user_password_service.execute(
+        request, auth_repository, user_repository
+    )
 
 
 @router.post(
