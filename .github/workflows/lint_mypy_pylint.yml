@@ -23,7 +23,6 @@ jobs:
             ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
       - name: Install Python Dependencies
         run: |
-          pip install -e .
-          pip install pylint==3.2.7
+          pip install -r requirements.txt
       - name: Run PyLint
         run: pylint --rcfile=setup.cfg distributedinference/*
