@@ -1,11 +1,15 @@
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.network.entities import (
     NetworkStatsResponse,
     NetworkModelStats,
 )
 
 
-async def execute(repository: NodeRepository) -> NetworkStatsResponse:
+async def execute(
+    repository: NodeRepository,
+    tokens_repository: TokensRepository,
+) -> NetworkStatsResponse:
     nodes_count = await repository.get_nodes_count()
     connected_nodes_count = repository.get_connected_nodes_count()
     throughput = 0
@@ -26,6 +30,7 @@ async def execute(repository: NodeRepository) -> NetworkStatsResponse:
         nodes_count=nodes_count,
         connected_nodes_count=connected_nodes_count,
         network_throughput=formatted_throughput,
+        inference_count_day=await tokens_repository.get_latest_count_by_time(),
         network_models_stats=formatted_throughput_by_model,
     )
 

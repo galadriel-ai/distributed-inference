@@ -8,6 +8,7 @@ import sqlalchemy
 from uuid_extensions import uuid7
 
 from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.utils import historic_uuid
 from distributedinference.repository.utils import utcnow
 
 SQL_INSERT_USAGE_TOKENS = """
@@ -57,6 +58,15 @@ SELECT
 FROM usage_tokens
 WHERE producer_user_profile_id = ANY(:node_ids)
 GROUP BY producer_user_profile_id, model_name;
+"""
+
+SQL_GET_COUNT_BY_TIME = """
+SELECT
+    count(*) AS usage_count
+FROM
+    usage_tokens
+WHERE
+    id > :start_id;
 """
 
 
@@ -140,3 +150,11 @@ class TokensRepository:
                     )
                 )
         return tokens
+
+    async def get_latest_count_by_time(self, hours: int = 24) -> int:
+        data = {"start_id": historic_uuid(hours)}
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_COUNT_BY_TIME), data)
+            for row in rows:
+                return row.usage_count
+        return 0
