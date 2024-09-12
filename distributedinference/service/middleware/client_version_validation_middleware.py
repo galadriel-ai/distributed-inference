@@ -15,6 +15,7 @@ class SupportedVersionRange(NamedTuple):
     max_version: str
 
 
+# pylint: disable=E1120
 class Client(str, Enum):
     GPU_NODE = ("gpu-node", SupportedVersionRange("0.0.6", "0.0.6"))
 
