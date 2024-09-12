@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock
 
 from distributedinference.repository.node_repository import NodeRepository, ModelStats
+from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.network import get_network_stats_service as service
 from distributedinference.service.network.entities import (
     NetworkStatsResponse,
@@ -18,7 +19,10 @@ async def test_success():
         ModelStats(model_name="model2", throughput=221.123),
     ]
 
-    response = await service.execute(mock_repository)
+    mock_tokens_repository = AsyncMock(spec=TokensRepository)
+    mock_tokens_repository.get_latest_count_by_time.return_value = 1337
+
+    response = await service.execute(mock_repository, mock_tokens_repository)
     expected_response = NetworkStatsResponse(
         nodes_count=2,
         connected_nodes_count=1,
@@ -27,5 +31,6 @@ async def test_success():
             NetworkModelStats(model_name="model1", throughput="100.0 tps"),
             NetworkModelStats(model_name="model2", throughput="221.123 tps"),
         ],
+        inference_count_day=1337,
     )
     assert response == expected_response

@@ -15,6 +15,9 @@ class NetworkStatsResponse(BaseModel):
     network_throughput: str = Field(
         description="Current network throughput in tokens/second"
     )
+    inference_count_day: int = Field(
+        description="Inferences count in the past 24 hours"
+    )
     network_models_stats: List[NetworkModelStats] = Field(
         description="Current network throughput per model in tokens/second"
     )
