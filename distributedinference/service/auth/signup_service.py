@@ -1,5 +1,6 @@
 from uuid_extensions import uuid7
 
+from distributedinference import api_logger
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
@@ -8,6 +9,8 @@ from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
 from distributedinference.service.auth.entities import SignupRequest
 from distributedinference.service.auth.entities import SignupResponse
+
+logger = api_logger.get()
 
 
 async def execute(
@@ -18,6 +21,7 @@ async def execute(
     try:
         authentication_user_id = await auth_repo.signup_user(signup_request.email)
     except:
+        logger.error("Error signing up", exc_info=True)
         raise error_responses.InvalidCredentialsAPIError()
     existing_user = await user_repository.get_user_by_authentication_id(
         authentication_user_id
