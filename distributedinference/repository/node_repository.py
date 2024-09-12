@@ -248,6 +248,7 @@ class NodeRepository:
         if node_id in self._connected_nodes:
             del self._connected_nodes[node_id]
 
+    # pylint: disable=W0613
     def select_node(self, model: str) -> Optional[ConnectedNode]:
         if not self._connected_nodes:
             return None
@@ -398,7 +399,7 @@ class NodeRepository:
         connected_user_profile_ids = self.get_connected_node_ids()
         if not connected_user_profile_ids:
             return 0
-        data = {"user_profile_ids": tuple([str(i) for i in connected_user_profile_ids])}
+        data = {"user_profile_ids": tuple(str(i) for i in connected_user_profile_ids)}
         async with self._session_provider.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_SUM), data
@@ -412,7 +413,7 @@ class NodeRepository:
         connected_user_profile_ids = self.get_connected_node_ids()
         if not connected_user_profile_ids:
             return []
-        data = {"user_profile_ids": tuple([str(i) for i in connected_user_profile_ids])}
+        data = {"user_profile_ids": tuple(str(i) for i in connected_user_profile_ids)}
         async with self._session_provider.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_BY_MODEL), data
@@ -469,7 +470,7 @@ class NodeRepository:
                         InferenceError(**data["error"]) if data.get("error") else None
                     ),
                 )
-            except Exception as e:
+            except Exception:
                 logger.warning(f"Failed to parse chunk, request_id={request_id}")
         return None
 

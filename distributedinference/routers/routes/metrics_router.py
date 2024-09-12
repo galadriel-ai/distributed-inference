@@ -1,4 +1,3 @@
-import settings
 from fastapi import APIRouter
 from fastapi.responses import Response
 from fastapi import Depends
@@ -10,10 +9,10 @@ from prometheus_client import generate_latest
 from prometheus_client import Gauge
 from prometheus_client.multiprocess import MultiProcessCollector
 
+import settings
 from distributedinference import api_logger
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
-
 from distributedinference import dependencies
 
 TAG = "Metrics"
@@ -54,7 +53,7 @@ node_time_to_first_token_gauge = Gauge(
 
 
 @router.get("", include_in_schema=False)
-async def metrics(
+async def get_metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
 ):

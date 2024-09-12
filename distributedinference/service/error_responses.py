@@ -46,7 +46,7 @@ class AuthorizationMissingAPIError(APIErrorResponse):
         return "authorization_missing"
 
     def to_message(self) -> str:
-        return f"Request is missing or has invalid 'Authorization' header."
+        return "Request is missing or has invalid 'Authorization' header."
 
 
 class InvalidCredentialsAPIError(APIErrorResponse):

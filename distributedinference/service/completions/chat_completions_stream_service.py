@@ -16,6 +16,7 @@ from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
 
+# pylint: disable=R0801
 async def execute(
     user: User,
     request: ChatCompletionRequest,
@@ -45,7 +46,9 @@ async def execute(
                 raise error_responses.InferenceError(
                     chunk.error.status_code, chunk.error.message
                 )
-            yield f"data: {chunk.chunk.to_json(indent=None)}\n\n"
+            if chunk.chunk:
+                yield f"data: {chunk.chunk.to_json(indent=None)}\n\n"
+            # TODO: what if chunk.chunk is None?
         yield "data: [DONE]"
     except NoAvailableNodesError:
         raise error_responses.NoAvailableInferenceNodesError()

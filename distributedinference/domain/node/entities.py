@@ -32,10 +32,10 @@ class NodeMetrics:
 
 @dataclass
 class NodeInfo:
+    cpu_model: str
+    cpu_count: int
     gpu_model: Optional[str] = None
     vram: Optional[int] = None
-    cpu_model: Optional[str] = None
-    cpu_count: Optional[int] = None
     ram: Optional[int] = None
     network_download_speed: Optional[float] = None
     network_upload_speed: Optional[float] = None

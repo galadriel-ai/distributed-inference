@@ -28,7 +28,7 @@ async def validate_api_key_header(
 
 
 async def validate_api_key(
-    api_key_header: str,
+    api_key_header: Optional[str],
     user_repository: UserRepository,
 ) -> Optional[User]:
     if not api_key_header:

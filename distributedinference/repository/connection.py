@@ -13,6 +13,8 @@ DEFAULT_POOL_OVERFLOW = 100
 DEFAULT_POOL_TIMEOUT = 3
 
 
+# pylint: disable=R0913
+# pylint: disable=W0603
 def init(
     user,
     password,
@@ -73,5 +75,6 @@ session_provider: Optional[SessionProvider] = None
 
 def get_session_provider() -> SessionProvider:
     if not session_provider:
+        # pylint: disable=W0719
         raise Exception("SessionProvider not initialized")
     return session_provider

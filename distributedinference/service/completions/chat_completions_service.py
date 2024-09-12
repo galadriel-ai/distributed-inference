@@ -2,7 +2,6 @@ import time
 
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat import CompletionCreateParams
-from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion import Choice
 from uuid_extensions import uuid7
 
