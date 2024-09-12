@@ -26,7 +26,8 @@ def init_globals():
         get_session_provider(), settings.MAX_PARALLEL_REQUESTS_PER_NODE
     )
     _metrics_queue_repository = MetricsQueueRepository()
-    _authentication_api_repository = AuthenticationApiRepository()
+    if settings.is_production() or (settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET):
+        _authentication_api_repository = AuthenticationApiRepository()
 
 
 def get_node_repository() -> NodeRepository:
