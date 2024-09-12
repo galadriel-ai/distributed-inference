@@ -11,8 +11,8 @@ from distributedinference.service.entities import ApiResponse
 class NodeInfoRequest(BaseModel):
     gpu_model: Optional[str] = Field(description="GPU model", default=None)
     vram: Optional[int] = Field(description="VRAM in MB", default=None)
-    cpu_model: Optional[str] = Field(description="CPU model", default=None)
-    cpu_count: int = Field(description="CPU cores count", default=0)
+    cpu_model: str = Field(description="CPU model")
+    cpu_count: int = Field(description="CPU cores count")
     ram: int = Field(description="RAM in MB")
     network_download_speed: float = Field(
         description="Network download speed in Mbps", default=None
