@@ -14,6 +14,9 @@ from distributedinference.routers import main_router
 from distributedinference.service.exception_handlers.exception_handlers import (
     custom_exception_handler,
 )
+from distributedinference.service.middleware.client_version_validation_middleware import (
+    ClientVersionValidationMiddleware,
+)
 from distributedinference.service.middleware.main_middleware import MainMiddleware
 from distributedinference.service.middleware.request_enrichment_middleware import (
     RequestEnrichmentMiddleware,
@@ -86,6 +89,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(MainMiddleware)
+app.add_middleware(ClientVersionValidationMiddleware)
 app.add_middleware(RequestEnrichmentMiddleware)
 
 # exception handlers run AFTER the middlewares!

@@ -68,7 +68,7 @@ async def websocket_endpoint(
     name="Node Info",
     response_model=GetNodeInfoResponse,
 )
-async def node_info(
+async def get_info(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user: User = Depends(authentication.validate_api_key_header),
 ):
@@ -80,7 +80,7 @@ async def node_info(
     name="Node Stats",
     response_model=GetNodeStatsResponse,
 )
-async def node_stats(
+async def get_stats(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_api_key_header),
@@ -95,7 +95,7 @@ async def node_stats(
     name="Node Info",
     response_model=PostNodeInfoResponse,
 )
-async def node_info(
+async def post_info(
     request: PostNodeInfoRequest,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user: User = Depends(authentication.validate_api_key_header),
@@ -108,7 +108,7 @@ async def node_info(
     name="Node Benchmark",
     response_model=GetNodeBenchmarkResponse,
 )
-async def node_info(
+async def get_benchmark(
     model: str = Query(..., description="Model name"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user: User = Depends(authentication.validate_api_key_header),
@@ -121,7 +121,7 @@ async def node_info(
     name="Node Benchmark",
     response_model=PostNodeBenchmarkResponse,
 )
-async def node_info(
+async def post_benchmark(
     request: PostNodeBenchmarkRequest,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user: User = Depends(authentication.validate_api_key_header),

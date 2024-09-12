@@ -46,7 +46,7 @@ class AuthorizationMissingAPIError(APIErrorResponse):
         return "authorization_missing"
 
     def to_message(self) -> str:
-        return f"Request is missing or has invalid 'Authorization' header."
+        return "Request is missing or has invalid 'Authorization' header."
 
 
 class InvalidCredentialsAPIError(APIErrorResponse):
@@ -124,3 +124,36 @@ class NoAvailableInferenceNodesError(APIErrorResponse):
 
     def to_message(self) -> str:
         return "No available inference nodes to process the request."
+
+
+class UnsupportedClientError(APIErrorResponse):
+    def __init__(self, client_name: str):
+        self.client_name = client_name
+
+    def to_status_code(self) -> status:
+        return status.HTTP_426_UPGRADE_REQUIRED
+
+    def to_code(self) -> str:
+        return "unsupported_client"
+
+    def to_message(self) -> str:
+        return f"Unsupported client: {self.client_name}"
+
+
+class UnsupportedClientVersionError(APIErrorResponse):
+    def __init__(self, client_name: str, client_version: str, min_version: str | None):
+        self.client_name = client_name
+        self.client_version = client_version
+        self.min_version = min_version
+
+    def to_status_code(self) -> status:
+        return status.HTTP_426_UPGRADE_REQUIRED
+
+    def to_code(self) -> str:
+        return "unsupported_client_version"
+
+    def to_message(self) -> str:
+        base_message = f"Unsupported client version {self.client_version} for client {self.client_name}"
+        if self.min_version:
+            return f"{base_message}. Minimum supported version is {self.min_version}."
+        return base_message

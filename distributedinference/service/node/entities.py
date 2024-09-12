@@ -74,6 +74,7 @@ class NodeBenchmarkRequest(BaseModel):
     model_name: str = Field(description="Model name")
     tokens_per_second: float = Field(description="Tokens per second")
 
+    # pylint: disable=R0903
     class Config:
         # to allow `model_name` field without warnings
         protected_namespaces = ()

@@ -17,6 +17,7 @@ _metrics_queue_repository: MetricsQueueRepository
 _authentication_api_repository: AuthenticationApiRepository
 
 
+# pylint: disable=W0603
 def init_globals():
     # TODO: refactor this, we shoudn't use globals
     global _node_repository_instance

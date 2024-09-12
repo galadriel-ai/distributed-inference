@@ -11,6 +11,7 @@ LOGGING_MESSAGE_FORMAT = "%(asctime)s %(name)-12s %(levelname)s %(message)s"
 logger: Optional[any] = None
 
 
+# pylint: disable=W0603
 def get():
     global logger
     if logger:
