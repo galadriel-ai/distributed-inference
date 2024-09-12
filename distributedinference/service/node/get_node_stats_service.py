@@ -28,6 +28,9 @@ async def execute(
     )
     return GetNodeStatsResponse(
         requests_served=node_stats.requests_served,
+        requests_served_day=await tokens_repository.get_latest_count_by_time_and_user(
+            user.uid
+        ),
         average_time_to_first_token=average_time_to_first_token,
         benchmark_tokens_per_second=node_stats.benchmark_tokens_per_second,
         benchmark_model_name=node_stats.benchmark_model_name,

@@ -56,11 +56,13 @@ async def test_success():
         created_at=created_at,
     )
     mock_tokens_repository.get_user_latest_usage_tokens.return_value = [usage_tokens]
+    mock_tokens_repository.get_latest_count_by_time_and_user.return_value = 321
 
     response = await service.execute(user, mock_repository, mock_tokens_repository)
 
     expected_response = GetNodeStatsResponse(
         requests_served=node_stats.requests_served,
+        requests_served_day=321,
         average_time_to_first_token=node_stats.average_time_to_first_token,
         benchmark_tokens_per_second=node_stats.benchmark_tokens_per_second,
         benchmark_model_name=node_stats.benchmark_model_name,

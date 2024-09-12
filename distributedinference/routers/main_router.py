@@ -8,7 +8,7 @@ from distributedinference.routers.routes import network_router
 from distributedinference.routers.routes import node_router
 from distributedinference.routers.routes import metrics_router
 from distributedinference.routers.routes.dashboard import authentication_router
-from distributedinference.routers.routes.dashboard import dashboard_network_router
+from distributedinference.routers.routes.dashboard import dashboard_router
 
 TAG_ROOT = "root"
 
@@ -21,7 +21,7 @@ routers_to_include: List[APIRouter] = [
     network_router.router,
     metrics_router.router,
     authentication_router.router,
-    dashboard_network_router.router,
+    dashboard_router.router,
 ]
 
 for router_to_include in routers_to_include:
