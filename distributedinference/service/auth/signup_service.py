@@ -20,7 +20,7 @@ async def execute(
 ) -> SignupResponse:
     try:
         authentication_user_id = await auth_repo.signup_user(signup_request.email)
-    except Exception as e:
+    except:
         logger.error("Error signing up", exc_info=True)
         raise error_responses.InvalidCredentialsAPIError()
     existing_user = await user_repository.get_user_by_authentication_id(
