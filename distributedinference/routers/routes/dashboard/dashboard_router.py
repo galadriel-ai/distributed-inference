@@ -21,7 +21,7 @@ logger = api_logger.get()
 
 
 @router.get(
-    "/node_stats",
+    "/node-stats",
     name="Node Stats",
     response_model=GetNodeStatsResponse,
     include_in_schema=not settings.is_production(),
@@ -37,7 +37,7 @@ async def get_node_stats(
 
 
 @router.get(
-    "/network_stats",
+    "/network-stats",
     name="Network Stats",
     response_model=NetworkStatsResponse,
     include_in_schema=not settings.is_production(),
