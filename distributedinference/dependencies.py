@@ -1,4 +1,7 @@
 import settings
+from distributedinference import api_logger
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.posthog import init_posthog
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
@@ -15,6 +18,7 @@ _node_repository_instance: NodeRepository
 _metrics_queue_repository: MetricsQueueRepository
 
 _authentication_api_repository: AuthenticationApiRepository
+_analytics: Analytics
 
 
 # pylint: disable=W0603
@@ -23,10 +27,14 @@ def init_globals():
     global _node_repository_instance
     global _metrics_queue_repository
     global _authentication_api_repository
+    global _analytics
     _node_repository_instance = NodeRepository(
         get_session_provider(), settings.MAX_PARALLEL_REQUESTS_PER_NODE
     )
     _metrics_queue_repository = MetricsQueueRepository()
+
+    _analytics = Analytics(init_posthog(is_production=settings.is_production()), logger=api_logger.get())
+
     if settings.is_production() or (
         settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET
     ):
@@ -51,3 +59,7 @@ def get_metrics_queue_repository() -> MetricsQueueRepository:
 
 def get_authentication_api_repository() -> AuthenticationApiRepository:
     return _authentication_api_repository
+
+
+def get_analytics() -> Analytics:
+    return _analytics

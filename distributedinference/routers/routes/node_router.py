@@ -6,6 +6,11 @@ from fastapi.exceptions import WebSocketRequestValidationError
 
 from distributedinference import api_logger
 from distributedinference import dependencies
+from distributedinference.analytics.analytics import (
+    AnalyticsEvent,
+    EventName,
+    Analytics,
+)
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -74,8 +79,10 @@ async def websocket_endpoint(
 async def get_info(
     node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_INFO, {}))
     return await get_node_info_service.execute(user, node_id, node_repository)
 
 
@@ -88,8 +95,10 @@ async def get_stats(
     node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_STATS, {}))
     return await get_node_stats_service.execute(
         user, node_id, node_repository, tokens_repository
     )
@@ -103,8 +112,10 @@ async def get_stats(
 async def post_info(
     request: PostNodeInfoRequest,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.POST_NODE_INFO, {}))
     return await save_node_info_service.execute(request, user.uid, node_repository)
 
 
@@ -117,8 +128,10 @@ async def get_benchmark(
     node_id: str = Query(..., description="Node id"),
     model: str = Query(..., description="Model name"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_BENCHMARK, {}))
     return await get_node_benchmark_service.execute(
         user, node_id, model, node_repository
     )
@@ -132,6 +145,8 @@ async def get_benchmark(
 async def post_benchmark(
     request: PostNodeBenchmarkRequest,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.POST_NODE_BENCHMARK, {}))
     return await save_node_benchmark_service.execute(request, user.uid, node_repository)
