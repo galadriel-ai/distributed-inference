@@ -19,10 +19,10 @@ logger = api_logger.get()
 
 @router.get(
     "/stats",
-    name="Node Stats",
+    name="Network Stats",
     response_model=NetworkStatsResponse,
 )
-async def node_stats(
+async def network_stats(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     _: User = Depends(authentication.validate_api_key_header),
