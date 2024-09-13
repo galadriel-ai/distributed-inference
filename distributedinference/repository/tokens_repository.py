@@ -120,9 +120,9 @@ class TokensRepository:
             await session.commit()
 
     async def get_user_latest_usage_tokens(
-        self, node_id: UUID, count: int
+        self, user_id: UUID, node_id: UUID, count: int
     ) -> List[UsageTokens]:
-        data = {"user_profile_id": node_id, "count": count}
+        data = {"node_id": node_id, "user_profile_id": user_id, "count": count}
         tokens = []
         async with self._session_provider.get() as session:
             rows = await session.execute(

@@ -54,9 +54,12 @@ async def websocket_endpoint(
     if not user:
         raise WebSocketRequestValidationError("Authorization header is required")
 
+    node_id = websocket.headers.get("Node-Id")
+
     await websocket_service.execute(
         websocket,
         user,
+        node_id,
         websocket.headers.get("Model"),
         node_repository,
         metrics_queue_repository,
@@ -69,10 +72,11 @@ async def websocket_endpoint(
     response_model=GetNodeInfoResponse,
 )
 async def get_info(
+    node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user: User = Depends(authentication.validate_api_key_header),
 ):
-    return await get_node_info_service.execute(user, node_repository)
+    return await get_node_info_service.execute(user, node_id, node_repository)
 
 
 @router.get(
@@ -81,12 +85,13 @@ async def get_info(
     response_model=GetNodeStatsResponse,
 )
 async def get_stats(
+    node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_api_key_header),
 ):
     return await get_node_stats_service.execute(
-        user, node_repository, tokens_repository
+        user, node_id, node_repository, tokens_repository
     )
 
 
@@ -109,11 +114,14 @@ async def post_info(
     response_model=GetNodeBenchmarkResponse,
 )
 async def get_benchmark(
+    node_id: str = Query(..., description="Node id"),
     model: str = Query(..., description="Model name"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user: User = Depends(authentication.validate_api_key_header),
 ):
-    return await get_node_benchmark_service.execute(user, model, node_repository)
+    return await get_node_benchmark_service.execute(
+        user, node_id, model, node_repository
+    )
 
 
 @router.post(

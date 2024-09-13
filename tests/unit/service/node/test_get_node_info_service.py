@@ -2,6 +2,7 @@ from datetime import datetime
 from datetime import timezone
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
 from uuid_extensions import uuid7
@@ -14,10 +15,13 @@ from distributedinference.service import error_responses
 from distributedinference.service.node import get_node_info_service as service
 from distributedinference.service.node.entities import GetNodeInfoResponse
 
+NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
+
 
 async def test_execute_success():
     created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     node_info = NodeInfo(
+        node_id=NODE_UUID,
         gpu_model="NVIDIA GTX 1080",
         vram=8,
         cpu_model="Intel i7",
@@ -29,6 +33,7 @@ async def test_execute_success():
         created_at=created_at,
     )
     expected_response = GetNodeInfoResponse(
+        node_id=str(NODE_UUID),
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
         cpu_model=node_info.cpu_model,
@@ -55,8 +60,8 @@ async def test_execute_success():
         websocket=MagicMock(),
         request_incoming_queues={},
     )
-    response = await service.execute(user, mock_repository)
-    mock_repository.get_node_info.assert_called_once_with(user.uid)
+    response = await service.execute(user, str(NODE_UUID), mock_repository)
+    mock_repository.get_node_info.assert_called_once_with(user.uid, NODE_UUID)
 
     assert response == expected_response
 
@@ -64,6 +69,7 @@ async def test_execute_success():
 async def test_execute_success_node_offline():
     created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     node_info = NodeInfo(
+        node_id=NODE_UUID,
         gpu_model="NVIDIA GTX 1080",
         vram=8,
         cpu_model="Intel i7",
@@ -75,6 +81,7 @@ async def test_execute_success_node_offline():
         created_at=created_at,
     )
     expected_response = GetNodeInfoResponse(
+        node_id=str(NODE_UUID),
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
         cpu_model=node_info.cpu_model,
@@ -96,8 +103,8 @@ async def test_execute_success_node_offline():
     mock_repository.get_node_info.return_value = node_info
     mock_repository.get_connected_node_info.return_value = None
 
-    response = await service.execute(user, mock_repository)
-    mock_repository.get_node_info.assert_called_once_with(user.uid)
+    response = await service.execute(user, str(NODE_UUID), mock_repository)
+    mock_repository.get_node_info.assert_called_once_with(user.uid, NODE_UUID)
 
     assert response == expected_response
 
@@ -109,5 +116,5 @@ async def test_execute_not_found():
     mock_repository.get_node_info.return_value = None
 
     with pytest.raises(error_responses.NotFoundAPIError) as e:
-        await service.execute(user, mock_repository)
+        await service.execute(user, str(NODE_UUID), mock_repository)
         assert e is not None
