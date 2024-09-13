@@ -7,8 +7,13 @@ from distributedinference import dependencies
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.user_repository import UserRepository
+from distributedinference.service.api_key import create_api_key_service
+from distributedinference.service.api_key import get_api_keys_service
 from distributedinference.service.auth import authentication
 from distributedinference.service.network import get_network_stats_service
+from distributedinference.service.network.entities import CreateApiKeyResponse
+from distributedinference.service.network.entities import GetApiKeysResponse
 from distributedinference.service.network.entities import NetworkStatsResponse
 from distributedinference.service.node import get_node_stats_service
 from distributedinference.service.node.entities import GetNodeStatsResponse
@@ -48,3 +53,29 @@ async def get_network_stats(
     _: User = Depends(authentication.validate_session_token),
 ):
     return await get_network_stats_service.execute(node_repository, tokens_repository)
+
+
+@router.get(
+    "/api-key",
+    name="Api key",
+    response_model=GetApiKeysResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def get_api_key(
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    user: User = Depends(authentication.validate_session_token),
+):
+    return await get_api_keys_service.execute(user, user_repository)
+
+
+@router.post(
+    "/api-key",
+    name="Api key",
+    response_model=CreateApiKeyResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def post_api_key(
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    user: User = Depends(authentication.validate_session_token),
+):
+    return await create_api_key_service.execute(user, user_repository)
