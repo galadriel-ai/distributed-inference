@@ -45,6 +45,9 @@ class GetNodeStatsResponse(BaseModel):
     requests_served: int = Field(
         description="Total inference requests served by the node"
     )
+    requests_served_day: int = Field(
+        description="Total inference requests served by the node past 24 hours"
+    )
     average_time_to_first_token: Optional[float] = Field(
         description="Average time to first token for the node"
     )
