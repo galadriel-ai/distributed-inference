@@ -39,7 +39,7 @@ async def execute(
 
     if not model_name:
         raise WebSocketRequestValidationError('No "Model" header provided')
-    benchmark = await node_repository.get_node_benchmark(user.uid, model_name)
+    benchmark = await node_repository.get_node_benchmark(user.uid, node_uid, model_name)
     if not benchmark:
         raise WebSocketRequestValidationError("Benchmarking is not completed")
     if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
