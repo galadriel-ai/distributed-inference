@@ -15,7 +15,7 @@ SQL_INSERT_USAGE_TOKENS = """
 INSERT INTO usage_tokens (
     id,
     consumer_user_profile_id,
-    producer_user_profile_id,
+    producer_node_info_id,
     model_name,
     prompt_tokens,
     completion_tokens,
@@ -26,7 +26,7 @@ INSERT INTO usage_tokens (
 VALUES (
     :id,
     :consumer_user_profile_id,
-    :producer_user_profile_id,
+    :producer_node_info_id,
     :model_name,
     :prompt_tokens,
     :completion_tokens,
@@ -83,7 +83,7 @@ WHERE
 @dataclass
 class UsageTokens:
     consumer_user_profile_id: UUID
-    producer_user_profile_id: UUID
+    producer_node_info_id: UUID
     model_name: str
     prompt_tokens: int
     completion_tokens: int
@@ -107,7 +107,7 @@ class TokensRepository:
         data = {
             "id": uuid7(),
             "consumer_user_profile_id": ut.consumer_user_profile_id,
-            "producer_user_profile_id": ut.producer_user_profile_id,
+            "producer_node_info_id": ut.producer_node_info_id,
             "model_name": ut.model_name,
             "prompt_tokens": ut.prompt_tokens,
             "completion_tokens": ut.completion_tokens,
@@ -132,7 +132,7 @@ class TokensRepository:
                 tokens.append(
                     UsageTokens(
                         consumer_user_profile_id=row.consumer_user_profile_id,
-                        producer_user_profile_id=row.producer_user_profile_id,
+                        producer_node_info_id=row.producer_user_profile_id,
                         model_name=row.model_name,
                         prompt_tokens=row.prompt_tokens,
                         completion_tokens=row.completion_tokens,

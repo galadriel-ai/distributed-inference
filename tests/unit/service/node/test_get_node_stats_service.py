@@ -51,7 +51,7 @@ async def test_success():
     mock_tokens_repository = AsyncMock(spec=TokensRepository)
     usage_tokens = UsageTokens(
         consumer_user_profile_id=uuid7(),
-        producer_user_profile_id=user.uid,
+        producer_node_info_id=NODE_UUID,
         model_name="model",
         prompt_tokens=1,
         completion_tokens=2,

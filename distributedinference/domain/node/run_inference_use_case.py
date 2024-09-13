@@ -96,7 +96,7 @@ async def _save_result(
     await repository.insert_usage_tokens(
         UsageTokens(
             consumer_user_profile_id=user_uid,
-            producer_user_profile_id=node_uid,
+            producer_node_info_id=node_uid,
             model_name=model_name,
             prompt_tokens=usage.prompt_tokens,
             completion_tokens=usage.completion_tokens,
