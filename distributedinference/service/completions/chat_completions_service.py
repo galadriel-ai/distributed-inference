@@ -38,6 +38,7 @@ async def execute(
     )
     try:
         response = ""
+        usage = None
         async for chunk in run_inference_use_case.execute(
             user.uid,
             inference_request,
@@ -49,9 +50,14 @@ async def execute(
                 raise error_responses.InferenceError(
                     chunk.error.status_code, chunk.error.message
                 )
-            if chunk.chunk and chunk.chunk.choices[0].delta.content:
+            if (
+                chunk.chunk
+                and chunk.chunk.choices
+                and chunk.chunk.choices[0].delta.content
+            ):
                 response += chunk.chunk.choices[0].delta.content
-
+            if chunk.chunk and chunk.chunk.usage:
+                usage = chunk.chunk.usage
         chat_completion = ChatCompletion(
             id="id",
             choices=[
@@ -64,6 +70,7 @@ async def execute(
             created=int(time.time()),
             model=request.model,
             object="chat.completion",
+            usage=usage,
         )
         return chat_completion
     except NoAvailableNodesError:
