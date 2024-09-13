@@ -39,25 +39,25 @@ VALUES (
 SQL_GET_USER_LATEST_USAGE_TOKENS = """
 SELECT
     consumer_user_profile_id,
-    producer_user_profile_id,
+    producer_node_info_id,
     model_name,
     prompt_tokens,
     completion_tokens,
     total_tokens,
     created_at
 FROM usage_tokens
-WHERE producer_user_profile_id = :user_profile_id
+WHERE producer_node_info_id = :producer_node_info_id
 ORDER BY id DESC LIMIT :count;
 """
 
 SQL_GET_TOTAL_TOKENS_BY_NODE_IDS = """
 SELECT
-    producer_user_profile_id,
+    producer_node_info_id,
     model_name,
     SUM(total_tokens) AS total_tokens
 FROM usage_tokens
-WHERE producer_user_profile_id = ANY(:node_ids)
-GROUP BY producer_user_profile_id, model_name;
+WHERE producer_node_info_id = ANY(:node_ids)
+GROUP BY producer_node_info_id, model_name;
 """
 
 SQL_GET_COUNT_BY_TIME = """
@@ -75,7 +75,7 @@ SELECT
 FROM 
     usage_tokens 
 WHERE 
-    producer_user_profile_id = :producer_user_profile_id
+    producer_node_info_id = :producer_node_info_id
     AND id > :start_id;
 """
 
@@ -122,7 +122,7 @@ class TokensRepository:
     async def get_user_latest_usage_tokens(
         self, user_id: UUID, node_id: UUID, count: int
     ) -> List[UsageTokens]:
-        data = {"node_id": node_id, "user_profile_id": user_id, "count": count}
+        data = {"node_id": node_id, "producer_node_info_id": user_id, "count": count}
         tokens = []
         async with self._session_provider.get() as session:
             rows = await session.execute(
@@ -132,7 +132,7 @@ class TokensRepository:
                 tokens.append(
                     UsageTokens(
                         consumer_user_profile_id=row.consumer_user_profile_id,
-                        producer_node_info_id=row.producer_user_profile_id,
+                        producer_node_info_id=row.producer_node_info_id,
                         model_name=row.model_name,
                         prompt_tokens=row.prompt_tokens,
                         completion_tokens=row.completion_tokens,
@@ -154,7 +154,7 @@ class TokensRepository:
             for row in rows:
                 tokens.append(
                     UsageNodeModelTotalTokens(
-                        node_uid=row.producer_user_profile_id,
+                        node_uid=row.producer_node_info_id,
                         model_name=row.model_name,
                         total_tokens=row.total_tokens,
                     )
@@ -172,7 +172,7 @@ class TokensRepository:
     async def get_latest_count_by_time_and_user(
         self, user_id: UUID, hours: int = 24
     ) -> int:
-        data = {"producer_user_profile_id": user_id, "start_id": historic_uuid(hours)}
+        data = {"producer_node_info_id": user_id, "start_id": historic_uuid(hours)}
         async with self._session_provider.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_COUNT_BY_TIME_AND_USER), data
