@@ -34,41 +34,39 @@ async def execute(
 
     metrics_increment.requests_served_incerement += 1
     is_stream = bool(request.chat_request.get("stream"))
-    is_include_usage: bool = bool(
-        (request.chat_request.get("stream_options") or {}).get("include_usage")
+    is_include_usage: bool = (
+        bool((request.chat_request.get("stream_options") or {}).get("include_usage"))
+        or not is_stream
     )
     usage: Optional[CompletionUsage] = None
     request_start_time = time.time()
     first_token_time = None
     request_successful = False
+
     try:
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
-            if not response or response.error:
-                yield response
+            if not response:
+                # Nothing to check, we can break
                 break
-
             if not first_token_time:
                 first_token_time = time.time() - request_start_time
-
-            # overwriting the usage each time
             if response.chunk:
-                usage = response.chunk.usage
-            yield response
-            if is_stream and is_include_usage:
-                # If is_stream and is_include_usage last chunk has no choices, only usage info
-                request_successful = True
-                if not response.chunk or not response.chunk.choices:
+                # overwriting the usage each time
+                usage = response.chunk.usage if response.chunk else None
+                if usage and not response.chunk.choices:
+                    # last chunk only has usage, no choices - request is finished
+                    request_successful = True
+                    if is_include_usage:
+                        yield response
                     break
-            else:
-                if (
-                    response.chunk
-                    and response.chunk.choices
-                    and response.chunk.choices[0]
-                ):
-                    if response.chunk.choices[0].finish_reason == "stop":
-                        request_successful = True
-                        break
+                # if users doesn't need usage, we can remove it from the response
+                if not is_include_usage:
+                    response.chunk.usage = None
+                yield response
+            elif response.error:
+                yield response
+                break
     finally:
         await node_repository.cleanup_request(node.uid, request.id)
         if usage:

@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from uuid import UUID
 
+from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice as CompletionChoice
@@ -71,6 +72,21 @@ class MockInference:
                 object="chat.completion.chunk",
             ),
         )
+        yield InferenceResponse(
+            request_id=str(MOCK_UUID),
+            chunk=ChatCompletionChunk(
+                id=f"mock-{self.chunk_count}",
+                choices=[],
+                created=123,
+                model="llama3",
+                object="chat.completion.chunk",
+                usage=CompletionUsage(
+                    completion_tokens=10,
+                    prompt_tokens=20,
+                    total_tokens=30,
+                ),
+            ),
+        )
 
 
 async def test_success():
@@ -109,5 +125,9 @@ async def test_success():
         object="chat.completion",
         service_tier=None,
         system_fingerprint=None,
-        usage=None,
+        usage=CompletionUsage(
+            completion_tokens=10,
+            prompt_tokens=20,
+            total_tokens=30,
+        ),
     )
