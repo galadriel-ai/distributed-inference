@@ -119,10 +119,11 @@ class TokensRepository:
             await session.execute(sqlalchemy.text(SQL_INSERT_USAGE_TOKENS), data)
             await session.commit()
 
+    # pylint: disable=W0613
     async def get_user_latest_usage_tokens(
         self, user_id: UUID, node_id: UUID, count: int
     ) -> List[UsageTokens]:
-        data = {"node_id": node_id, "producer_node_info_id": user_id, "count": count}
+        data = {"producer_node_info_id": node_id, "count": count}
         tokens = []
         async with self._session_provider.get() as session:
             rows = await session.execute(
