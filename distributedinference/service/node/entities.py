@@ -8,25 +8,43 @@ from pydantic import Field
 from distributedinference.service.entities import ApiResponse
 
 
+class CreateNodeRequest(BaseModel):
+    # we can have a name and stuff but this depends on the website/product
+    pass
+
+
+class CreateNodeResponse(ApiResponse):
+    node_id: str = Field(description="Unique ID of the Node")
+
+
+class ListNodeRequestNode(BaseModel):
+    node_id: str = Field(description="Unique ID of the Node")
+
+
+class ListNodeResponse(ApiResponse):
+    nodes: List[ListNodeRequestNode] = Field(description="User nodes")
+
+
 class NodeInfoRequest(BaseModel):
+    node_id: str = Field(description="Unique ID of the Node")
     gpu_model: Optional[str] = Field(description="GPU model", default=None)
     vram: Optional[int] = Field(description="VRAM in MB", default=None)
-    cpu_model: str = Field(description="CPU model")
-    cpu_count: int = Field(description="CPU cores count")
-    ram: int = Field(description="RAM in MB")
-    network_download_speed: float = Field(
+    cpu_model: Optional[str] = Field(description="CPU model", default=None)
+    cpu_count: Optional[int] = Field(description="CPU cores count", default=None)
+    ram: Optional[int] = Field(description="RAM in MB", default=None)
+    network_download_speed: Optional[float] = Field(
         description="Network download speed in Mbps", default=None
     )
-    network_upload_speed: float = Field(
+    network_upload_speed: Optional[float] = Field(
         description="Network upload speed in Mbps", default=None
     )
-    operating_system: str = Field(description="Operating system")
+    operating_system: Optional[str] = Field(description="Operating system")
 
 
 class GetNodeInfoResponse(NodeInfoRequest):
     status: Literal["online", "offline"] = Field(description="Node status")
-    run_duration_seconds: int = Field(
-        description="Run duration in seconds since connecting"
+    run_duration_seconds: Optional[int] = Field(
+        description="Run duration in seconds since connecting", default=None
     )
     node_created_at: int = Field(
         description="UNIX timestamp of node first registration"
@@ -43,25 +61,28 @@ class InferenceStats(BaseModel):
 
 class GetNodeStatsResponse(BaseModel):
     requests_served: int = Field(
-        description="Total inference requests served by the node"
+        description="Total inference requests served by the node", default=0
     )
     requests_served_day: int = Field(
-        description="Total inference requests served by the node past 24 hours"
+        description="Total inference requests served by the node past 24 hours",
+        default=0,
     )
     average_time_to_first_token: Optional[float] = Field(
-        description="Average time to first token for the node"
+        description="Average time to first token for the node", default=0
     )
 
     benchmark_tokens_per_second: Optional[float] = Field(
-        description="Node benchmark generated tokens per second"
+        description="Node benchmark generated tokens per second", default=0
     )
-    benchmark_model_name: Optional[str] = Field(description="Node benchmark model name")
+    benchmark_model_name: Optional[str] = Field(
+        description="Node benchmark model name", default=None
+    )
     benchmark_created_at: Optional[int] = Field(
-        description="UNIX timestamp of node benchmark creation"
+        description="UNIX timestamp of node benchmark creation", default=0
     )
 
     completed_inferences: List[InferenceStats] = Field(
-        description="Last 10 processed inference calls"
+        description="Last 10 processed inference calls", default=None
     )
 
 
@@ -74,6 +95,7 @@ class PostNodeInfoResponse(ApiResponse):
 
 
 class NodeBenchmarkRequest(BaseModel):
+    node_id: str = Field(description="Unique ID of the Node")
     model_name: str = Field(description="Model name")
     tokens_per_second: float = Field(description="Tokens per second")
 

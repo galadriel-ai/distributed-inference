@@ -16,19 +16,26 @@ from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service.node import node_service_utils
 
 logger = api_logger.get()
 
 
+# pylint: disable=R0913
 async def execute(
     websocket: WebSocket,
     user: User,
+    node_id: Optional[str],
     model_name: Optional[str],
     node_repository: NodeRepository,
     metrics_queue_repository: MetricsQueueRepository,
 ):
-    logger.info(f"Node, with user id {user.uid}, trying to connect")
+    logger.info(
+        f"Node with user id {user.uid} and node id {node_id}, trying to connect"
+    )
     await websocket.accept()
+
+    node_uid = node_service_utils.parse_node_uid(node_id)
 
     if not model_name:
         raise WebSocketRequestValidationError('No "Model" header provided')
@@ -38,9 +45,8 @@ async def execute(
     if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
         raise WebSocketRequestValidationError("Benchmarking performance is too low")
 
-    node_id = user.uid
     node = ConnectedNode(
-        uid=node_id,
+        uid=node_uid,
         model=model_name,
         connected_at=int(time.time()),
         websocket=websocket,
@@ -50,7 +56,7 @@ async def execute(
     connect_time = time.time()
     if not node_repository.register_node(node):
         raise WebSocketRequestValidationError(
-            "Node with same API key already connected"
+            "Node with same node id already connected"
         )
     try:
         while True:
@@ -67,13 +73,13 @@ async def execute(
             except KeyError:
                 logger.error(f"Received chunk for unknown request {request_id}")
     except WebSocketRequestValidationError as e:
-        node_repository.deregister_node(node_id)
+        node_repository.deregister_node(node_uid)
         uptime = int(time.time() - connect_time)
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
         logger.info(f"Node {node_id} disconnected, because of invalid JSON")
         raise e
     except WebSocketDisconnect:
-        node_repository.deregister_node(node_id)
+        node_repository.deregister_node(node_uid)
         uptime = int(time.time() - connect_time)
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
         logger.info(f"Node {node_id} disconnected")

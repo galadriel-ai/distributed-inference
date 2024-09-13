@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 
@@ -8,6 +9,12 @@ class User:
     name: str
     email: str
     authentication_id: str = None
+
+
+@dataclass(frozen=True)
+class ApiKey:
+    api_key: str
+    created_at: datetime
 
 
 @dataclass(frozen=True)

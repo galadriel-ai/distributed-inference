@@ -2,6 +2,7 @@ from uuid import UUID
 
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service.node import node_service_utils
 from distributedinference.service.node.entities import PostNodeInfoRequest
 from distributedinference.service.node.entities import PostNodeInfoResponse
 
@@ -15,7 +16,9 @@ async def execute(
 
 
 def _request_to_node_info(request: PostNodeInfoRequest) -> NodeInfo:
+    node_uid = node_service_utils.parse_node_uid(request.node_id)
     return NodeInfo(
+        node_id=node_uid,
         gpu_model=request.gpu_model,
         vram=request.vram,
         cpu_model=request.cpu_model,

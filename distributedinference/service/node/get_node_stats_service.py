@@ -7,6 +7,7 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
+from distributedinference.service.node import node_service_utils
 from distributedinference.service.node.entities import GetNodeStatsResponse
 from distributedinference.service.node.entities import InferenceStats
 
@@ -14,9 +15,15 @@ INFERENCES_COUNT = 10
 
 
 async def execute(
-    user: User, repository: NodeRepository, tokens_repository: TokensRepository
+    user: User,
+    node_id: str,
+    repository: NodeRepository,
+    tokens_repository: TokensRepository,
 ) -> GetNodeStatsResponse:
-    node_stats: Optional[NodeStats] = await repository.get_node_stats(user.uid)
+    node_uid = node_service_utils.parse_node_uid(node_id)
+    node_stats: Optional[NodeStats] = await repository.get_node_stats(
+        user.uid, node_uid
+    )
     if not node_stats:
         raise error_responses.NotFoundAPIError()
     average_time_to_first_token = None
@@ -24,8 +31,9 @@ async def execute(
         average_time_to_first_token = node_stats.average_time_to_first_token
 
     usage_tokens = await tokens_repository.get_user_latest_usage_tokens(
-        user.uid, INFERENCES_COUNT
+        user.uid, node_uid, INFERENCES_COUNT
     )
+
     return GetNodeStatsResponse(
         requests_served=node_stats.requests_served,
         requests_served_day=await tokens_repository.get_latest_count_by_time_and_user(

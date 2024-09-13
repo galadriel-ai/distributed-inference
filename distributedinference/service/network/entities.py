@@ -21,3 +21,17 @@ class NetworkStatsResponse(BaseModel):
     network_models_stats: List[NetworkModelStats] = Field(
         description="Current network throughput per model in tokens/second"
     )
+
+
+class UserApiKey(BaseModel):
+    api_key_prefix: str = Field(description="Partially revealed API key")
+    created_at: str = Field(description="API key creation date in ISO 8601 format.")
+
+
+class GetApiKeysResponse(BaseModel):
+    api_keys: List[UserApiKey] = Field(description="User API keys")
+
+
+class CreateApiKeyResponse(BaseModel):
+    api_key: str = Field(description="Newly created API key")
+    created_at: str = Field(description="API key creation date in ISO 8601 format.")
