@@ -1,9 +1,11 @@
+from typing import List
 from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
 from uuid_extensions import uuid7
 
+from distributedinference.domain.user.entities import ApiKey
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
@@ -73,6 +75,14 @@ SELECT
     up.last_updated_at
 FROM user_profile up
 WHERE up.authentication_id = :authentication_id;
+"""
+
+SQL_GET_USER_API_KEYS = """
+SELECT
+    api_key,
+    created_at
+FROM api_key
+WHERE user_profile_id = :user_profile_id;
 """
 
 
@@ -156,3 +166,12 @@ class UserRepository:
                     authentication_id=row.authentication_id,
                 )
         return None
+
+    async def get_user_api_keys(self, user_profile_id: UUID) -> List[ApiKey]:
+        data = {"user_profile_id": user_profile_id}
+        api_keys = []
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_USER_API_KEYS), data)
+            for row in rows:
+                api_keys.append(ApiKey(api_key=row.api_key, created_at=row.created_at))
+        return api_keys
