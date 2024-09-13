@@ -5,16 +5,22 @@ from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
+from distributedinference.service.node import node_service_utils
 from distributedinference.service.node.entities import GetNodeInfoResponse
 
 
-async def execute(user: User, repository: NodeRepository) -> GetNodeInfoResponse:
-    node_info: Optional[NodeInfo] = await repository.get_node_info(user.uid)
+async def execute(
+    user: User, node_id: str, repository: NodeRepository
+) -> GetNodeInfoResponse:
+    node_uid = node_service_utils.parse_node_uid(node_id)
+
+    node_info: Optional[NodeInfo] = await repository.get_node_info(user.uid, node_uid)
     if not node_info:
         raise error_responses.NotFoundAPIError()
 
     connected_node = repository.get_connected_node_info(user.uid)
     return GetNodeInfoResponse(
+        node_id=str(node_info.node_id),
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
         cpu_model=node_info.cpu_model,

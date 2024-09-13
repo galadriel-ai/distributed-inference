@@ -32,8 +32,9 @@ class NodeMetrics:
 
 @dataclass
 class NodeInfo:
-    cpu_model: str
-    cpu_count: int
+    node_id: UUID
+    cpu_model: Optional[str] = None
+    cpu_count: Optional[int] = None
     gpu_model: Optional[str] = None
     vram: Optional[int] = None
     ram: Optional[int] = None
@@ -45,18 +46,19 @@ class NodeInfo:
 
 @dataclass
 class NodeBenchmark:
+    node_id: UUID
     model_name: str
     tokens_per_second: float
 
 
 @dataclass
 class NodeStats:
-    requests_served: int
-    average_time_to_first_token: Optional[float]
+    requests_served: Optional[int] = 0
+    average_time_to_first_token: Optional[float] = 0.0
 
-    benchmark_tokens_per_second: Optional[float]
-    benchmark_model_name: Optional[str]
-    benchmark_created_at: Optional[datetime]
+    benchmark_tokens_per_second: Optional[float] = 0
+    benchmark_model_name: Optional[str] = None
+    benchmark_created_at: Optional[datetime] = None
 
 
 @dataclass(frozen=True)

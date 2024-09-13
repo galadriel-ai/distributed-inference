@@ -1,6 +1,7 @@
 from datetime import datetime
 from datetime import timezone
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import pytest
 from uuid_extensions import uuid7
@@ -15,6 +16,8 @@ from distributedinference.service.node import get_node_stats_service as service
 from distributedinference.service.node.entities import GetNodeStatsResponse
 from distributedinference.service.node.entities import InferenceStats
 
+NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
+
 
 def _get_user():
     return User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
@@ -27,7 +30,7 @@ async def test_execute_not_found():
     mock_repository.get_node_stats.return_value = None
 
     with pytest.raises(error_responses.NotFoundAPIError) as e:
-        await service.execute(user, mock_repository, AsyncMock())
+        await service.execute(user, str(NODE_UUID), mock_repository, AsyncMock())
         assert e is not None
 
 
@@ -58,7 +61,9 @@ async def test_success():
     mock_tokens_repository.get_user_latest_usage_tokens.return_value = [usage_tokens]
     mock_tokens_repository.get_latest_count_by_time_and_user.return_value = 321
 
-    response = await service.execute(user, mock_repository, mock_tokens_repository)
+    response = await service.execute(
+        user, str(NODE_UUID), mock_repository, mock_tokens_repository
+    )
 
     expected_response = GetNodeStatsResponse(
         requests_served=node_stats.requests_served,

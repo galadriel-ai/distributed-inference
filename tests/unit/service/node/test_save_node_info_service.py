@@ -1,4 +1,5 @@
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 from uuid_extensions import uuid7
 
@@ -8,10 +9,13 @@ from distributedinference.service.node import save_node_info_service as service
 from distributedinference.service.node.entities import PostNodeInfoRequest
 from distributedinference.service.node.entities import PostNodeInfoResponse
 
+NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
+
 
 async def test_execute_success():
     node_id = uuid7()
     request = PostNodeInfoRequest(
+        node_id=str(NODE_UUID),
         gpu_model="NVIDIA GTX 1080",
         vram=8,
         cpu_model="Intel i7",
@@ -23,6 +27,7 @@ async def test_execute_success():
     )
 
     expected_node_info = NodeInfo(
+        node_id=NODE_UUID,
         gpu_model=request.gpu_model,
         vram=request.vram,
         cpu_model=request.cpu_model,

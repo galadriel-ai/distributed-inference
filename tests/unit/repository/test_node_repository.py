@@ -3,6 +3,7 @@ import time
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
+from uuid import UUID
 
 import pytest
 from uuid_extensions import uuid7
@@ -20,6 +21,7 @@ from distributedinference.repository.node_repository import (
 from distributedinference.repository.connection import SessionProvider
 
 MAX_PARALLEL_REQUESTS = 10
+NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
 
 
 @pytest.fixture
@@ -131,6 +133,7 @@ async def test_save_node_info(node_repository, session_provider):
     node_id = uuid7()
 
     node_info = NodeInfo(
+        node_id=NODE_UUID,
         gpu_model="NVIDIA GTX 1080",
         vram=8,
         cpu_model="Intel i7",
