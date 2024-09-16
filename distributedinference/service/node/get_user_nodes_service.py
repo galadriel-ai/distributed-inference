@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.entities import ListNodeRequestNode
 from distributedinference.service.node.entities import ListNodeResponse
@@ -14,10 +14,17 @@ async def execute(
     return _format(nodes)
 
 
-def _format(nodes: List[NodeInfo]) -> ListNodeResponse:
+def _format(nodes: List[UserNodeInfo]) -> ListNodeResponse:
     result = []
     for node in nodes:
         result.append(
-            ListNodeRequestNode(node_id=node.name, name_alias=node.name_alias)
+            ListNodeRequestNode(
+                node_id=node.name,
+                name_alias=node.name_alias,
+                status="online" if node.connected else "offline",
+                run_duration_seconds=node.uptime,
+                requests_served=node.requests_served,
+                gpu_model=node.gpu_model,
+            )
         )
     return ListNodeResponse(response="OK", nodes=result)
