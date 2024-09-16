@@ -224,7 +224,7 @@ SELECT
     sum(nb.tokens_per_second) AS benchmark_sum
 FROM node_benchmark nb
 LEFT JOIN node_info ni on nb.node_id = ni.id
-WHERE ni.user_profile_id = ANY(:user_profile_ids);
+WHERE ni.id = ANY(:node_ids);
 """
 
 SQL_GET_BENCHMARK_TOKENS_BY_MODEL = """
@@ -233,7 +233,7 @@ SELECT
     SUM(nb.tokens_per_second) AS total_tokens_per_second
 FROM node_benchmark nb
 LEFT JOIN node_info ni ON nb.node_id = ni.id
-WHERE ni.user_profile_id = ANY(:user_profile_ids)
+WHERE ni.id = ANY(:node_ids)
 GROUP BY nb.model_name
 ORDER BY total_tokens_per_second DESC;
 """
@@ -501,10 +501,10 @@ class NodeRepository:
         return 0
 
     async def get_network_throughput(self) -> float:
-        connected_user_profile_ids = self.get_connected_node_ids()
-        if not connected_user_profile_ids:
+        connected_node_ids = self.get_connected_node_ids()
+        if not connected_node_ids:
             return 0
-        data = {"user_profile_ids": tuple(str(i) for i in connected_user_profile_ids)}
+        data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
         async with self._session_provider.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_SUM), data
@@ -515,10 +515,10 @@ class NodeRepository:
         return 0
 
     async def get_network_model_stats(self) -> List[ModelStats]:
-        connected_user_profile_ids = self.get_connected_node_ids()
-        if not connected_user_profile_ids:
+        connected_node_ids = self.get_connected_node_ids()
+        if not connected_node_ids:
             return []
-        data = {"user_profile_ids": tuple(str(i) for i in connected_user_profile_ids)}
+        data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
         async with self._session_provider.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_BY_MODEL), data
