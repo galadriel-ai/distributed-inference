@@ -1,4 +1,3 @@
-import asyncio
 from enum import Enum
 from dataclasses import dataclass
 from logging import Logger
@@ -6,6 +5,7 @@ from typing import Any, Dict
 from uuid import UUID
 
 from posthog import Posthog
+
 
 class EventName(Enum):
     GET_NODE_INFO = "get_node_info"
