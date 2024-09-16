@@ -8,6 +8,8 @@ def init_posthog(is_production: bool, is_test: bool):
         api_key = os.getenv("POSTHOG_API_KEY")
     else:
         api_key = os.getenv("DEBUG_POSTHOG_API_KEY")
+    if not api_key:
+        return None
 
     posthog = Posthog(project_api_key=api_key, host="https://eu.i.posthog.com")
 

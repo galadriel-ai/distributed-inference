@@ -15,13 +15,13 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
-from distributedinference.service.node import node_service_utils
 
 logger = api_logger.get()
 
@@ -30,27 +30,28 @@ logger = api_logger.get()
 async def execute(
     websocket: WebSocket,
     user: User,
-    node_id: Optional[str],
+    node_info: NodeInfo,
     model_name: Optional[str],
     node_repository: NodeRepository,
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
 ):
     logger.info(
-        f"Node with user id {user.uid} and node id {node_id}, trying to connect"
+        f"Node with user id {user.uid} and node id {node_info.node_id}, trying to connect"
     )
     await websocket.accept()
 
-    node_uid = node_service_utils.parse_node_uid(node_id)
-
     if not model_name:
         raise WebSocketRequestValidationError('No "Model" header provided')
-    benchmark = await node_repository.get_node_benchmark(user.uid, node_uid, model_name)
+    benchmark = await node_repository.get_node_benchmark(
+        user.uid, node_info.node_id, model_name
+    )
     if not benchmark:
         raise WebSocketRequestValidationError("Benchmarking is not completed")
     if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
         raise WebSocketRequestValidationError("Benchmarking performance is too low")
 
+    node_uid = node_info.node_id
     node = ConnectedNode(
         uid=node_uid,
         model=model_name,
@@ -58,7 +59,7 @@ async def execute(
         websocket=websocket,
         request_incoming_queues={},
     )
-    logger.info(f"Node {node_id} connected")
+    logger.info(f"Node {node_uid} connected")
     analytics.track_event(user.uid, AnalyticsEvent(EventName.WS_NODE_CONNECTED, {}))
 
     connect_time = time.time()
@@ -84,7 +85,7 @@ async def execute(
         node_repository.deregister_node(node_uid)
         uptime = int(time.time() - connect_time)
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
-        logger.info(f"Node {node_id} disconnected, because of invalid JSON")
+        logger.info(f"Node {node_uid} disconnected, because of invalid JSON")
         analytics.track_event(
             user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED_WITH_ERROR, {})
         )
@@ -93,7 +94,7 @@ async def execute(
         node_repository.deregister_node(node_uid)
         uptime = int(time.time() - connect_time)
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
-        logger.info(f"Node {node_id} disconnected")
+        logger.info(f"Node {node_uid} disconnected")
         analytics.track_event(
             user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {})
         )

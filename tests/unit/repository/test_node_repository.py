@@ -17,7 +17,7 @@ from distributedinference.repository.node_repository import (
     SQL_INCREMENT_NODE_METRICS,
 )
 from distributedinference.repository.node_repository import (
-    SQL_INSERT_OR_UPDATE_NODE_INFO,
+    SQL_UPDATE_NODE_INFO,
 )
 from distributedinference.repository.connection import SessionProvider
 
@@ -134,6 +134,8 @@ async def test_save_node_info(node_repository, session_provider):
     node_id = uuid7()
 
     node_info = NodeInfo(
+        name="name",
+        user_name="user name",
         node_id=NODE_UUID,
         gpu_model="NVIDIA GTX 1080",
         vram=8,
@@ -153,7 +155,7 @@ async def test_save_node_info(node_repository, session_provider):
     mock_session.execute.assert_called_once()
     args, kwargs = mock_session.execute.call_args
 
-    assert args[0].text == SQL_INSERT_OR_UPDATE_NODE_INFO
+    assert args[0].text == SQL_UPDATE_NODE_INFO
 
     data = args[1]
     assert data["user_profile_id"] == node_id

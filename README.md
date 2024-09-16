@@ -20,6 +20,18 @@ Check README in database/README.md
 python wsgi.py
 ```
 
+### Insert some data to DB
+
+Modify the data to insert however you wish
+```
+PYTHONPATH=. python scripts/insert_users.py
+```
+
+Modify the user_id with the result from the previous script
+```
+PYTHONPATH=. python scripts/insert_node.py
+```
+
 ### Unit testing
 
 ```shell

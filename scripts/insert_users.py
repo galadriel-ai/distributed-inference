@@ -28,13 +28,13 @@ USERS = [
 
 async def main():
     connection.init_defaults()
-    repo = UserRepository()
+    repo = UserRepository(connection.get_session_provider())
 
     print(f"Inserting {len(USERS)} users.")
     for api_key, user in USERS:
         user = await _insert_user(repo, user)
         await _insert_api_key(user, api_key, repo)
-        read_repo = UserRepository()
+        read_repo = UserRepository(connection.get_session_provider())
         inserted_user = await read_repo.get_user_by_api_key(api_key)
         print(f"  Inserted user {inserted_user} with api_key='{api_key}'")
 

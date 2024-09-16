@@ -34,6 +34,8 @@ class NodeMetrics:
 @dataclass
 class NodeInfo:
     node_id: UUID
+    name: str
+    user_name: str
     cpu_model: Optional[str] = None
     cpu_count: Optional[int] = None
     gpu_model: Optional[str] = None
