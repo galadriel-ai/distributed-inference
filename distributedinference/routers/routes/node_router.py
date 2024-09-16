@@ -51,6 +51,7 @@ async def websocket_endpoint(
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),
+    analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     user = await authentication.validate_api_key(
         websocket.headers.get("Authorization"),
@@ -68,6 +69,7 @@ async def websocket_endpoint(
         websocket.headers.get("Model"),
         node_repository,
         metrics_queue_repository,
+        analytics,
     )
 
 

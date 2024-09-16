@@ -9,6 +9,11 @@ from fastapi.exceptions import WebSocketRequestValidationError
 
 import settings
 from distributedinference import api_logger
+from distributedinference.analytics.analytics import (
+    Analytics,
+    AnalyticsEvent,
+    EventName,
+)
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
@@ -21,7 +26,7 @@ from distributedinference.service.node import node_service_utils
 logger = api_logger.get()
 
 
-# pylint: disable=R0913
+# pylint: disable=R0913, R0914
 async def execute(
     websocket: WebSocket,
     user: User,
@@ -29,6 +34,7 @@ async def execute(
     model_name: Optional[str],
     node_repository: NodeRepository,
     metrics_queue_repository: MetricsQueueRepository,
+    analytics: Analytics,
 ):
     logger.info(
         f"Node with user id {user.uid} and node id {node_id}, trying to connect"
@@ -53,6 +59,8 @@ async def execute(
         request_incoming_queues={},
     )
     logger.info(f"Node {node_id} connected")
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.WS_NODE_CONNECTED, {}))
+
     connect_time = time.time()
     if not node_repository.register_node(node):
         raise WebSocketRequestValidationError(
@@ -77,12 +85,18 @@ async def execute(
         uptime = int(time.time() - connect_time)
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
         logger.info(f"Node {node_id} disconnected, because of invalid JSON")
+        analytics.track_event(
+            user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED_WITH_ERROR, {})
+        )
         raise e
     except WebSocketDisconnect:
         node_repository.deregister_node(node_uid)
         uptime = int(time.time() - connect_time)
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
         logger.info(f"Node {node_id} disconnected")
+        analytics.track_event(
+            user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {})
+        )
 
 
 async def _increment_uptime(
