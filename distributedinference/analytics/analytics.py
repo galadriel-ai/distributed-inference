@@ -18,6 +18,10 @@ class EventName(Enum):
 
     CHAT_COMPLETIONS = "chat_completions"
 
+    WS_NODE_CONNECTED = "ws_node_connected"
+    WS_NODE_DISCONNECTED = "ws_node_disconnected"
+    WS_NODE_DISCONNECTED_WITH_ERROR = "ws_node_disconnected_with_error"
+
 
 @dataclass
 class AnalyticsEvent:

@@ -34,7 +34,7 @@ async def test_execute_node_no_node_id_header():
 
     with pytest.raises(ValidationTypeError, match="Error, node_id is not a valid type"):
         await websocket_service.execute(
-            websocket, user, None, "model", node_repository, AsyncMock()
+            websocket, user, None, "model", node_repository, AsyncMock(), Mock()
         )
 
     websocket.accept.assert_called_once()
@@ -55,7 +55,7 @@ async def test_execute_node_no_model_header():
         WebSocketRequestValidationError, match='No "Model" header provided'
     ):
         await websocket_service.execute(
-            websocket, user, str(NODE_UUID), None, node_repository, AsyncMock()
+            websocket, user, str(NODE_UUID), None, node_repository, AsyncMock(), Mock()
         )
 
     websocket.accept.assert_called_once()
@@ -76,7 +76,13 @@ async def test_execute_node_no_benchmark():
         WebSocketRequestValidationError, match="Benchmarking is not completed"
     ):
         await websocket_service.execute(
-            websocket, user, str(NODE_UUID), "model", node_repository, AsyncMock()
+            websocket,
+            user,
+            str(NODE_UUID),
+            "model",
+            node_repository,
+            AsyncMock(),
+            Mock(),
         )
 
     websocket.accept.assert_called_once()
@@ -101,7 +107,13 @@ async def test_execute_node_benchmark_too_low():
         WebSocketRequestValidationError, match="Benchmarking performance is too low"
     ):
         await websocket_service.execute(
-            websocket, user, str(NODE_UUID), "model", node_repository, AsyncMock()
+            websocket,
+            user,
+            str(NODE_UUID),
+            "model",
+            node_repository,
+            AsyncMock(),
+            Mock(),
         )
 
     websocket.accept.assert_called_once()
@@ -127,7 +139,13 @@ async def test_execute_node_already_connected():
         match="Node with same node id already connected",
     ):
         await websocket_service.execute(
-            websocket, user, str(NODE_UUID), "model", node_repository, AsyncMock()
+            websocket,
+            user,
+            str(NODE_UUID),
+            "model",
+            node_repository,
+            AsyncMock(),
+            Mock(),
         )
 
     websocket.accept.assert_called_once()
@@ -156,6 +174,7 @@ async def test_execute_websocket_disconnect():
         "model",
         node_repository,
         metrics_queue_repository,
+        Mock(),
     )
 
     websocket.accept.assert_called_once()
@@ -191,6 +210,7 @@ async def test_execute_metrics_update_after_disconnect():
         "model",
         node_repository,
         metrics_queue_repository,
+        Mock(),
     )
 
     websocket.accept.assert_called_once()
