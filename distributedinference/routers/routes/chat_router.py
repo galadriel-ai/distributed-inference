@@ -35,6 +35,7 @@ logger = api_logger.get()
     response_description="Returns a chat completion object, or a streamed sequence of chat completion chunk objects if the request is streamed.",
     response_model=ChatCompletion,
 )
+# pylint: disable=too-many-arguments
 async def completions(
     request: ChatCompletionRequest,
     user: User = Depends(authentication.validate_api_key_header),
