@@ -44,3 +44,7 @@ SESSION_DURATION_MINUTES = 2 * 24 * 60
 
 def is_production():
     return ENVIRONMENT == "production"
+
+
+def is_test():
+    return ENVIRONMENT == "test"

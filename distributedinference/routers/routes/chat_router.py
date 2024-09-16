@@ -4,6 +4,11 @@ from starlette.responses import StreamingResponse
 
 from distributedinference import api_logger
 from distributedinference import dependencies
+from distributedinference.analytics.analytics import (
+    Analytics,
+    EventName,
+    AnalyticsEvent,
+)
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -30,6 +35,7 @@ logger = api_logger.get()
     response_description="Returns a chat completion object, or a streamed sequence of chat completion chunk objects if the request is streamed.",
     response_model=ChatCompletion,
 )
+# pylint: disable=too-many-arguments
 async def completions(
     request: ChatCompletionRequest,
     user: User = Depends(authentication.validate_api_key_header),
@@ -38,7 +44,9 @@ async def completions(
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),
+    analytics: Analytics = Depends(dependencies.get_analytics),
 ):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.CHAT_COMPLETIONS, {}))
     if request.stream:
         headers = {
             "X-Content-Type-Options": "nosniff",
