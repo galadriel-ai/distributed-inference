@@ -12,9 +12,6 @@ from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
-from distributedinference.domain.node.entities import InferenceError
-from distributedinference.domain.node.entities import InferenceResponse
-from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
