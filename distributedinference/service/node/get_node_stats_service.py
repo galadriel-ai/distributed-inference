@@ -1,13 +1,13 @@
 from typing import List
 from typing import Optional
 
+from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeStats
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
-from distributedinference.service.node import node_service_utils
 from distributedinference.service.node.entities import GetNodeStatsResponse
 from distributedinference.service.node.entities import InferenceStats
 
@@ -16,13 +16,12 @@ INFERENCES_COUNT = 10
 
 async def execute(
     user: User,
-    node_id: str,
+    node_info: NodeInfo,
     repository: NodeRepository,
     tokens_repository: TokensRepository,
 ) -> GetNodeStatsResponse:
-    node_uid = node_service_utils.parse_node_uid(node_id)
     node_stats: Optional[NodeStats] = await repository.get_node_stats(
-        user.uid, node_uid
+        user.uid, node_info.node_id
     )
     if not node_stats:
         raise error_responses.NotFoundAPIError()
@@ -31,7 +30,7 @@ async def execute(
         average_time_to_first_token = node_stats.average_time_to_first_token
 
     usage_tokens = await tokens_repository.get_user_latest_usage_tokens(
-        user.uid, node_uid, INFERENCES_COUNT
+        user.uid, node_info.node_id, INFERENCES_COUNT
     )
 
     return GetNodeStatsResponse(

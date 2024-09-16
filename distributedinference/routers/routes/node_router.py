@@ -61,11 +61,12 @@ async def websocket_endpoint(
         raise WebSocketRequestValidationError("Authorization header is required")
 
     node_id = websocket.headers.get("Node-Id")
+    node_info = await authentication.validate_node_name(user, node_id, node_repository)
 
     await websocket_service.execute(
         websocket,
         user,
-        node_id,
+        node_info,
         websocket.headers.get("Model"),
         node_repository,
         metrics_queue_repository,
@@ -84,8 +85,9 @@ async def get_info(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    node_info = await authentication.validate_node_name(user, node_id, node_repository)
     analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_INFO, {}))
-    return await get_node_info_service.execute(user, node_id, node_repository)
+    return await get_node_info_service.execute(user, node_info, node_repository)
 
 
 @router.get(
@@ -100,9 +102,10 @@ async def get_stats(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    node_info = await authentication.validate_node_name(user, node_id, node_repository)
     analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_STATS, {}))
     return await get_node_stats_service.execute(
-        user, node_id, node_repository, tokens_repository
+        user, node_info, node_repository, tokens_repository
     )
 
 
@@ -117,8 +120,13 @@ async def post_info(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    node_info = await authentication.validate_node_name(
+        user, request.node_id, node_repository
+    )
     analytics.track_event(user.uid, AnalyticsEvent(EventName.POST_NODE_INFO, {}))
-    return await save_node_info_service.execute(request, user.uid, node_repository)
+    return await save_node_info_service.execute(
+        request, node_info, user.uid, node_repository
+    )
 
 
 @router.get(
@@ -133,9 +141,10 @@ async def get_benchmark(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    node_info = await authentication.validate_node_name(user, node_id, node_repository)
     analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_BENCHMARK, {}))
     return await get_node_benchmark_service.execute(
-        user, node_id, model, node_repository
+        user, node_info, model, node_repository
     )
 
 
@@ -150,5 +159,10 @@ async def post_benchmark(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
+    node_info = await authentication.validate_node_name(
+        user, request.node_id, node_repository
+    )
     analytics.track_event(user.uid, AnalyticsEvent(EventName.POST_NODE_BENCHMARK, {}))
-    return await save_node_benchmark_service.execute(request, user.uid, node_repository)
+    return await save_node_benchmark_service.execute(
+        request, node_info, user.uid, node_repository
+    )

@@ -30,11 +30,15 @@ logger = api_logger.get()
 SQL_CREATE_NODE_INFO = """
 INSERT INTO node_info (
     id,
+    name,
+    name_alias,
     user_profile_id,
     created_at,
     last_updated_at
 ) VALUES (
     :id,
+    :name,
+    :name_alias,
     :user_profile_id,
     :created_at,
     :last_updated_at
@@ -42,11 +46,13 @@ INSERT INTO node_info (
 """
 
 SQL_GET_USER_NODE_INFOS = """
-SELECT id
+SELECT 
+    id,
+    name,
+    name_alias
 FROM node_info
 WHERE  user_profile_id = :user_profile_id;
 """
-
 
 SQL_GET_NODE_METRICS_BY_IDS = """
 SELECT
@@ -112,9 +118,11 @@ FROM node_info
 WHERE id = :id AND user_profile_id = :user_profile_id;
 """
 
-SQL_INSERT_OR_UPDATE_NODE_INFO = """
-INSERT INTO node_info (
+SQL_GET_NODE_INFO_BY_NAME = """
+SELECT
     id,
+    name,
+    name_alias,
     user_profile_id,
     gpu_model,
     vram,
@@ -126,30 +134,26 @@ INSERT INTO node_info (
     operating_system,
     created_at,
     last_updated_at
-) VALUES (
-    :id,
-    :user_profile_id,
-    :gpu_model,
-    :vram,
-    :cpu_model,
-    :cpu_count,
-    :ram,
-    :network_download_speed,
-    :network_upload_speed,
-    :operating_system,
-    :created_at,
-    :last_updated_at
-)
-ON CONFLICT (id) DO UPDATE SET
-    gpu_model = EXCLUDED.gpu_model,
-    vram = EXCLUDED.vram,
-    cpu_model = EXCLUDED.cpu_model,
-    cpu_count = EXCLUDED.cpu_count,
-    ram = EXCLUDED.ram,
-    network_download_speed = EXCLUDED.network_download_speed,
-    network_upload_speed = EXCLUDED.network_upload_speed,
-    operating_system = EXCLUDED.operating_system,
-    last_updated_at = EXCLUDED.last_updated_at;
+FROM node_info
+WHERE name = :node_name AND user_profile_id = :user_profile_id;
+"""
+
+SQL_UPDATE_NODE_INFO = """
+UPDATE node_info 
+SET 
+    name_alias = :name_alias,
+    user_profile_id = :user_profile_id,
+    gpu_model = :gpu_model,
+    vram = :vram,
+    cpu_model = :cpu_model,
+    cpu_count = :cpu_count,
+    ram = :ram,
+    network_download_speed = :network_download_speed,
+    network_upload_speed = :network_upload_speed,
+    operating_system = :operating_system,
+    created_at = :created_at,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
 """
 
 SQL_GET_NODE_BENCHMARK = """
@@ -253,10 +257,17 @@ class NodeRepository:
         # user_id: ConnectedNode
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
-    async def create_node(self, user_profile_id: UUID) -> NodeInfo:
+    async def create_node(
+        self,
+        user_profile_id: UUID,
+        name: str,
+        name_alias: str,
+    ) -> NodeInfo:
         node_id = uuid7()
         data = {
             "id": str(node_id),
+            "name": name,
+            "name_alias": name_alias,
             "user_profile_id": user_profile_id,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
@@ -264,7 +275,7 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_CREATE_NODE_INFO), data)
             await session.commit()
-            return NodeInfo(node_id=node_id)
+            return NodeInfo(node_id=node_id, name=name, name_alias=name_alias)
 
     async def get_user_nodes(self, user_profile_id: UUID) -> List[NodeInfo]:
         data = {"user_profile_id": user_profile_id}
@@ -272,7 +283,13 @@ class NodeRepository:
             rows = await session.execute(sqlalchemy.text(SQL_GET_USER_NODE_INFOS), data)
             result = []
             for row in rows:
-                result.append(NodeInfo(node_id=row.id))
+                result.append(
+                    NodeInfo(
+                        node_id=row.id,
+                        name=row.name,
+                        name_alias=row.name_alias,
+                    )
+                )
             return result
 
     def register_node(self, connected_node: ConnectedNode) -> bool:
@@ -379,6 +396,34 @@ class NodeRepository:
             if row:
                 return NodeInfo(
                     node_id=row.id,
+                    name=row.name,
+                    name_alias=row.name_alias,
+                    gpu_model=row.gpu_model,
+                    vram=row.vram,
+                    cpu_model=row.cpu_model,
+                    cpu_count=row.cpu_count,
+                    ram=row.ram,
+                    network_download_speed=row.network_download_speed,
+                    network_upload_speed=row.network_upload_speed,
+                    operating_system=row.operating_system,
+                    created_at=row.created_at,
+                )
+        return None
+
+    async def get_node_info_by_name(
+        self, user_id: UUID, node_name: str
+    ) -> Optional[NodeInfo]:
+        data = {"node_name": node_name, "user_profile_id": user_id}
+        async with self._session_provider.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_NODE_INFO_BY_NAME), data
+            )
+            row = result.first()
+            if row:
+                return NodeInfo(
+                    node_id=row.id,
+                    name=row.name,
+                    name_alias=row.name_alias,
                     gpu_model=row.gpu_model,
                     vram=row.vram,
                     cpu_model=row.cpu_model,
@@ -394,6 +439,7 @@ class NodeRepository:
     async def save_node_info(self, user_profile_id: UUID, info: NodeInfo):
         data = {
             "id": str(info.node_id),
+            "name_alias": info.name_alias,
             "user_profile_id": user_profile_id,
             "gpu_model": info.gpu_model,
             "vram": info.vram,
@@ -407,7 +453,7 @@ class NodeRepository:
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            await session.execute(sqlalchemy.text(SQL_INSERT_OR_UPDATE_NODE_INFO), data)
+            await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_INFO), data)
             await session.commit()
 
     async def get_node_benchmark(

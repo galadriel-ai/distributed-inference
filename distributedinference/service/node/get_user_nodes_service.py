@@ -17,5 +17,7 @@ async def execute(
 def _format(nodes: List[NodeInfo]) -> ListNodeResponse:
     result = []
     for node in nodes:
-        result.append(ListNodeRequestNode(node_id=str(node.node_id)))
+        result.append(
+            ListNodeRequestNode(node_id=node.name, name_alias=node.name_alias)
+        )
     return ListNodeResponse(response="OK", nodes=result)

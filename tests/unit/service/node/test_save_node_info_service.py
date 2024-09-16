@@ -28,6 +28,8 @@ async def test_execute_success():
 
     expected_node_info = NodeInfo(
         node_id=NODE_UUID,
+        name="name",
+        name_alias="name_alias",
         gpu_model=request.gpu_model,
         vram=request.vram,
         cpu_model=request.cpu_model,
@@ -39,7 +41,16 @@ async def test_execute_success():
     )
 
     mock_repository = AsyncMock(spec=NodeRepository)
-    response = await service.execute(request, node_id, mock_repository)
+    response = await service.execute(
+        request,
+        NodeInfo(
+            node_id=NODE_UUID,
+            name="name",
+            name_alias="name_alias",
+        ),
+        node_id,
+        mock_repository,
+    )
     mock_repository.save_node_info.assert_called_once_with(node_id, expected_node_info)
 
     assert response == PostNodeInfoResponse(response="OK")

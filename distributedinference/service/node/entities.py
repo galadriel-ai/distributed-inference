@@ -9,8 +9,7 @@ from distributedinference.service.entities import ApiResponse
 
 
 class CreateNodeRequest(BaseModel):
-    # we can have a name and stuff but this depends on the website/product
-    pass
+    node_name: str = Field(description="User defined node name")
 
 
 class CreateNodeResponse(ApiResponse):
@@ -19,6 +18,7 @@ class CreateNodeResponse(ApiResponse):
 
 class ListNodeRequestNode(BaseModel):
     node_id: str = Field(description="Unique ID of the Node")
+    name_alias: str = Field(description="User defined name for the Node")
 
 
 class ListNodeResponse(ApiResponse):
@@ -42,6 +42,7 @@ class NodeInfoRequest(BaseModel):
 
 
 class GetNodeInfoResponse(NodeInfoRequest):
+    name_alias: str = Field(description="User defined name for the node")
     status: Literal["online", "offline"] = Field(description="Node status")
     run_duration_seconds: Optional[int] = Field(
         description="Run duration in seconds since connecting", default=None

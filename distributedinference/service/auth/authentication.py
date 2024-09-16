@@ -1,16 +1,18 @@
 from typing import Optional
 
-from fastapi import Security
 from fastapi import Depends
+from fastapi import Security
 from fastapi.security import APIKeyHeader
 
 from distributedinference import api_logger
 from distributedinference.dependencies import get_authentication_api_repository
 from distributedinference.dependencies import get_user_repository
+from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
 
@@ -69,3 +71,18 @@ async def validate_session_token(
     if user:
         return user
     raise error_responses.InvalidCredentialsAPIError(message_extra="User not found.")
+
+
+async def validate_node_name(
+    user: User,
+    node_name: Optional[str],
+    node_repository: NodeRepository,
+) -> Optional[NodeInfo]:
+    if not node_name:
+        raise error_responses.NotFoundAPIError(message_extra="Node ID not provided")
+    node_info = await node_repository.get_node_info_by_name(user.uid, node_name)
+    if not node_info:
+        raise error_responses.NotFoundAPIError(
+            message_extra="Node with the given name not found."
+        )
+    return node_info
