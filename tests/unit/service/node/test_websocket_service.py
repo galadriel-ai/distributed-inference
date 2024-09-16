@@ -76,7 +76,13 @@ async def test_execute_node_no_benchmark():
         WebSocketRequestValidationError, match="Benchmarking is not completed"
     ):
         await websocket_service.execute(
-            websocket, user, str(NODE_UUID), "model", node_repository, AsyncMock(), Mock()
+            websocket,
+            user,
+            str(NODE_UUID),
+            "model",
+            node_repository,
+            AsyncMock(),
+            Mock(),
         )
 
     websocket.accept.assert_called_once()
@@ -101,7 +107,13 @@ async def test_execute_node_benchmark_too_low():
         WebSocketRequestValidationError, match="Benchmarking performance is too low"
     ):
         await websocket_service.execute(
-            websocket, user, str(NODE_UUID), "model", node_repository, AsyncMock(), Mock()
+            websocket,
+            user,
+            str(NODE_UUID),
+            "model",
+            node_repository,
+            AsyncMock(),
+            Mock(),
         )
 
     websocket.accept.assert_called_once()
@@ -127,7 +139,13 @@ async def test_execute_node_already_connected():
         match="Node with same node id already connected",
     ):
         await websocket_service.execute(
-            websocket, user, str(NODE_UUID), "model", node_repository, AsyncMock(), Mock()
+            websocket,
+            user,
+            str(NODE_UUID),
+            "model",
+            node_repository,
+            AsyncMock(),
+            Mock(),
         )
 
     websocket.accept.assert_called_once()
@@ -156,7 +174,7 @@ async def test_execute_websocket_disconnect():
         "model",
         node_repository,
         metrics_queue_repository,
-        Mock()
+        Mock(),
     )
 
     websocket.accept.assert_called_once()
@@ -192,7 +210,7 @@ async def test_execute_metrics_update_after_disconnect():
         "model",
         node_repository,
         metrics_queue_repository,
-        Mock()
+        Mock(),
     )
 
     websocket.accept.assert_called_once()
