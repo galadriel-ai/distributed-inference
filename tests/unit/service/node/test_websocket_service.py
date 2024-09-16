@@ -21,12 +21,12 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node import websocket_service
 
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
-NODE_INFO = NodeInfo(node_id=NODE_UUID, name="name", user_name="user_name")
+NODE_INFO = NodeInfo(node_id=NODE_UUID, name="name", name_alias="name_alias")
 
 
 async def test_execute_node_no_model_header():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_user_name", email="test_user_email")
+    user = User(uid="test_user_id", name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -47,7 +47,7 @@ async def test_execute_node_no_model_header():
 
 async def test_execute_node_no_benchmark():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_user_name", email="test_user_email")
+    user = User(uid="test_user_id", name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -74,7 +74,7 @@ async def test_execute_node_no_benchmark():
 
 async def test_execute_node_benchmark_too_low():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_user_name", email="test_user_email")
+    user = User(uid="test_user_id", name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -105,7 +105,7 @@ async def test_execute_node_benchmark_too_low():
 
 async def test_execute_node_already_connected():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_user_name", email="test_user_email")
+    user = User(uid="test_user_id", name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -139,7 +139,7 @@ async def test_execute_websocket_disconnect():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
-    user = User(uid="test_user_id", name="test_user_name", email="test_user_email")
+    user = User(uid="test_user_id", name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
     metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
 
@@ -172,7 +172,7 @@ async def test_execute_metrics_update_after_disconnect():
         side_effect=[json.dumps({"request_id": "123"}), WebSocketDisconnect()]
     )
 
-    user = User(uid="test_user_id", name="test_user_name", email="test_user_email")
+    user = User(uid="test_user_id", name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_repository.register_node = Mock(return_value=True)

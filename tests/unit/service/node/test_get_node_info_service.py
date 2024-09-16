@@ -23,7 +23,7 @@ async def test_execute_success():
     node_info = NodeInfo(
         node_id=NODE_UUID,
         name="name",
-        user_name="user_name",
+        name_alias="name_alias",
         gpu_model="NVIDIA GTX 1080",
         vram=8,
         cpu_model="Intel i7",
@@ -36,7 +36,7 @@ async def test_execute_success():
     )
     expected_response = GetNodeInfoResponse(
         node_id=str(NODE_UUID),
-        user_name="user_name",
+        name_alias="name_alias",
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
         cpu_model=node_info.cpu_model,
@@ -73,7 +73,7 @@ async def test_execute_success_node_offline():
     node_info = NodeInfo(
         node_id=NODE_UUID,
         name="name",
-        user_name="user_name",
+        name_alias="name_alias",
         gpu_model="NVIDIA GTX 1080",
         vram=8,
         cpu_model="Intel i7",
@@ -86,7 +86,7 @@ async def test_execute_success_node_offline():
     )
     expected_response = GetNodeInfoResponse(
         node_id=str(NODE_UUID),
-        user_name="user_name",
+        name_alias="name_alias",
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
         cpu_model=node_info.cpu_model,

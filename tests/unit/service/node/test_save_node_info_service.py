@@ -29,7 +29,7 @@ async def test_execute_success():
     expected_node_info = NodeInfo(
         node_id=NODE_UUID,
         name="name",
-        user_name="user_name",
+        name_alias="name_alias",
         gpu_model=request.gpu_model,
         vram=request.vram,
         cpu_model=request.cpu_model,
@@ -46,7 +46,7 @@ async def test_execute_success():
         NodeInfo(
             node_id=NODE_UUID,
             name="name",
-            user_name="user_name",
+            name_alias="name_alias",
         ),
         node_id,
         mock_repository,

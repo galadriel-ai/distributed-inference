@@ -1,4 +1,4 @@
-"""Add node_info table new required columns name and user_name
+"""Add node_info table new required columns name and name_alias
 
 Revision ID: 000000000015
 Revises: 000000000014
@@ -26,11 +26,11 @@ def upgrade():
     SET name = id::TEXT;
     """
     )
-    op.add_column("node_info", sa.Column("user_name", sa.String(), nullable=True))
+    op.add_column("node_info", sa.Column("name_alias", sa.String(), nullable=True))
     op.execute(
         """
     UPDATE node_info
-    SET user_name = id::TEXT;
+    SET name_alias = id::TEXT;
     """
     )
 
@@ -38,7 +38,7 @@ def upgrade():
         "uq_node_info_name", "node_info", ["user_profile_id", "name"]
     )
     op.alter_column("node_info", "name", existing_type=sa.String(), nullable=False)
-    op.alter_column("node_info", "user_name", existing_type=sa.String(), nullable=False)
+    op.alter_column("node_info", "name_alias", existing_type=sa.String(), nullable=False)
 
     op.alter_column(
         "usage_tokens", "producer_node_info_id", existing_type=sa.UUID(), nullable=False
@@ -52,6 +52,6 @@ def downgrade():
         "usage_tokens", "producer_node_info_id", existing_type=sa.UUID(), nullable=True
     )
     op.drop_constraint("uq_node_info_name", "node_info", type_="unique")
-    op.drop_column("node_info", "user_name")
+    op.drop_column("node_info", "name_alias")
     op.drop_column("node_info", "name")
     # ### end Alembic commands ###

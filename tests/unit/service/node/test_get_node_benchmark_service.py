@@ -13,7 +13,7 @@ from distributedinference.service.node import get_node_benchmark_service as serv
 from distributedinference.service.node.entities import GetNodeBenchmarkResponse
 
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
-NODE_INFO = NodeInfo(node_id=NODE_UUID, name="name", user_name="user_name")
+NODE_INFO = NodeInfo(node_id=NODE_UUID, name="name", name_alias="name_alias")
 
 
 async def test_execute_success():

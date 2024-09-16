@@ -43,8 +43,9 @@ async def get_node_stats(
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_session_token),
 ):
+    node_info = await authentication.validate_node_name(user, node_id, node_repository)
     return await get_node_stats_service.execute(
-        user, node_id, node_repository, tokens_repository
+        user, node_info, node_repository, tokens_repository
     )
 
 

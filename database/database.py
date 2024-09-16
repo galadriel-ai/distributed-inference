@@ -70,7 +70,7 @@ class NodeInfo(Base):
     __table_args__ = (
         UniqueConstraint("user_profile_id", "name", name="uq_node_info_name"),
     )
-    user_name = Column(String(), nullable=False)
+    name_alias = Column(String(), nullable=False)
 
     gpu_model = Column(String(), nullable=True)
     vram = Column(Integer(), nullable=True)  # VRAM in MB

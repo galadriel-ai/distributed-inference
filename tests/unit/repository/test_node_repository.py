@@ -135,7 +135,7 @@ async def test_save_node_info(node_repository, session_provider):
 
     node_info = NodeInfo(
         name="name",
-        user_name="user name",
+        name_alias="user alias",
         node_id=NODE_UUID,
         gpu_model="NVIDIA GTX 1080",
         vram=8,

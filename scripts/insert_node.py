@@ -9,7 +9,7 @@ from distributedinference.service.node import create_node_service
 from distributedinference.service.node.entities import CreateNodeRequest
 
 # Modify with whatever values you wish! (check user_profile_id from user table ID column)
-NODE_USER_NAME = "My node"
+NODE_NAME_ALIAS = "My node"
 USER_PROFILE_ID = UUID("066cc88e-e83c-7f5f-8000-8bf552a84935")
 
 
@@ -18,7 +18,7 @@ async def main():
     repo = NodeRepository(connection.get_session_provider(), 1)
 
     res = await create_node_service.execute(
-        CreateNodeRequest(node_name=NODE_USER_NAME),
+        CreateNodeRequest(node_name=NODE_NAME_ALIAS),
         user_profile_id=USER_PROFILE_ID,
         repository=repo,
     )

@@ -12,7 +12,7 @@ async def execute(
     connected_node = repository.get_connected_node_info(user.uid)
     return GetNodeInfoResponse(
         node_id=str(node_info.node_id),
-        user_name=node_info.user_name,
+        name_alias=node_info.name_alias,
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
         cpu_model=node_info.cpu_model,

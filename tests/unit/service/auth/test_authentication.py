@@ -64,7 +64,7 @@ async def test_node_success():
     node_info = NodeInfo(
         node_id=UUID("9fe247c3-71ce-4abf-8e3f-24becfab50da"),
         name="name",
-        user_name="user_name",
+        name_alias="name_alias",
     )
     mock_repository.get_node_info_by_name.return_value = node_info
 
