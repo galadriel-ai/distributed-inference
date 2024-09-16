@@ -33,7 +33,13 @@ def init_globals():
     )
     _metrics_queue_repository = MetricsQueueRepository()
 
-    _analytics = Analytics(init_posthog(is_production=settings.is_production()), logger=api_logger.get())
+    _analytics = Analytics(
+        posthog=init_posthog(
+            is_production=settings.is_production(),
+            is_test=settings.is_test(),
+        ),
+        logger=api_logger.get(),
+    )
 
     if settings.is_production() or (
         settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET
