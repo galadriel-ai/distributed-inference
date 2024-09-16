@@ -38,7 +38,9 @@ def upgrade():
         "uq_node_info_name", "node_info", ["user_profile_id", "name"]
     )
     op.alter_column("node_info", "name", existing_type=sa.String(), nullable=False)
-    op.alter_column("node_info", "name_alias", existing_type=sa.String(), nullable=False)
+    op.alter_column(
+        "node_info", "name_alias", existing_type=sa.String(), nullable=False
+    )
 
     op.alter_column(
         "usage_tokens", "producer_node_info_id", existing_type=sa.UUID(), nullable=False
