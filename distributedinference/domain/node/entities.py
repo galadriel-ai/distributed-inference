@@ -53,9 +53,9 @@ class UserNodeInfo:
     name: str
     name_alias: str
     connected: bool
-    gpu_model: str
-    requests_served: int
-    uptime: int
+    gpu_model: Optional[str] = None
+    requests_served: Optional[int] = None
+    uptime: Optional[int] = None
 
 
 @dataclass

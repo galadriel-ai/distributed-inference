@@ -22,8 +22,8 @@ def _format(nodes: List[UserNodeInfo]) -> ListNodeResponse:
                 node_id=node.name,
                 name_alias=node.name_alias,
                 status="online" if node.connected else "offline",
-                run_duration_seconds=node.uptime,
-                requests_served=node.requests_served,
+                run_duration_seconds=node.uptime or 0,
+                requests_served=node.requests_served or 0,
                 gpu_model=node.gpu_model,
             )
         )

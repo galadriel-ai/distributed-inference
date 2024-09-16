@@ -21,12 +21,12 @@ class ListNodeRequestNode(BaseModel):
     name_alias: str = Field(description="User defined name for the Node")
     status: Literal["online", "offline"] = Field(description="Node status")
     run_duration_seconds: int = Field(
-        description="Run duration in seconds since connecting", default=None
+        description="Run duration in seconds since connecting", default=0
     )
     requests_served: int = Field(
         description="Total inference requests served by the node", default=0
     )
-    gpu_model: str = Field(description="GPU model", default=None)
+    gpu_model: Optional[str] = Field(description="GPU model", default=None)
 
 
 class ListNodeResponse(ApiResponse):
