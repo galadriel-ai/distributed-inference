@@ -48,6 +48,17 @@ class NodeInfo:
 
 
 @dataclass
+class UserNodeInfo:
+    node_id: UUID
+    name: str
+    name_alias: str
+    connected: bool
+    gpu_model: str
+    requests_served: int
+    uptime: int
+
+
+@dataclass
 class NodeBenchmark:
     node_id: UUID
     model_name: str
