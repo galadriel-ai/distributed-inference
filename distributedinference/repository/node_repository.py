@@ -47,25 +47,11 @@ FROM node_info
 WHERE  user_profile_id = :user_profile_id;
 """
 
-SQL_GET_NODE_METRICS = """
-SELECT
-    id,
-    user_profile_id,
-    requests_served,
-    requests_successful,
-    requests_failed,
-    time_to_first_token,
-    uptime,
-    created_at,
-    last_updated_at
-FROM node_metrics
-WHERE user_profile_id = :user_profile_id;
-"""
 
 SQL_GET_NODE_METRICS_BY_IDS = """
 SELECT
     id,
-    user_profile_id,
+    node_info_id,
     requests_served,
     requests_successful,
     requests_failed,
@@ -74,13 +60,13 @@ SELECT
     created_at,
     last_updated_at
 FROM node_metrics
-WHERE user_profile_id = ANY(:user_profile_ids);
+WHERE node_info_id = ANY(:node_ids);
 """
 
 SQL_INCREMENT_NODE_METRICS = """
 INSERT INTO node_metrics (
     id,
-    user_profile_id,
+    node_info_id,
     requests_served,
     requests_successful,
     requests_failed,
@@ -90,7 +76,7 @@ INSERT INTO node_metrics (
     last_updated_at
 ) VALUES (
     :id,
-    :user_profile_id,
+    :node_id,
     :requests_served_increment,
     :requests_successful_increment,
     :requests_failed_increment,
@@ -99,7 +85,7 @@ INSERT INTO node_metrics (
     :created_at,
     :last_updated_at
 )
-ON CONFLICT (user_profile_id) DO UPDATE SET
+ON CONFLICT (node_info_id) DO UPDATE SET
     requests_served = node_metrics.requests_served + EXCLUDED.requests_served,
     requests_successful = node_metrics.requests_successful + EXCLUDED.requests_successful,
     requests_failed = node_metrics.requests_failed + EXCLUDED.requests_failed,
@@ -351,16 +337,16 @@ class NodeRepository:
         return self._connected_nodes.get(user_id)
 
     async def get_node_metrics_by_ids(
-        self, user_profile_ids: List[UUID]
+        self, node_ids: List[UUID]
     ) -> Dict[UUID, NodeMetrics]:
-        data = {"user_profile_ids": user_profile_ids}
+        data = {"node_ids": node_ids}
         async with self._session_provider.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data
             )
             result = {}
             for row in rows:
-                result[row.user_profile_id] = NodeMetrics(
+                result[row.node_info_id] = NodeMetrics(
                     requests_served=row.requests_served,
                     requests_successful=row.requests_successful,
                     requests_failed=row.requests_failed,
@@ -372,7 +358,7 @@ class NodeRepository:
     async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
         data = {
             "id": str(uuid7()),
-            "user_profile_id": metrics.node_id,
+            "node_id": metrics.node_id,
             "requests_served_increment": metrics.requests_served_incerement,
             "requests_successful_increment": metrics.requests_successful_incerement,
             "requests_failed_increment": metrics.requests_failed_increment,

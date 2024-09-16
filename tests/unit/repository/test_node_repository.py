@@ -189,7 +189,7 @@ async def test_save_node_metrics(node_repository, session_provider):
     assert args[0].text == SQL_INCREMENT_NODE_METRICS
 
     data = args[1]
-    assert data["user_profile_id"] == node_id
+    assert data["node_id"] == node_id
     assert data["requests_served_increment"] == node_metrics.requests_served_incerement
     assert (
         data["requests_successful_increment"]
