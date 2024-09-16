@@ -65,7 +65,7 @@ WHERE user_profile_id = :user_profile_id;
 SQL_GET_NODE_METRICS_BY_IDS = """
 SELECT
     id,
-    user_profile_id,
+    node_info_id,
     requests_served,
     requests_successful,
     requests_failed,
@@ -74,7 +74,7 @@ SELECT
     created_at,
     last_updated_at
 FROM node_metrics
-WHERE user_profile_id = ANY(:user_profile_ids);
+WHERE node_info_id = ANY(:node_ids);
 """
 
 SQL_INCREMENT_NODE_METRICS = """
@@ -351,16 +351,16 @@ class NodeRepository:
         return self._connected_nodes.get(user_id)
 
     async def get_node_metrics_by_ids(
-        self, user_profile_ids: List[UUID]
+        self, node_ids: List[UUID]
     ) -> Dict[UUID, NodeMetrics]:
-        data = {"user_profile_ids": user_profile_ids}
+        data = {"node_ids": node_ids}
         async with self._session_provider.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data
             )
             result = {}
             for row in rows:
-                result[row.user_profile_id] = NodeMetrics(
+                result[row.node_info_id] = NodeMetrics(
                     requests_served=row.requests_served,
                     requests_successful=row.requests_successful,
                     requests_failed=row.requests_failed,
