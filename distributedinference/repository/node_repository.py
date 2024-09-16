@@ -18,6 +18,7 @@ from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.entities import NodeStats
 from distributedinference.repository import utils
@@ -299,6 +300,19 @@ class NodeRepository:
 
     def deregister_node(self, node_id: UUID):
         if node_id in self._connected_nodes:
+            # Send error to all active requests
+            for request_id, queue in self._connected_nodes[
+                node_id
+            ].request_incoming_queues.items():
+                queue.put_nowait(
+                    InferenceResponse(
+                        request_id=request_id,
+                        error=InferenceError(
+                            status_code=InferenceStatusCodes.UNPROCESSABLE_ENTITY,
+                            message="Node disconnected",
+                        ),
+                    ).to_dict()
+                )
             del self._connected_nodes[node_id]
 
     # pylint: disable=W0613

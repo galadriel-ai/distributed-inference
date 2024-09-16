@@ -11,6 +11,7 @@ from uuid_extensions import uuid7
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
     SQL_INCREMENT_NODE_METRICS,
@@ -291,3 +292,30 @@ def test_least_busy_node_selection(
     ):
         node_repository.select_node("model")
         mock_random_choice.assert_called_once_with([node2])
+
+
+async def test_deregister_node_sends_error_on_disconnect(
+    node_repository, connected_node_factory
+):
+    node_id = "1"
+    request_id = "request_123"
+    node = connected_node_factory(node_id)
+
+    request_queue = asyncio.Queue()
+    node.request_incoming_queues[request_id] = request_queue
+    node_repository.register_node(node)
+
+    assert node_id in node_repository._connected_nodes
+
+    node_repository.deregister_node(node_id)
+
+    assert node_id not in node_repository._connected_nodes
+
+    error_response = await request_queue.get()
+
+    assert error_response["request_id"] == request_id
+    assert error_response["error"]["message"] == "Node disconnected"
+    assert (
+        error_response["error"]["status_code"]
+        == InferenceStatusCodes.UNPROCESSABLE_ENTITY.value
+    )

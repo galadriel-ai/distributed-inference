@@ -1,4 +1,5 @@
 import asyncio
+
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -89,6 +90,12 @@ class InferenceError:
     status_code: InferenceStatusCodes
     message: str
 
+    def to_dict(self):
+        return {
+            "status_code": self.status_code.value,
+            "message": self.message,
+        }
+
 
 @dataclass
 class InferenceRequest:
@@ -102,3 +109,10 @@ class InferenceResponse:
     request_id: str
     chunk: Optional[ChatCompletionChunk] = None
     error: Optional[InferenceError] = None
+
+    def to_dict(self):
+        return {
+            "request_id": self.request_id,
+            "error": self.error.to_dict() if self.error else None,
+            "chunk": self.chunk.to_dict() if self.chunk else None,
+        }
