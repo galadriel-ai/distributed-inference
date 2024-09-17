@@ -89,7 +89,7 @@ SELECT
     created_at,
     last_updated_at
 FROM user_profile
-WHERE username = :username;
+WHERE username ILIKE :username;
 """
 
 SQL_GET_BY_AUTHENTICATION_ID = """
