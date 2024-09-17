@@ -80,6 +80,20 @@ class NotFoundAPIError(APIErrorResponse):
         return "Can't find the requested resource"
 
 
+class UsernameAlreadyExistsAPIError(APIErrorResponse):
+    def __init__(self):
+        pass
+
+    def to_status_code(self) -> status:
+        return status.HTTP_409_CONFLICT
+
+    def to_code(self) -> str:
+        return "username_already_exists"
+
+    def to_message(self) -> str:
+        return "Username already exists."
+
+
 class ValidationError(APIErrorResponse):
     """Raised when a validation error occurs"""
 

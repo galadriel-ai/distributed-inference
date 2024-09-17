@@ -8,6 +8,7 @@ class User:
     uid: UUID
     name: str
     email: str
+    username: str = None
     authentication_id: str = None
 
 

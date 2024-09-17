@@ -9,7 +9,7 @@ from distributedinference.repository.authentication_api_repository import (
 )
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.auth import login_service
-from distributedinference.service.auth import set_user_password_service
+from distributedinference.service.auth import set_username_and_password_service
 from distributedinference.service.auth import signup_service
 from distributedinference.service.auth.entities import LoginRequest
 from distributedinference.service.auth.entities import SetUserPasswordRequest
@@ -57,7 +57,7 @@ async def set_user_password(
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
 ):
-    return await set_user_password_service.execute(
+    return await set_username_and_password_service.execute(
         request, auth_repository, user_repository
     )
 
@@ -75,5 +75,6 @@ async def login(
     auth_repository: AuthenticationApiRepository = Depends(
         dependencies.get_authentication_api_repository
     ),
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
 ):
-    return await login_service.execute(request, auth_repository)
+    return await login_service.execute(request, auth_repository, user_repository)
