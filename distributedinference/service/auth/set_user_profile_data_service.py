@@ -1,6 +1,3 @@
-from distributedinference.repository.authentication_api_repository import (
-    AuthenticationApiRepository,
-)
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
 from distributedinference.domain.user.entities import User
