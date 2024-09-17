@@ -335,7 +335,7 @@ class NodeRepository:
         eligible_nodes = [
             node
             for node in self._connected_nodes.values()
-            if node.active_requests_count() < self._max_parallel_requests_per_node
+            if self._can_handle_new_request(node)
         ]
 
         if not eligible_nodes:
@@ -349,6 +349,9 @@ class NodeRepository:
         ]
 
         return random.choice(least_busy_nodes)
+
+    def _can_handle_new_request(self, node: ConnectedNode) -> bool:
+        return node.active_requests_count() < self._max_parallel_requests_per_node
 
     def get_connected_nodes(self) -> List[ConnectedNode]:
         return list(self._connected_nodes.values())
