@@ -49,8 +49,6 @@ async def test_execute_success():
         run_duration_seconds=1,
         node_created_at=created_at.timestamp(),
     )
-    user = User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
-
     service.time = MagicMock()
     service.time.time.return_value = 1338
 
@@ -63,7 +61,7 @@ async def test_execute_success():
         websocket=MagicMock(),
         request_incoming_queues={},
     )
-    response = await service.execute(user, node_info, mock_repository)
+    response = await service.execute(node_info, mock_repository)
 
     assert response == expected_response
 
@@ -99,8 +97,6 @@ async def test_execute_success_node_offline():
         run_duration_seconds=0,
         node_created_at=created_at.timestamp(),
     )
-    user = User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
-
     service.time = MagicMock()
     service.time.time.return_value = 1338
 
@@ -108,6 +104,6 @@ async def test_execute_success_node_offline():
     mock_repository.get_node_info.return_value = node_info
     mock_repository.get_connected_node_info.return_value = None
 
-    response = await service.execute(user, node_info, mock_repository)
+    response = await service.execute(node_info, mock_repository)
 
     assert response == expected_response

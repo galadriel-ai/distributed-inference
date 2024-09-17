@@ -359,8 +359,8 @@ class NodeRepository:
     def get_connected_node_ids(self) -> List[UUID]:
         return [k for k, _ in self._connected_nodes.items()]
 
-    def get_connected_node_info(self, user_id: UUID) -> Optional[ConnectedNode]:
-        return self._connected_nodes.get(user_id)
+    def get_connected_node_info(self, node_id: str) -> Optional[ConnectedNode]:
+        return self._connected_nodes.get(node_id)
 
     async def get_node_metrics_by_ids(
         self, node_ids: List[UUID]
