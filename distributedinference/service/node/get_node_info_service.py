@@ -9,7 +9,7 @@ from distributedinference.service.node.entities import GetNodeInfoResponse
 async def execute(
     user: User, node_info: NodeInfo, repository: NodeRepository
 ) -> GetNodeInfoResponse:
-    connected_node = repository.get_connected_node_info(user.uid)
+    connected_node = repository.get_connected_node_info(node_info.node_id)
     return GetNodeInfoResponse(
         node_id=str(node_info.node_id),
         name_alias=node_info.name_alias,
