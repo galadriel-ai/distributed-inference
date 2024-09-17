@@ -12,7 +12,7 @@ async def execute(
     auth_repo: AuthenticationApiRepository,
     user_repository: UserRepository,
 ) -> SetUserPasswordResponse:
-    if user_repository.get_user_by_username(link_request.username):
+    if await user_repository.get_user_by_username(link_request.username):
         raise error_responses.UsernameAlreadyExistsAPIError()
     try:
         authentication = await auth_repo.authenticate_magic_link(link_request.token)

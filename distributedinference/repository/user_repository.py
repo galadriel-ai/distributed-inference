@@ -1,3 +1,4 @@
+import json
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -45,7 +46,7 @@ UPDATE
 SET 
     profile_data = :profile_data,
     last_updated_at = :last_updated_at
-WHERE user_profile_id = :user_profile_id; 
+WHERE id = :user_profile_id; 
 """
 
 SQL_INSERT_API_KEY = """
@@ -158,7 +159,7 @@ class UserRepository:
     ):
         data = {
             "user_profile_id": user_profile_id,
-            "profile_data": profile_data,
+            "profile_data": json.dumps(profile_data),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
