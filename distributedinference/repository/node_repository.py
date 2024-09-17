@@ -351,7 +351,10 @@ class NodeRepository:
         return random.choice(least_busy_nodes)
 
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
-        return node.active_requests_count() < self._max_parallel_requests_per_node
+        if node.can_handle_parallel_requests():
+            return node.active_requests_count() < self._max_parallel_requests_per_node
+
+        return node.active_requests_count() == 1
 
     def get_connected_nodes(self) -> List[ConnectedNode]:
         return list(self._connected_nodes.values())

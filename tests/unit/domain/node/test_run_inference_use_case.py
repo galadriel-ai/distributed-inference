@@ -30,7 +30,7 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(uid, model, int(time.time()), mock_websocket, {})
+        return ConnectedNode(uid, model, 16000, int(time.time()), mock_websocket, {})
 
     return _create_node
 
