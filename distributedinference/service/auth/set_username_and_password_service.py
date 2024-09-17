@@ -26,5 +26,4 @@ async def execute(
         username=link_request.username,
         is_password_set=True,
     )
-    # TODO: decide if user should be logged in here or log in with password, product question
     return SetUserPasswordResponse(session_token=updated_authentication.session_token)
