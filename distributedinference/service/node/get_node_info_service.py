@@ -1,13 +1,12 @@
 import time
 
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.entities import GetNodeInfoResponse
 
 
 async def execute(
-    user: User, node_info: NodeInfo, repository: NodeRepository
+    node_info: NodeInfo, repository: NodeRepository
 ) -> GetNodeInfoResponse:
     connected_node = repository.get_connected_node_info(node_info.node_id)
     return GetNodeInfoResponse(

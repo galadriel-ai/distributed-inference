@@ -87,7 +87,7 @@ async def get_info(
 ):
     node_info = await authentication.validate_node_name(user, node_id, node_repository)
     analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_INFO, {}))
-    return await get_node_info_service.execute(user, node_info, node_repository)
+    return await get_node_info_service.execute(node_info, node_repository)
 
 
 @router.get(
