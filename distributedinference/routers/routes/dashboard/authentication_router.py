@@ -8,14 +8,19 @@ from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
 from distributedinference.repository.user_repository import UserRepository
+from distributedinference.domain.user.entities import User
 from distributedinference.service.auth import login_service
 from distributedinference.service.auth import set_username_and_password_service
 from distributedinference.service.auth import signup_service
+from distributedinference.service.auth import authentication
+from distributedinference.service.auth import set_user_profile_data_service
 from distributedinference.service.auth.entities import LoginRequest
 from distributedinference.service.auth.entities import SetUserPasswordRequest
 from distributedinference.service.auth.entities import SetUserPasswordResponse
 from distributedinference.service.auth.entities import SignupRequest
 from distributedinference.service.auth.entities import SignupResponse
+from distributedinference.service.auth.entities import SetUserProfileDataRequest
+from distributedinference.service.auth.entities import SetUserProfileDataResponse
 
 TAG = "Authentication"
 router = APIRouter(prefix="/auth")
@@ -78,3 +83,19 @@ async def login(
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
 ):
     return await login_service.execute(request, auth_repository, user_repository)
+
+
+@router.post(
+    "/profile",
+    summary="Save profile",
+    description="Save user profile.",
+    response_description="",
+    response_model=SetUserProfileDataResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def profile_data(
+    request: SetUserProfileDataRequest,
+    user: User = Depends(authentication.validate_session_token),
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+):
+    return await set_user_profile_data_service.execute(request, user, user_repository)

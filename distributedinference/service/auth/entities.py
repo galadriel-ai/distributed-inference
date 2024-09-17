@@ -31,3 +31,11 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(ApiResponse):
     session_token: str = Field(description="Session token")
+
+
+class SetUserProfileDataRequest(BaseModel):
+    data: dict = Field(description="User profile data")
+
+
+class SetUserProfileDataResponse(ApiResponse):
+    pass

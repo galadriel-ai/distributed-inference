@@ -39,6 +39,14 @@ SET
 WHERE authentication_id = :authentication_id; 
 """
 
+SQL_UPDATE_USER_PROFILE_DATA = """
+UPDATE 
+    user_profile 
+SET 
+    profile_data = :profile_data,
+    last_updated_at = :last_updated_at
+WHERE user_profile_id = :user_profile_id; 
+"""
 
 SQL_INSERT_API_KEY = """
 INSERT INTO api_key (
@@ -141,6 +149,20 @@ class UserRepository:
             await session.execute(
                 sqlalchemy.text(SQL_UPDATE_USERNAME_AND_IS_PASSWORD_SET), data
             )
+            await session.commit()
+
+    async def update_user_profile_data(
+        self,
+        user_profile_id: UUID,
+        profile_data: dict,
+    ):
+        data = {
+            "user_profile_id": user_profile_id,
+            "profile_data": profile_data,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_USER_PROFILE_DATA), data)
             await session.commit()
 
     async def insert_api_key(self, user_id: UUID, api_key: str) -> UUID:
