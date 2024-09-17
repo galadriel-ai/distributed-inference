@@ -15,6 +15,7 @@ from distributedinference.service.auth import signup_service
 from distributedinference.service.auth import authentication
 from distributedinference.service.auth import set_user_profile_data_service
 from distributedinference.service.auth.entities import LoginRequest
+from distributedinference.service.auth.entities import LoginResponse
 from distributedinference.service.auth.entities import SetUserPasswordRequest
 from distributedinference.service.auth.entities import SetUserPasswordResponse
 from distributedinference.service.auth.entities import SignupRequest
@@ -72,7 +73,7 @@ async def set_user_password(
     summary="Log in with password",
     description="Validate password and log in.",
     response_description="Returns a session token, or a helpful error.",
-    response_model=SetUserPasswordResponse,
+    response_model=LoginResponse,
     include_in_schema=not settings.is_production(),
 )
 async def login(

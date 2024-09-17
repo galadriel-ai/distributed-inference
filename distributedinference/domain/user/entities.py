@@ -9,6 +9,7 @@ class User:
     name: str
     email: str
     username: str = None
+    profile_data: dict = None
     authentication_id: str = None
 
 

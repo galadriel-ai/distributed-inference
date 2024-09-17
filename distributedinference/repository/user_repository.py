@@ -72,6 +72,7 @@ SELECT
     up.name,
     up.email,
     up.authentication_id,
+    up.profile_data,
     up.created_at,
     up.last_updated_at
 FROM user_profile up
@@ -85,6 +86,7 @@ SELECT
     name,
     username,
     email,
+    profile_data,
     authentication_id,
     created_at,
     last_updated_at
@@ -98,6 +100,7 @@ SELECT
     up.name,
     up.email,
     up.authentication_id,
+    up.profile_data,
     up.created_at,
     up.last_updated_at
 FROM user_profile up
@@ -190,6 +193,7 @@ class UserRepository:
                     uid=row.id,
                     name=row.name,
                     email=row.email,
+                    profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
                 )
         return None
@@ -205,6 +209,7 @@ class UserRepository:
                     name=row.name,
                     username=row.username,
                     email=row.email,
+                    profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
                 )
         return None
@@ -223,6 +228,7 @@ class UserRepository:
                     uid=row.id,
                     name=row.name,
                     email=row.email,
+                    profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
                 )
         return None
@@ -235,3 +241,16 @@ class UserRepository:
             for row in rows:
                 api_keys.append(ApiKey(api_key=row.api_key, created_at=row.created_at))
         return api_keys
+
+
+if __name__ == "__main__":
+    import asyncio
+    from distributedinference.repository import connection
+
+    async def main():
+        connection.init_defaults()
+        user_repository = UserRepository(connection.get_session_provider())
+        user = await user_repository.get_user_by_username("dino")
+        print(user.profile_data is None)
+
+    asyncio.run(main())

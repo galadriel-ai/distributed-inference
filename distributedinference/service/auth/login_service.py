@@ -12,9 +12,14 @@ async def execute(
     auth_repo: AuthenticationApiRepository,
     user_repository: UserRepository,
 ) -> LoginResponse:
+    user = await user_repository.get_user_by_username(login_request.username)
+    if not user:
+        raise error_responses.InvalidCredentialsAPIError()
     try:
-        user = await user_repository.get_user_by_username(login_request.username)
         authentication = await auth_repo.login(user.email, login_request.password)
     except:
         raise error_responses.InvalidCredentialsAPIError()
-    return LoginResponse(session_token=authentication.session_token)
+    return LoginResponse(
+        session_token=authentication.session_token,
+        onboarding_completed=user.profile_data is not None,
+    )
