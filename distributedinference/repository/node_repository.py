@@ -15,6 +15,7 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
@@ -47,11 +48,15 @@ INSERT INTO node_info (
 
 SQL_GET_USER_NODE_INFOS = """
 SELECT 
-    id,
-    name,
-    name_alias
-FROM node_info
-WHERE  user_profile_id = :user_profile_id;
+    ni.id,
+    ni.name,
+    ni.name_alias,
+    ni.gpu_model,
+    nm.requests_served,
+    nm.uptime
+FROM node_info ni
+LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
+WHERE ni.user_profile_id = :user_profile_id;
 """
 
 SQL_GET_NODE_METRICS_BY_IDS = """
@@ -277,17 +282,21 @@ class NodeRepository:
             await session.commit()
             return NodeInfo(node_id=node_id, name=name, name_alias=name_alias)
 
-    async def get_user_nodes(self, user_profile_id: UUID) -> List[NodeInfo]:
+    async def get_user_nodes(self, user_profile_id: UUID) -> List[UserNodeInfo]:
         data = {"user_profile_id": user_profile_id}
         async with self._session_provider.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_USER_NODE_INFOS), data)
             result = []
             for row in rows:
                 result.append(
-                    NodeInfo(
+                    UserNodeInfo(
                         node_id=row.id,
                         name=row.name,
                         name_alias=row.name_alias,
+                        gpu_model=row.gpu_model,
+                        requests_served=row.requests_served,
+                        uptime=row.uptime,
+                        connected=(row.id in self._connected_nodes),
                     )
                 )
             return result
@@ -350,8 +359,8 @@ class NodeRepository:
     def get_connected_node_ids(self) -> List[UUID]:
         return [k for k, _ in self._connected_nodes.items()]
 
-    def get_connected_node_info(self, user_id: UUID) -> Optional[ConnectedNode]:
-        return self._connected_nodes.get(user_id)
+    def get_connected_node_info(self, node_id: str) -> Optional[ConnectedNode]:
+        return self._connected_nodes.get(node_id)
 
     async def get_node_metrics_by_ids(
         self, node_ids: List[UUID]

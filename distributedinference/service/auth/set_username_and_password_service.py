@@ -12,6 +12,8 @@ async def execute(
     auth_repo: AuthenticationApiRepository,
     user_repository: UserRepository,
 ) -> SetUserPasswordResponse:
+    if await user_repository.get_user_by_username(link_request.username):
+        raise error_responses.UsernameAlreadyExistsAPIError()
     try:
         authentication = await auth_repo.authenticate_magic_link(link_request.token)
         updated_authentication = await auth_repo.set_user_password(
@@ -19,8 +21,9 @@ async def execute(
         )
     except:
         raise error_responses.InvalidCredentialsAPIError()
-    await user_repository.update_user_password_by_authentication_id(
-        authentication.provider_user_id, is_password_set=True
+    await user_repository.update_user_username_and_password_by_authentication_id(
+        authentication.provider_user_id,
+        username=link_request.username,
+        is_password_set=True,
     )
-    # TODO: decide if user should be logged in here or log in with password, product question
     return SetUserPasswordResponse(session_token=updated_authentication.session_token)
