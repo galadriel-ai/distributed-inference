@@ -1,5 +1,3 @@
-import time
-
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.entities import GetNodeInfoResponse
@@ -22,7 +20,7 @@ async def execute(
         operating_system=node_info.operating_system,
         status="online" if connected_node else "offline",
         run_duration_seconds=(
-            0 if not connected_node else int(time.time() - connected_node.connected_at)
+            0 if not connected_node else connected_node.current_uptime
         ),
         node_created_at=int(node_info.created_at.timestamp()),
     )
