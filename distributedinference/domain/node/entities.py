@@ -76,12 +76,16 @@ class NodeStats:
 class ConnectedNode:
     uid: UUID
     model: str
+    vram: int
     connected_at: int
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
 
     def active_requests_count(self) -> int:
         return len(self.request_incoming_queues)
+
+    def can_handle_parallel_requests(self) -> bool:
+        return self.vram > 8000  # 8GB vram is needed to handle parallel requests
 
     @property
     def current_uptime(self) -> int:
