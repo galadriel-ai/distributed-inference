@@ -16,23 +16,6 @@ class CreateNodeResponse(ApiResponse):
     node_id: str = Field(description="Unique ID of the Node")
 
 
-class ListNodeRequestNode(BaseModel):
-    node_id: str = Field(description="Unique ID of the Node")
-    name_alias: str = Field(description="User defined name for the Node")
-    status: Literal["online", "offline"] = Field(description="Node status")
-    run_duration_seconds: int = Field(
-        description="Run duration in seconds since connecting", default=0
-    )
-    requests_served: int = Field(
-        description="Total inference requests served by the node", default=0
-    )
-    gpu_model: Optional[str] = Field(description="GPU model", default=None)
-
-
-class ListNodeResponse(ApiResponse):
-    nodes: List[ListNodeRequestNode] = Field(description="User nodes")
-
-
 class NodeInfoRequest(BaseModel):
     node_id: str = Field(description="Unique ID of the Node")
     gpu_model: Optional[str] = Field(description="GPU model", default=None)
@@ -47,6 +30,31 @@ class NodeInfoRequest(BaseModel):
         description="Network upload speed in Mbps", default=None
     )
     operating_system: Optional[str] = Field(description="Operating system")
+
+
+class ListNodeRequestNode(NodeInfoRequest):
+    name_alias: str = Field(description="User defined name for the Node")
+    status: Literal["online", "offline"] = Field(description="Node status")
+    run_duration_seconds: int = Field(
+        description="Run duration in seconds since connecting", default=0
+    )
+    total_uptime_seconds: Optional[int] = Field(
+        description="Node total uptime in seconds", default=None
+    )
+    requests_served: int = Field(
+        description="Total inference requests served by the node", default=0
+    )
+    requests_served_day: int = Field(
+        description="Total inference requests served by the node past 24 hours",
+        default=0,
+    )
+    node_created_at: int = Field(
+        description="UNIX timestamp of node first registration"
+    )
+
+
+class ListNodeResponse(ApiResponse):
+    nodes: List[ListNodeRequestNode] = Field(description="User nodes")
 
 
 class GetNodeInfoResponse(NodeInfoRequest):

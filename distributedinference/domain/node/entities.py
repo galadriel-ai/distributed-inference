@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -48,12 +49,8 @@ class NodeInfo:
 
 
 @dataclass
-class UserNodeInfo:
-    node_id: UUID
-    name: str
-    name_alias: str
-    connected: bool
-    gpu_model: Optional[str] = None
+class UserNodeInfo(NodeInfo):
+    connected: bool = False
     requests_served: Optional[int] = None
     uptime: Optional[int] = None
 
@@ -89,6 +86,10 @@ class ConnectedNode:
 
     def can_handle_parallel_requests(self) -> bool:
         return self.vram > 8000  # 8GB vram is needed to handle parallel requests
+
+    @property
+    def current_uptime(self) -> int:
+        return int(time.time() - self.connected_at)
 
 
 class InferenceStatusCodes(Enum):
