@@ -5,9 +5,10 @@ from unittest.mock import Mock
 from uuid import UUID
 
 import pytest
+from fastapi import status
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
-from fastapi.exceptions import WebSocketRequestValidationError
+from fastapi.exceptions import WebSocketException
 
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
@@ -35,12 +36,13 @@ async def test_execute_node_no_model_header():
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
 
     with pytest.raises(
-        WebSocketRequestValidationError, match='No "Model" header provided'
-    ):
+        WebSocketException, match='No "Model" header provided'
+    ) as exc_info:
         await websocket_service.execute(
             websocket, user, NODE_INFO, None, node_repository, AsyncMock(), Mock()
         )
 
+    assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
 
@@ -56,8 +58,8 @@ async def test_execute_node_no_benchmark():
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
 
     with pytest.raises(
-        WebSocketRequestValidationError, match="Benchmarking is not completed"
-    ):
+        WebSocketException, match="Benchmarking is not completed"
+    ) as exc_info:
         await websocket_service.execute(
             websocket,
             user,
@@ -68,6 +70,7 @@ async def test_execute_node_no_benchmark():
             Mock(),
         )
 
+    assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
 
@@ -87,8 +90,8 @@ async def test_execute_node_benchmark_too_low():
     )
 
     with pytest.raises(
-        WebSocketRequestValidationError, match="Benchmarking performance is too low"
-    ):
+        WebSocketException, match="Benchmarking performance is too low"
+    ) as exc_info:
         await websocket_service.execute(
             websocket,
             user,
@@ -99,6 +102,7 @@ async def test_execute_node_benchmark_too_low():
             Mock(),
         )
 
+    assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
 
@@ -118,9 +122,9 @@ async def test_execute_node_already_connected():
     )
 
     with pytest.raises(
-        WebSocketRequestValidationError,
+        WebSocketException,
         match="Node with same node id already connected",
-    ):
+    ) as exc_info:
         await websocket_service.execute(
             websocket,
             user,
@@ -131,6 +135,7 @@ async def test_execute_node_already_connected():
             Mock(),
         )
 
+    assert exc_info.value.code == status.WS_1013_TRY_AGAIN_LATER
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
 

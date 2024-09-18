@@ -45,20 +45,19 @@ async def execute(
 
     if not model_name:
         raise WebSocketException(
-            code=status.WS_1007_INVALID_FRAME_PAYLOAD_DATA,
-            reason='No "Model" header provided',
+            code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
         )
     benchmark = await node_repository.get_node_benchmark(
         user.uid, node_info.node_id, model_name
     )
     if not benchmark:
         raise WebSocketException(
-            code=status.WS_1007_INVALID_FRAME_PAYLOAD_DATA,
+            code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking is not completed",
         )
     if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
         raise WebSocketException(
-            code=status.WS_1007_INVALID_FRAME_PAYLOAD_DATA,
+            code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking performance is too low",
         )
 
@@ -76,7 +75,8 @@ async def execute(
 
     connect_time = time.time()
     if not node_repository.register_node(node):
-        raise WebSocketDisconnect(
+        # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
+        raise WebSocketException(
             code=status.WS_1013_TRY_AGAIN_LATER,
             reason="Node with same node id already connected",
         )
