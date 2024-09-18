@@ -4,14 +4,10 @@ from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from uuid import UUID
 
-import pytest
 from uuid_extensions import uuid7
 
-from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
-from distributedinference.service import error_responses
 from distributedinference.service.node import get_node_info_service as service
 from distributedinference.service.node.entities import GetNodeInfoResponse
 
@@ -49,18 +45,17 @@ async def test_execute_success():
         run_duration_seconds=1,
         node_created_at=created_at.timestamp(),
     )
-    service.time = MagicMock()
-    service.time.time.return_value = 1338
 
     mock_repository = AsyncMock(spec=NodeRepository)
     mock_repository.get_node_info.return_value = node_info
-    mock_repository.get_connected_node_info.return_value = ConnectedNode(
+    mock_repository.get_connected_node_info.return_value = MagicMock(
         uid=uuid7(),
         model="model",
         vram=16000,
         connected_at=1337,
         websocket=MagicMock(),
         request_incoming_queues={},
+        current_uptime=1,
     )
     response = await service.execute(node_info, mock_repository)
 

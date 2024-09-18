@@ -52,11 +52,21 @@ SELECT
     ni.name,
     ni.name_alias,
     ni.gpu_model,
+    ni.vram,
+    ni.cpu_model,
+    ni.cpu_count,
+    ni.ram,
+    ni.network_download_speed,
+    ni.network_upload_speed,
+    ni.operating_system,
+    ni.created_at,
+    ni.last_updated_at,
     nm.requests_served,
     nm.uptime
 FROM node_info ni
 LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
-WHERE ni.user_profile_id = :user_profile_id;
+WHERE ni.user_profile_id = :user_profile_id
+ORDER BY ni.id DESC;
 """
 
 SQL_GET_NODE_METRICS_BY_IDS = """
@@ -294,9 +304,17 @@ class NodeRepository:
                         name=row.name,
                         name_alias=row.name_alias,
                         gpu_model=row.gpu_model,
+                        vram=row.vram,
+                        cpu_model=row.cpu_model,
+                        cpu_count=row.cpu_count,
+                        ram=row.ram,
+                        network_download_speed=row.network_download_speed,
+                        network_upload_speed=row.network_upload_speed,
+                        operating_system=row.operating_system,
                         requests_served=row.requests_served,
                         uptime=row.uptime,
                         connected=(row.id in self._connected_nodes),
+                        created_at=row.created_at,
                     )
                 )
             return result
@@ -373,7 +391,7 @@ class NodeRepository:
     def get_connected_node_ids(self) -> List[UUID]:
         return [k for k, _ in self._connected_nodes.items()]
 
-    def get_connected_node_info(self, node_id: str) -> Optional[ConnectedNode]:
+    def get_connected_node_info(self, node_id: UUID) -> Optional[ConnectedNode]:
         return self._connected_nodes.get(node_id)
 
     async def get_node_metrics_by_ids(

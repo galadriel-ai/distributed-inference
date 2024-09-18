@@ -101,6 +101,9 @@ async def create_node(
 @router.get("/nodes", name="List all nodes", response_model=ListNodeResponse)
 async def list_nodes(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_session_token),
 ):
-    return await get_user_nodes_service.execute(user.uid, node_repository)
+    return await get_user_nodes_service.execute(
+        user.uid, node_repository, tokens_repository
+    )

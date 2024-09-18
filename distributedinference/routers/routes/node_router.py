@@ -4,7 +4,6 @@ from fastapi import Depends
 from fastapi import Query
 from fastapi import WebSocket
 from fastapi.exceptions import WebSocketException
-from fastapi.exceptions import WebSocketRequestValidationError
 
 from distributedinference import api_logger
 from distributedinference import dependencies
@@ -61,14 +60,14 @@ async def websocket_endpoint(
     )
     if not user:
         raise WebSocketException(
-            status=status.WS_1008_POLICY_VIOLATION,
+            code=status.WS_1008_POLICY_VIOLATION,
             reason="Authorization header is required",
         )
 
     node_id = websocket.headers.get("Node-Id")
     if not node_id:
         raise WebSocketException(
-            status=status.WS_1008_POLICY_VIOLATION,
+            code=status.WS_1008_POLICY_VIOLATION,
             reason="Node-Id header is required",
         )
     node_info = await authentication.validate_node_name(user, node_id, node_repository)
