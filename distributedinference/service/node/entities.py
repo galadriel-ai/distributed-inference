@@ -38,6 +38,9 @@ class ListNodeRequestNode(NodeInfoRequest):
     run_duration_seconds: int = Field(
         description="Run duration in seconds since connecting", default=0
     )
+    total_uptime_seconds: Optional[int] = Field(
+        description="Node total uptime in seconds", default=None
+    )
     requests_served: int = Field(
         description="Total inference requests served by the node", default=0
     )

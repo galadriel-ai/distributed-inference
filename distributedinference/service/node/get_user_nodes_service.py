@@ -39,7 +39,8 @@ async def _format(
                 network_upload_speed=node.network_upload_speed,
                 operating_system=node.operating_system,
                 status="online" if connected_node else "offline",
-                run_duration_seconds=(node.uptime or 0) + current_uptime,
+                run_duration_seconds=current_uptime,
+                total_uptime_seconds=(node.uptime or 0) + current_uptime,
                 requests_served=node.requests_served or 0,
                 requests_served_day=await tokens_repository.get_latest_count_by_time_and_user(
                     node.node_id
