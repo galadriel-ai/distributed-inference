@@ -55,6 +55,7 @@ async def execute(
     node = ConnectedNode(
         uid=node_uid,
         model=model_name,
+        vram=node_info.vram,
         connected_at=int(time.time()),
         websocket=websocket,
         request_incoming_queues={},

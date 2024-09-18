@@ -57,6 +57,7 @@ async def test_execute_success():
     mock_repository.get_connected_node_info.return_value = ConnectedNode(
         uid=uuid7(),
         model="model",
+        vram=16000,
         connected_at=1337,
         websocket=MagicMock(),
         request_incoming_queues={},
