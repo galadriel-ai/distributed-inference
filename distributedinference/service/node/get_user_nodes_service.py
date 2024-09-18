@@ -3,18 +3,25 @@ from uuid import UUID
 
 from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.node.entities import ListNodeRequestNode
 from distributedinference.service.node.entities import ListNodeResponse
 
 
 async def execute(
-    user_profile_id: UUID, repository: NodeRepository
+    user_profile_id: UUID,
+    repository: NodeRepository,
+    tokens_repository: TokensRepository,
 ) -> ListNodeResponse:
     nodes = await repository.get_user_nodes(user_profile_id)
-    return _format(repository, nodes)
+    return await _format(repository, tokens_repository, nodes)
 
 
-def _format(repository: NodeRepository, nodes: List[UserNodeInfo]) -> ListNodeResponse:
+async def _format(
+    repository: NodeRepository,
+    tokens_repository: TokensRepository,
+    nodes: List[UserNodeInfo],
+) -> ListNodeResponse:
     result = []
     for node in nodes:
         connected_node = repository.get_connected_node_info(node.node_id)
@@ -34,6 +41,9 @@ def _format(repository: NodeRepository, nodes: List[UserNodeInfo]) -> ListNodeRe
                 status="online" if connected_node else "offline",
                 run_duration_seconds=(node.uptime or 0) + current_uptime,
                 requests_served=node.requests_served or 0,
+                requests_served_day=await tokens_repository.get_latest_count_by_time_and_user(
+                    node.node_id
+                ),
                 node_created_at=int(node.created_at.timestamp()),
             )
         )

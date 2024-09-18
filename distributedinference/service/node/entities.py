@@ -41,6 +41,10 @@ class ListNodeRequestNode(NodeInfoRequest):
     requests_served: int = Field(
         description="Total inference requests served by the node", default=0
     )
+    requests_served_day: int = Field(
+        description="Total inference requests served by the node past 24 hours",
+        default=0,
+    )
     node_created_at: int = Field(
         description="UNIX timestamp of node first registration"
     )

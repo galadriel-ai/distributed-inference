@@ -171,9 +171,9 @@ class TokensRepository:
         return 0
 
     async def get_latest_count_by_time_and_user(
-        self, user_id: UUID, hours: int = 24
+        self, node_id: UUID, hours: int = 24
     ) -> int:
-        data = {"producer_node_info_id": user_id, "start_id": historic_uuid(hours)}
+        data = {"producer_node_info_id": node_id, "start_id": historic_uuid(hours)}
         async with self._session_provider.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_COUNT_BY_TIME_AND_USER), data
