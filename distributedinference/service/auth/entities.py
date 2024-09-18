@@ -32,6 +32,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(ApiResponse):
     session_token: str = Field(description="Session token")
     onboarding_completed: bool = Field(description="Onboarding status")
+    email: str = Field("User email address")
 
 
 class SetUserProfileDataRequest(BaseModel):
