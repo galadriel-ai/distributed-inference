@@ -65,7 +65,8 @@ SELECT
     nm.uptime
 FROM node_info ni
 LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
-WHERE ni.user_profile_id = :user_profile_id;
+WHERE ni.user_profile_id = :user_profile_id
+ORDER BY ni.id DESC;
 """
 
 SQL_GET_NODE_METRICS_BY_IDS = """
