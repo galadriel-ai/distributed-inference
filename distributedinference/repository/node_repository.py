@@ -344,7 +344,9 @@ class NodeRepository:
         max_capacity_left = max(self._capacity_left(node) for node in eligible_nodes)
         # Select all nodes with the maximum capacity
         nodes_with_max_capacity_left = [
-            node for node in eligible_nodes if self._capacity_left(node) == max_capacity_left
+            node
+            for node in eligible_nodes
+            if self._capacity_left(node) == max_capacity_left
         ]
 
         # Randomly choose one node from those with maximum capacity
