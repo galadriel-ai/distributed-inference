@@ -1,35 +1,83 @@
 # Distributed inference
 
-### Setup
+This repository contains the code for the centralised server (a.ka. distributed inference)
+that interfaces to the consumer side to get the inference request and schedule it to the
+`galadriel-node`s in the Galadriel network.
 
-Requirements to run:
+## Requirements to run
 
 - python 3.12
+- docker (latest version)
+- docker-compose (latest version)
+- git (latest version)
+
+## Installation
+
+### Install Python 3.12, Docker, Docker-Compose, and Git
+
+- For linux (Ubuntu), run the following commands:
+
+```shell
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.12
+sudo apt-get install git docker docker-compose
+```
+
+- For macOS, run the following commands:
+
+```shell
+brew install python@3.12
+brew install docker docker-compose git
+```
+
+Check if all the above has installed properly:
+
+```shell
+python3 --version
+docker --version
+docker-compose --version
+git --version
+```
+
+### Clone the repository
+
+Clone the `distributed-inference` repo and prepare it for running:
+
+```shell
+git clone https://github.com/galadriel-ai/distributed-inference.git
+cd distributed-inference
+pip3 install -r requirements.txt
 
 ```
-pip install -r requirements.txt
+
+### Install Database
+
+We use postgres to store all the information about the nodes and the requests. To setup the database, run the
+following
+command:
+
+```shell
+cd database
+cp template.env .env
+docker-compose up --build -d
 ```
 
-### Setup database
+### Insert Dummy Data
 
-Check README in database/README.md
-
-### Run
-
-```
-python wsgi.py
-```
-
-### Insert some data to DB
-
-Modify the data to insert however you wish
-```
+```shell
+cd ..
 PYTHONPATH=. python scripts/insert_users.py
+PYTHONPATH=. python scripts/insert_nodes.py
 ```
 
-Modify the user_id with the result from the previous script
-```
-PYTHONPATH=. python scripts/insert_node.py
+`inset_node.py` has a variable `user_id` which should be updated with one of the `id` from `user_profile` table.
+For now this has to be done manually but in future we will automate this.
+
+### Run the server:
+
+```shell
+python wsgi.py
 ```
 
 ### Unit testing
@@ -50,6 +98,7 @@ python -m black .
 ## Production deployment
 
 **Run App**
+
 ```
 ./deploy.sh
 ```
