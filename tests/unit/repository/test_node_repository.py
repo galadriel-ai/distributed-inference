@@ -43,8 +43,9 @@ def mock_websocket():
 
 @pytest.fixture
 def connected_node_factory(mock_websocket):
-    def _create_node(uid, model="model"):
-        return ConnectedNode(uid, model, int(time.time()), mock_websocket, {})
+    def _create_node(uid, model="model", small_node=False):
+        vram = 8000 if small_node else 16000
+        return ConnectedNode(uid, model, vram, int(time.time()), mock_websocket, {})
 
     return _create_node
 
@@ -125,6 +126,23 @@ def test_select_node_after_reaching_maximum_parallel_requests(
 
     # Add one more request
     node.request_incoming_queues[MAX_PARALLEL_REQUESTS - 1] = asyncio.Queue()
+
+    # Now, there are no nodes left, should return None
+    assert node_repository.select_node("model") is None
+
+
+def test_8gb_node_handles_only_1_connection(node_repository, connected_node_factory):
+    node = connected_node_factory("1", small_node=True)
+    node_repository.register_node(node)
+
+    # Adding one request
+    node.request_incoming_queues["test-id"] = asyncio.Queue()
+
+    # Initially, it should return the node
+    assert node_repository.select_node("model").uid == "1"
+
+    # Add one more request
+    node.request_incoming_queues["test-id-2"] = asyncio.Queue()
 
     # Now, there are no nodes left, should return None
     assert node_repository.select_node("model") is None
