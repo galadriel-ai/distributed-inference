@@ -48,6 +48,9 @@ class ListNodeRequestNode(NodeInfoRequest):
         description="Total inference requests served by the node past 24 hours",
         default=0,
     )
+    tokens_per_second: Optional[float] = Field(
+        description="Theoretical max tokens per second for the node"
+    )
     node_created_at: int = Field(
         description="UNIX timestamp of node first registration"
     )
@@ -100,6 +103,21 @@ class GetNodeStatsResponse(BaseModel):
 
     completed_inferences: List[InferenceStats] = Field(
         description="Last 10 processed inference calls", default=None
+    )
+
+
+class GetUserAggregatedStatsResponse(BaseModel):
+    total_requests_served: Optional[int] = Field(
+        description="User total requests served"
+    )
+    requests_served_day: Optional[int] = Field(
+        description="User total requests served in the past 24h"
+    )
+    average_time_to_first_token: Optional[float] = Field(
+        description="User average time to first token across all their nodes"
+    )
+    total_tokens_per_second: Optional[float] = Field(
+        description="User max theoretical tokens per second across all their nodes"
     )
 
 

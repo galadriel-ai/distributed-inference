@@ -1,11 +1,11 @@
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import Query
 
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.analytics.analytics import AnalyticsEvent, EventName
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -18,11 +18,11 @@ from distributedinference.service.network.entities import CreateApiKeyResponse
 from distributedinference.service.network.entities import GetApiKeysResponse
 from distributedinference.service.network.entities import NetworkStatsResponse
 from distributedinference.service.node import create_node_service
-from distributedinference.service.node import get_node_stats_service
+from distributedinference.service.node import get_user_aggregated_stats_service
 from distributedinference.service.node import get_user_nodes_service
 from distributedinference.service.node.entities import CreateNodeRequest
 from distributedinference.service.node.entities import CreateNodeResponse
-from distributedinference.service.node.entities import GetNodeStatsResponse
+from distributedinference.service.node.entities import GetUserAggregatedStatsResponse
 from distributedinference.service.node.entities import ListNodeResponse
 
 TAG = "Dashboard Network"
@@ -33,20 +33,18 @@ logger = api_logger.get()
 
 
 @router.get(
-    "/node-stats",
+    "/user-node-stats",
     name="Node Stats",
-    response_model=GetNodeStatsResponse,
+    response_model=GetUserAggregatedStatsResponse,
     include_in_schema=not settings.is_production(),
 )
 async def get_node_stats(
-    node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_session_token),
 ):
-    node_info = await authentication.validate_node_name(user, node_id, node_repository)
-    return await get_node_stats_service.execute(
-        user, node_info, node_repository, tokens_repository
+    return await get_user_aggregated_stats_service.execute(
+        user, node_repository, tokens_repository
     )
 
 

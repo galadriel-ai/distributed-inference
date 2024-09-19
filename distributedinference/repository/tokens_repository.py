@@ -69,7 +69,7 @@ WHERE
     id > :start_id;
 """
 
-SQL_GET_COUNT_BY_TIME_AND_USER = """
+SQL_GET_COUNT_BY_TIME_AND_NODE = """
 SELECT 
     count(*) AS usage_count
 FROM 
@@ -77,6 +77,17 @@ FROM
 WHERE 
     producer_node_info_id = :producer_node_info_id
     AND id > :start_id;
+"""
+
+SQL_GET_COUNT_BY_TIME_AND_USER = """
+SELECT
+    count(*) AS usage_count
+FROM
+    usage_tokens ut
+LEFT JOIN node_info ni on ut.producer_node_info_id = ni.id
+WHERE
+    ni.user_profile_id = :user_profile_id
+    AND ut.id > :start_id;
 """
 
 
@@ -170,10 +181,22 @@ class TokensRepository:
                 return row.usage_count
         return 0
 
-    async def get_latest_count_by_time_and_user(
+    async def get_latest_count_by_time_and_node(
         self, node_id: UUID, hours: int = 24
     ) -> int:
         data = {"producer_node_info_id": node_id, "start_id": historic_uuid(hours)}
+        async with self._session_provider.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_COUNT_BY_TIME_AND_NODE), data
+            )
+            for row in rows:
+                return row.usage_count
+        return 0
+
+    async def get_latest_count_by_time_and_user(
+        self, user_id: UUID, hours: int = 24
+    ) -> int:
+        data = {"user_profile_id": user_id, "start_id": historic_uuid(hours)}
         async with self._session_provider.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_COUNT_BY_TIME_AND_USER), data

@@ -42,9 +42,10 @@ async def _format(
                 run_duration_seconds=current_uptime,
                 total_uptime_seconds=(node.uptime or 0) + current_uptime,
                 requests_served=node.requests_served or 0,
-                requests_served_day=await tokens_repository.get_latest_count_by_time_and_user(
+                requests_served_day=await tokens_repository.get_latest_count_by_time_and_node(
                     node.node_id
                 ),
+                tokens_per_second=node.tokens_per_second,
                 node_created_at=int(node.created_at.timestamp()),
             )
         )
