@@ -58,11 +58,10 @@ class MainMiddleware(BaseHTTPMiddleware):
                 )
             return await http_headers.add_response_headers(response)
         except Exception as error:
-
-            response_status_codes_counter.labels(error.to_status_code()).inc()
-
             if isinstance(error, APIErrorResponse):
-                is_exc_info = error.to_status_code() == 500
+                error_status_code = error.to_status_code()
+                response_status_codes_counter.labels(error_status_code).inc()
+                is_exc_info = error_status_code == 500
                 logger.error(
                     f"Error while handling request. request_id={request_id} "
                     f"request_path={request.url.path}"
