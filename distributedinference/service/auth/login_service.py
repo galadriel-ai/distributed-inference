@@ -29,5 +29,6 @@ async def execute(
     return LoginResponse(
         session_token=authentication.session_token,
         onboarding_completed=user.profile_data is not None,
+        user_uid=str(user.uid),
         email=user.email,
     )
