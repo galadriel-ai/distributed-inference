@@ -3,8 +3,10 @@ import time
 from typing import Optional
 from uuid import UUID
 
+from fastapi import status
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from fastapi.exceptions import WebSocketException
 from fastapi.exceptions import WebSocketRequestValidationError
 
 import settings
@@ -42,14 +44,22 @@ async def execute(
     await websocket.accept()
 
     if not model_name:
-        raise WebSocketRequestValidationError('No "Model" header provided')
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
+        )
     benchmark = await node_repository.get_node_benchmark(
         user.uid, node_info.node_id, model_name
     )
     if not benchmark:
-        raise WebSocketRequestValidationError("Benchmarking is not completed")
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Benchmarking is not completed",
+        )
     if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
-        raise WebSocketRequestValidationError("Benchmarking performance is too low")
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Benchmarking performance is too low",
+        )
 
     node_uid = node_info.node_id
     node = ConnectedNode(
@@ -65,8 +75,10 @@ async def execute(
 
     connect_time = time.time()
     if not node_repository.register_node(node):
-        raise WebSocketRequestValidationError(
-            "Node with same node id already connected"
+        # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
+        raise WebSocketException(
+            code=status.WS_1013_TRY_AGAIN_LATER,
+            reason="Node with same node id already connected",
         )
     try:
         while True:
@@ -74,7 +86,6 @@ async def execute(
             request_id = None
             try:
                 parsed_data = json.loads(data)
-                # get request id
                 request_id = parsed_data["request_id"]
             except json.JSONDecodeError:
                 raise WebSocketRequestValidationError("Invalid JSON data")
