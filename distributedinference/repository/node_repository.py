@@ -15,6 +15,7 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import UserAggregatedStats
 from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
@@ -62,9 +63,11 @@ SELECT
     ni.created_at,
     ni.last_updated_at,
     nm.requests_served,
-    nm.uptime
+    nm.uptime,
+    nb.tokens_per_second
 FROM node_info ni
 LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
+LEFT JOIN node_benchmark nb on nb.node_id = ni.id
 WHERE ni.user_profile_id = :user_profile_id
 ORDER BY ni.id DESC;
 """
@@ -229,6 +232,17 @@ WHERE ni.user_profile_id = :user_profile_id AND ni.id = :id
 LIMIT 1;
 """
 
+SQL_GET_USER_STATS = """
+SELECT
+    SUM(nm.requests_served) AS total_requests_served,
+    AVG(nm.time_to_first_token) AS average_time_to_first_token,
+    SUM(nb.tokens_per_second) AS total_tokens_per_second
+FROM node_info ni
+LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
+LEFT JOIN node_benchmark nb on ni.id = nb.node_id
+WHERE ni.user_profile_id = :user_profile_id;
+"""
+
 SQL_GET_NODES_COUNT = """
 SELECT COUNT(id) AS node_count
 FROM node_info;
@@ -314,6 +328,7 @@ class NodeRepository:
                         requests_served=row.requests_served,
                         uptime=row.uptime,
                         connected=(row.id in self._connected_nodes),
+                        tokens_per_second=row.tokens_per_second,
                         created_at=row.created_at,
                     )
                 )
@@ -530,6 +545,21 @@ class NodeRepository:
                     ),
                     benchmark_model_name=row.benchmark_model_name,
                     benchmark_created_at=row.benchmark_created_at,
+                )
+        return None
+
+    async def get_user_aggregated_stats(
+        self, user_id: UUID
+    ) -> Optional[UserAggregatedStats]:
+        data = {"user_profile_id": user_id}
+        async with self._session_provider.get() as session:
+            result = await session.execute(sqlalchemy.text(SQL_GET_USER_STATS), data)
+            row = result.first()
+            if row:
+                return UserAggregatedStats(
+                    total_requests_served=row.total_requests_served,
+                    average_time_to_first_token=row.average_time_to_first_token,
+                    total_tokens_per_second=row.total_tokens_per_second,
                 )
         return None
 

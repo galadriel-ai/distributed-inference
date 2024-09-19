@@ -65,7 +65,7 @@ async def test_success():
         created_at=created_at,
     )
     mock_tokens_repository.get_user_latest_usage_tokens.return_value = [usage_tokens]
-    mock_tokens_repository.get_latest_count_by_time_and_user.return_value = 321
+    mock_tokens_repository.get_latest_count_by_time_and_node.return_value = 321
 
     response = await service.execute(
         user, NODE_INFO, mock_repository, mock_tokens_repository

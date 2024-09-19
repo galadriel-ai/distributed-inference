@@ -4,14 +4,13 @@ from typing import Dict
 from typing import List
 from uuid import UUID
 
+import settings
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
-
-TIMEOUT_BETWEEN_RUNS_SECONDS = 300
 
 logger = api_logger.get()
 
@@ -20,14 +19,15 @@ async def execute(
     metrics_queue_repository: MetricsQueueRepository,
     node_repository: NodeRepository,
 ) -> None:
+    timeout = settings.METRICS_JOB_TIMEOUT_BETWEEN_RUNS_SECONDS
     while True:
         try:
-            await asyncio.sleep(TIMEOUT_BETWEEN_RUNS_SECONDS)
+            await asyncio.sleep(timeout)
             logger.debug("Running metrics update job!")
             await _handle_metrics_update(metrics_queue_repository, node_repository)
         except Exception:
             logger.error(
-                f"Failed to run metrics update job, restarting in {TIMEOUT_BETWEEN_RUNS_SECONDS} seconds",
+                f"Failed to run metrics update job, restarting in {timeout} seconds",
                 exc_info=True,
             )
 
