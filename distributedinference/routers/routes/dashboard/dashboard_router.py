@@ -5,6 +5,7 @@ from fastapi import Query
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
+from distributedinference.analytics.analytics import AnalyticsEvent, EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -85,7 +86,9 @@ async def get_api_key(
 async def post_api_key(
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
     user: User = Depends(authentication.validate_session_token),
+    analytics=Depends(dependencies.get_analytics),
 ):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.CREATE_API_KEY, {}))
     return await create_api_key_service.execute(user, user_repository)
 
 
@@ -94,7 +97,12 @@ async def create_node(
     request: CreateNodeRequest,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     user: User = Depends(authentication.validate_session_token),
+    analytics=Depends(dependencies.get_analytics),
 ):
+    analytics.track_event(
+        user.uid,
+        AnalyticsEvent(EventName.CREATE_NODE, {"node_name": request.node_name}),
+    )
     return await create_node_service.execute(request, user.uid, node_repository)
 
 

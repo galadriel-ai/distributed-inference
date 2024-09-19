@@ -4,6 +4,7 @@ from fastapi import Depends
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
+from distributedinference.analytics.analytics import Analytics
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
@@ -44,8 +45,11 @@ async def signup(
         dependencies.get_authentication_api_repository
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
 ):
-    return await signup_service.execute(request, auth_repository, user_repository)
+    return await signup_service.execute(
+        request, auth_repository, user_repository, analytics
+    )
 
 
 @router.post(
@@ -62,9 +66,10 @@ async def set_user_password(
         dependencies.get_authentication_api_repository
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     return await set_username_and_password_service.execute(
-        request, auth_repository, user_repository
+        request, auth_repository, user_repository, analytics
     )
 
 
@@ -82,8 +87,11 @@ async def login(
         dependencies.get_authentication_api_repository
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
 ):
-    return await login_service.execute(request, auth_repository, user_repository)
+    return await login_service.execute(
+        request, auth_repository, user_repository, analytics
+    )
 
 
 @router.post(
@@ -98,5 +106,8 @@ async def profile_data(
     request: SetUserProfileDataRequest,
     user: User = Depends(authentication.validate_session_token),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
 ):
-    return await set_user_profile_data_service.execute(request, user, user_repository)
+    return await set_user_profile_data_service.execute(
+        request, user, user_repository, analytics
+    )

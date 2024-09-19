@@ -8,6 +8,7 @@ from posthog import Posthog
 
 
 class EventName(Enum):
+    # Node
     GET_NODE_INFO = "get_node_info"
     GET_NODE_STATS = "get_node_stats"
     POST_NODE_INFO = "post_node_info"
@@ -21,6 +22,14 @@ class EventName(Enum):
     WS_NODE_CONNECTED = "ws_node_connected"
     WS_NODE_DISCONNECTED = "ws_node_disconnected"
     WS_NODE_DISCONNECTED_WITH_ERROR = "ws_node_disconnected_with_error"
+
+    # Dashboard
+    SIGNUP = "signup"
+    LOGIN = "login"
+    SET_PROFILE_DATA = "set_profile_data"
+    SET_USER_PASSWORD = "set_user_password"
+    CREATE_API_KEY = "create_api_key"
+    CREATE_NODE = "create_node"
 
 
 @dataclass
