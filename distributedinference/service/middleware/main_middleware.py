@@ -1,6 +1,8 @@
 import time
 from typing import Optional
 
+from prometheus_client import Counter
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
@@ -14,6 +16,10 @@ from distributedinference.service.middleware import util
 from distributedinference.service.middleware.entitites import RequestStateKey
 
 logger = api_logger.get()
+
+response_status_codes_counter = Counter(
+    "response_status_codes", "Total number of HTTP status codes", ["status_code"]
+)
 
 
 class MainMiddleware(BaseHTTPMiddleware):
@@ -38,6 +44,8 @@ class MainMiddleware(BaseHTTPMiddleware):
             before = time.time()
             response: Response = await call_next(request)
 
+            response_status_codes_counter.labels(response.status_code).inc()
+
             process_time = (time.time() - before) * 1000
             formatted_process_time = "{0:.2f}".format(process_time)
             if response.status_code != 404:
@@ -50,6 +58,9 @@ class MainMiddleware(BaseHTTPMiddleware):
                 )
             return await http_headers.add_response_headers(response)
         except Exception as error:
+
+            response_status_codes_counter.labels(error.to_status_code()).inc()
+
             if isinstance(error, APIErrorResponse):
                 is_exc_info = error.to_status_code() == 500
                 logger.error(
