@@ -1,3 +1,8 @@
+from distributedinference.analytics.analytics import (
+    Analytics,
+    AnalyticsEvent,
+    EventName,
+)
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
@@ -11,6 +16,7 @@ async def execute(
     link_request: SetUserPasswordRequest,
     auth_repo: AuthenticationApiRepository,
     user_repository: UserRepository,
+    analytics: Analytics,
 ) -> SetUserPasswordResponse:
     if await user_repository.get_user_by_username(link_request.username):
         raise error_responses.UsernameAlreadyExistsAPIError()
@@ -26,4 +32,8 @@ async def execute(
         username=link_request.username,
         is_password_set=True,
     )
+    user = await user_repository.get_user_by_authentication_id(
+        authentication.provider_user_id
+    )
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.SET_USER_PASSWORD, {}))
     return SetUserPasswordResponse(session_token=updated_authentication.session_token)
