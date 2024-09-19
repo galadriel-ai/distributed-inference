@@ -1,4 +1,8 @@
-from distributedinference.analytics.analytics import AnalyticsEvent, EventName, Analytics
+from distributedinference.analytics.analytics import (
+    AnalyticsEvent,
+    EventName,
+    Analytics,
+)
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
