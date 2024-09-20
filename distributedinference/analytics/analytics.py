@@ -18,6 +18,7 @@ class EventName(Enum):
     GET_NETWORK_STATS = "get_network_stats"
 
     CHAT_COMPLETIONS = "chat_completions"
+    DASHBOARD_CHAT_COMPLETIONS = "dashboard_chat_completions"
 
     WS_NODE_CONNECTED = "ws_node_connected"
     WS_NODE_DISCONNECTED = "ws_node_disconnected"
