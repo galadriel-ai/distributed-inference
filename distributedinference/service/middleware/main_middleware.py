@@ -10,6 +10,12 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from distributedinference import api_logger
+from distributedinference import dependencies
+from distributedinference.analytics.analytics import (
+    Analytics,
+    AnalyticsEvent,
+    EventName,
+)
 from distributedinference.utils import http_headers
 from distributedinference.service.error_responses import APIErrorResponse
 from distributedinference.service.middleware import util
@@ -21,7 +27,6 @@ response_status_codes_counter = Counter(
     "response_status_codes", "Total number of HTTP status codes", ["status_code"]
 )
 
-
 class MainMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
@@ -32,6 +37,7 @@ class MainMiddleware(BaseHTTPMiddleware):
         request_id = util.get_state(request, RequestStateKey.REQUEST_ID)
         ip_address = util.get_state(request, RequestStateKey.IP_ADDRESS)
         country = util.get_state(request, RequestStateKey.COUNTRY)
+        analytics: Analytics = dependencies.get_analytics()
 
         try:
             logger.info(
@@ -45,6 +51,13 @@ class MainMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
 
             response_status_codes_counter.labels(response.status_code).inc()
+            analytics.track_event(
+                request_id,
+                AnalyticsEvent(
+                    EventName.API_RESPONSE,
+                    {"status_code": response.status_code},
+                ),
+            )
 
             process_time = (time.time() - before) * 1000
             formatted_process_time = "{0:.2f}".format(process_time)
@@ -59,8 +72,17 @@ class MainMiddleware(BaseHTTPMiddleware):
             return await http_headers.add_response_headers(response)
         except Exception as error:
             if isinstance(error, APIErrorResponse):
+
                 error_status_code = error.to_status_code()
                 response_status_codes_counter.labels(error_status_code).inc()
+                analytics.track_event(
+                    request_id,
+                    AnalyticsEvent(
+                        EventName.API_RESPONSE,
+                        {"status_code": error_status_code},
+                    ),
+                )
+
                 is_exc_info = error_status_code == 500
                 logger.error(
                     f"Error while handling request. request_id={request_id} "
