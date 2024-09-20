@@ -1,14 +1,11 @@
 from fastapi import APIRouter
 from fastapi import Depends
-from starlette.responses import StreamingResponse
 
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.analytics.analytics import (
-    Analytics,
-    EventName,
-    AnalyticsEvent,
-)
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -16,8 +13,7 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.auth import authentication
-from distributedinference.service.completions import chat_completions_service
-from distributedinference.service.completions import chat_completions_stream_service
+from distributedinference.service.completions import chat_completions_handler_service
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
@@ -47,26 +43,6 @@ async def completions(
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     analytics.track_event(user.uid, AnalyticsEvent(EventName.CHAT_COMPLETIONS, {}))
-    if request.stream:
-        headers = {
-            "X-Content-Type-Options": "nosniff",
-            "Connection": "keep-alive",
-        }
-        return StreamingResponse(
-            chat_completions_stream_service.execute(
-                user,
-                request,
-                node_repository=node_repository,
-                tokens_repository=tokens_repository,
-                metrics_queue_repository=metrics_queue_repository,
-            ),
-            headers=headers,
-            media_type="text/event-stream",
-        )
-    return await chat_completions_service.execute(
-        user,
-        request,
-        node_repository=node_repository,
-        tokens_repository=tokens_repository,
-        metrics_queue_repository=metrics_queue_repository,
+    return await chat_completions_handler_service.execute(
+        request, user, node_repository, tokens_repository, metrics_queue_repository
     )

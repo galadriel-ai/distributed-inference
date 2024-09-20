@@ -1,0 +1,46 @@
+from typing import Union
+
+from starlette.responses import StreamingResponse
+
+from distributedinference.domain.user.entities import User
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
+from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.service.completions import chat_completions_service
+from distributedinference.service.completions import chat_completions_stream_service
+from distributedinference.service.completions.entities import ChatCompletion
+from distributedinference.service.completions.entities import ChatCompletionRequest
+
+
+async def execute(
+    request: ChatCompletionRequest,
+    user: User,
+    node_repository: NodeRepository,
+    tokens_repository: TokensRepository,
+    metrics_queue_repository: MetricsQueueRepository,
+) -> Union[StreamingResponse, ChatCompletion]:
+    if request.stream:
+        headers = {
+            "X-Content-Type-Options": "nosniff",
+            "Connection": "keep-alive",
+        }
+        return StreamingResponse(
+            chat_completions_stream_service.execute(
+                user,
+                request,
+                node_repository=node_repository,
+                tokens_repository=tokens_repository,
+                metrics_queue_repository=metrics_queue_repository,
+            ),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+    return await chat_completions_service.execute(
+        user,
+        request,
+        node_repository=node_repository,
+        tokens_repository=tokens_repository,
+        metrics_queue_repository=metrics_queue_repository,
+    )
