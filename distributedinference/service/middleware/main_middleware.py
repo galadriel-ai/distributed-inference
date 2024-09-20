@@ -12,7 +12,6 @@ from starlette.types import ASGIApp
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.analytics.analytics import (
-    Analytics,
     AnalyticsEvent,
     EventName,
 )
@@ -38,7 +37,7 @@ class MainMiddleware(BaseHTTPMiddleware):
         request_id = util.get_state(request, RequestStateKey.REQUEST_ID)
         ip_address = util.get_state(request, RequestStateKey.IP_ADDRESS)
         country = util.get_state(request, RequestStateKey.COUNTRY)
-        analytics: Analytics = dependencies.get_analytics()
+        analytics = dependencies.get_analytics()
 
         try:
             logger.info(
@@ -52,7 +51,7 @@ class MainMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
 
             response_status_codes_counter.labels(response.status_code).inc()
-            analytics.track_event(
+            analytics.track_request_event(
                 request_id,
                 AnalyticsEvent(
                     EventName.API_RESPONSE,
@@ -76,7 +75,7 @@ class MainMiddleware(BaseHTTPMiddleware):
 
                 error_status_code = error.to_status_code()
                 response_status_codes_counter.labels(error_status_code).inc()
-                analytics.track_event(
+                analytics.track_request_event(
                     request_id,
                     AnalyticsEvent(
                         EventName.API_RESPONSE,
