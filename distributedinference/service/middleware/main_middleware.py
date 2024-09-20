@@ -27,6 +27,7 @@ response_status_codes_counter = Counter(
     "response_status_codes", "Total number of HTTP status codes", ["status_code"]
 )
 
+
 class MainMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
