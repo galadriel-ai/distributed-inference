@@ -15,6 +15,7 @@ class User:
 
 @dataclass(frozen=True)
 class ApiKey:
+    uid: UUID
     api_key: str
     created_at: datetime
 

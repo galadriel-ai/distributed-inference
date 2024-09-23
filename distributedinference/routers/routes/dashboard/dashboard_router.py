@@ -15,6 +15,7 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.api_key import create_api_key_service
+from distributedinference.service.api_key import delete_api_key_service
 from distributedinference.service.api_key import get_api_keys_service
 from distributedinference.service.auth import authentication
 from distributedinference.service.completions import chat_completions_handler_service
@@ -22,6 +23,8 @@ from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 from distributedinference.service.network import get_network_stats_service
 from distributedinference.service.network.entities import CreateApiKeyResponse
+from distributedinference.service.network.entities import DeleteApiKeyRequest
+from distributedinference.service.network.entities import DeleteApiKeyResponse
 from distributedinference.service.network.entities import GetApiKeysResponse
 from distributedinference.service.network.entities import NetworkStatsResponse
 from distributedinference.service.node import create_node_service
@@ -80,6 +83,22 @@ async def get_api_key(
     user: User = Depends(authentication.validate_session_token),
 ):
     return await get_api_keys_service.execute(user, user_repository)
+
+
+@router.delete(
+    "/api-key",
+    name="Api key",
+    response_model=DeleteApiKeyResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def delete_api_key(
+    request: DeleteApiKeyRequest,
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    user: User = Depends(authentication.validate_session_token),
+    analytics=Depends(dependencies.get_analytics),
+):
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.DELETE_API_KEY, {}))
+    return await delete_api_key_service.execute(request, user, user_repository)
 
 
 @router.post(
