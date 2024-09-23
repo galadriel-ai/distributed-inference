@@ -129,7 +129,7 @@ async def list_nodes(
     response_description="Returns a chat completion object, or a streamed sequence of chat completion chunk objects if the request is streamed.",
     response_model=ChatCompletion,
 )
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, R0801
 async def completions(
     request: ChatCompletionRequest,
     user: User = Depends(authentication.validate_session_token),
@@ -146,5 +146,10 @@ async def completions(
     # Force streaming
     request.stream = True
     return await chat_completions_handler_service.execute(
-        request, user, node_repository, tokens_repository, metrics_queue_repository
+        request,
+        user,
+        node_repository,
+        tokens_repository,
+        metrics_queue_repository,
+        analytics,
     )

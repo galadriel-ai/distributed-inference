@@ -79,7 +79,12 @@ async def test_success(connected_node_factory):
 
     responses = []
     async for response in use_case.execute(
-        USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
+        USER_UUID,
+        request,
+        mock_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        AsyncMock(),
     ):
         responses.append(response)
 
@@ -112,6 +117,7 @@ async def test_no_nodes():
             mock_node_repository,
             mock_tokens_repository,
             AsyncMock(),
+            MagicMock(),
         ):
             pass
 
@@ -164,7 +170,12 @@ async def test_streaming_no_usage(connected_node_factory):
 
     responses = []
     async for response in use_case.execute(
-        USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
+        USER_UUID,
+        request,
+        mock_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     ):
         responses.append(response)
 
@@ -223,7 +234,12 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
 
     responses = []
     async for response in use_case.execute(
-        USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
+        USER_UUID,
+        request,
+        mock_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     ):
         responses.append(response)
 
@@ -270,7 +286,12 @@ async def test_inference_error_stops_loop(connected_node_factory):
 
     responses = []
     async for response in use_case.execute(
-        USER_UUID, request, mock_node_repository, mock_tokens_repository, AsyncMock()
+        USER_UUID,
+        request,
+        mock_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     ):
         responses.append(response)
 
