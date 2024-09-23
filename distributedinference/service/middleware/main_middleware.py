@@ -1,4 +1,5 @@
 import time
+from typing import Any
 from typing import Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -54,25 +55,25 @@ class MainMiddleware(BaseHTTPMiddleware):
                 is_exc_info = error.to_status_code() == 500
                 logger.error(
                     f"Error while handling request. request_id={request_id} "
-                    f"request_path={request.url.path}"
-                    f"status code={error.to_status_code()}"
-                    f"code={error.to_code()}"
+                    f"request_path={request.url.path} "
+                    f"status code={error.to_status_code()} "
+                    f"code={error.to_code()} "
                     f"message={error.to_message()}",
                     exc_info=is_exc_info,
                 )
             else:
                 logger.error(
                     f"Error while handling request. request_id={request_id} "
-                    f"request_path={request.url.path}",
+                    f"request_path={request.url.path} ",
                     exc_info=True,
                 )
-            raise error
+            raise error from None
 
 
 # pylint: disable=C2801
-def _set_state(request: Request, state_key: RequestStateKey, value: any):
+def _set_state(request: Request, state_key: RequestStateKey, value: Any):
     request.state.__setattr__(state_key.value, value)
 
 
-def _get_state(request: Request, state_key: RequestStateKey) -> Optional[any]:
+def _get_state(request: Request, state_key: RequestStateKey) -> Optional[Any]:
     return getattr(request.state, state_key.value, None)

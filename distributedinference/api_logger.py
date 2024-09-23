@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Any
 from typing import Optional
 
 from pythonjsonlogger import jsonlogger
@@ -8,7 +9,7 @@ import settings
 
 LOGGING_MESSAGE_FORMAT = "%(asctime)s %(name)-12s %(levelname)s %(message)s"
 
-logger: Optional[any] = None
+logger: Optional[Any] = None
 
 
 # pylint: disable=W0603
