@@ -84,7 +84,10 @@ class MainMiddleware(BaseHTTPMiddleware):
                         user_id,
                         AnalyticsEvent(
                             EventName.API_RESPONSE,
-                            {"request_id": request_id, "status_code": error_status_code},
+                            {
+                                "request_id": request_id,
+                                "status_code": error_status_code,
+                            },
                         ),
                     )
 
@@ -99,7 +102,9 @@ class MainMiddleware(BaseHTTPMiddleware):
                 )
             else:
                 # Return UNKNOWN_ERROR(500) if it is not a APIErrorResponse
-                response_status_codes_counter.labels(InferenceStatusCodes.UNKNOWN_ERROR).inc()
+                response_status_codes_counter.labels(
+                    InferenceStatusCodes.UNKNOWN_ERROR
+                ).inc()
 
                 user_id = util.get_state(request, RequestStateKey.USER_ID)
                 if user_id:
