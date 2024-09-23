@@ -22,7 +22,7 @@ def upgrade():
     op.create_check_constraint(
         "profile_data_size_check_constraint",
         "user_profile",
-        "octet_length(profile_data::text) <= 1024",
+        "octet_length(profile_data::text) <= 2048",
     )
 
 
