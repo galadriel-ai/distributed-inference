@@ -30,6 +30,7 @@ class EventName(Enum):
     SET_PROFILE_DATA = "set_profile_data"
     SET_USER_PASSWORD = "set_user_password"
     CREATE_API_KEY = "create_api_key"
+    DELETE_API_KEY = "delete_api_key"
     CREATE_NODE = "create_node"
 
 

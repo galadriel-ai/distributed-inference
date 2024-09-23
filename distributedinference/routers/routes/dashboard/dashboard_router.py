@@ -97,7 +97,7 @@ async def delete_api_key(
     user: User = Depends(authentication.validate_session_token),
     analytics=Depends(dependencies.get_analytics),
 ):
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.CREATE_API_KEY, {}))
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.DELETE_API_KEY, {}))
     return await delete_api_key_service.execute(request, user, user_repository)
 
 
