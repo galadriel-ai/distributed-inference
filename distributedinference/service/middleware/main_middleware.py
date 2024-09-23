@@ -15,6 +15,7 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
+from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.utils import http_headers
 from distributedinference.service.error_responses import APIErrorResponse
 from distributedinference.service.middleware import util
@@ -49,13 +50,14 @@ class MainMiddleware(BaseHTTPMiddleware):
             )
             before = time.time()
             response: Response = await call_next(request)
+            user_id = util.get_state(request, RequestStateKey.USER_ID)
 
             response_status_codes_counter.labels(response.status_code).inc()
-            analytics.track_request_event(
-                request_id,
+            analytics.track_event(
+                user_id,
                 AnalyticsEvent(
                     EventName.API_RESPONSE,
-                    {"status_code": response.status_code},
+                    {"request_id": request_id, "status_code": response.status_code},
                 ),
             )
 
@@ -75,13 +77,16 @@ class MainMiddleware(BaseHTTPMiddleware):
 
                 error_status_code = error.to_status_code()
                 response_status_codes_counter.labels(error_status_code).inc()
-                analytics.track_request_event(
-                    request_id,
-                    AnalyticsEvent(
-                        EventName.API_RESPONSE,
-                        {"status_code": error_status_code},
-                    ),
-                )
+
+                user_id = util.get_state(request, RequestStateKey.USER_ID)
+                if user_id:
+                    analytics.track_event(
+                        user_id,
+                        AnalyticsEvent(
+                            EventName.API_RESPONSE,
+                            {"request_id": request_id, "status_code": error_status_code},
+                        ),
+                    )
 
                 is_exc_info = error_status_code == 500
                 logger.error(
@@ -93,6 +98,21 @@ class MainMiddleware(BaseHTTPMiddleware):
                     exc_info=is_exc_info,
                 )
             else:
+                # Return UNKNOWN_ERROR(500) if it is not a APIErrorResponse
+                response_status_codes_counter.labels(InferenceStatusCodes.UNKNOWN_ERROR).inc()
+
+                user_id = util.get_state(request, RequestStateKey.USER_ID)
+                if user_id:
+                    analytics.track_event(
+                        user_id,
+                        AnalyticsEvent(
+                            EventName.API_RESPONSE,
+                            {
+                                "request_id": request_id,
+                                "status_code": InferenceStatusCodes.UNKNOWN_ERROR,
+                            },
+                        ),
+                    )
                 logger.error(
                     f"Error while handling request. request_id={request_id} "
                     f"request_path={request.url.path}",

@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import Depends
 from fastapi import Security
 from fastapi.security import APIKeyHeader
+from starlette.requests import Request
 
 from distributedinference import api_logger
 from distributedinference.dependencies import get_authentication_api_repository
@@ -15,6 +16,8 @@ from distributedinference.repository.authentication_api_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
+from distributedinference.service.middleware import util
+from distributedinference.service.middleware.entitites import RequestStateKey
 
 API_KEY_NAME = "Authorization"
 API_KEY_HEADER = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
@@ -23,13 +26,15 @@ logger = api_logger.get()
 
 
 async def validate_api_key_header(
+    request: Request,
     api_key_header: str = Security(API_KEY_HEADER),
     user_repository: UserRepository = Depends(get_user_repository),
 ) -> Optional[User]:
-    return await validate_api_key(api_key_header, user_repository)
+    return await validate_api_key(request, api_key_header, user_repository)
 
 
 async def validate_api_key(
+    request: Optional[Request],
     api_key_header: Optional[str],
     user_repository: UserRepository,
 ) -> Optional[User]:
@@ -44,6 +49,8 @@ async def validate_api_key(
     api_key_header = api_key_header.replace("Bearer ", "")
     user = await user_repository.get_user_by_api_key(api_key_header)
     if user:
+        if request:
+            util.set_state(request, RequestStateKey.USER_ID, user.uid)
         return user
     raise error_responses.InvalidCredentialsAPIError(message_extra="API Key not found.")
 

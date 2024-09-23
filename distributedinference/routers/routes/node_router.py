@@ -55,6 +55,7 @@ async def websocket_endpoint(
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     user = await authentication.validate_api_key(
+        None,
         websocket.headers.get("Authorization"),
         user_repository,
     )

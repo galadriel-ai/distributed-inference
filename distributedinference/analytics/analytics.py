@@ -51,9 +51,3 @@ class Analytics:
             self.posthog.capture(user_id, event.name.value, event.metadata)
         except Exception as e:
             self.logger.error(f"Error tracking event: {str(e)}")
-
-    def track_request_event(self, request_id, event: AnalyticsEvent):
-        try:
-            self.posthog.capture(request_id, event.name.value, event.metadata)
-        except Exception as e:
-            self.logger.error(f"Error tracking event: {str(e)}")
