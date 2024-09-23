@@ -3,6 +3,8 @@ from typing import List
 from pydantic import BaseModel
 from pydantic import Field
 
+from distributedinference.service.entities import ApiResponse
+
 
 class NetworkModelStats(BaseModel):
     model_name: str = Field(description="Model name")
@@ -24,6 +26,7 @@ class NetworkStatsResponse(BaseModel):
 
 
 class UserApiKey(BaseModel):
+    api_key_id: str = Field(description="Unique ID of the API key")
     api_key_prefix: str = Field(description="Partially revealed API key")
     created_at: str = Field(description="API key creation date in ISO 8601 format.")
 
@@ -32,6 +35,15 @@ class GetApiKeysResponse(BaseModel):
     api_keys: List[UserApiKey] = Field(description="User API keys")
 
 
+class DeleteApiKeyRequest(BaseModel):
+    api_key_id: str = Field(description="Unique ID of the API key")
+
+
+class DeleteApiKeyResponse(ApiResponse):
+    pass
+
+
 class CreateApiKeyResponse(BaseModel):
+    api_key_id: str = Field(description="Unique ID of the API key")
     api_key: str = Field(description="Newly created API key")
     created_at: str = Field(description="API key creation date in ISO 8601 format.")

@@ -13,8 +13,9 @@ async def execute(user: User, repo: UserRepository) -> CreateApiKeyResponse:
     approx_created_at = utils.to_response_date_format(
         datetime.datetime.now(datetime.UTC)
     )
-    await repo.insert_api_key(user.uid, api_key)
+    api_key_id = await repo.insert_api_key(user.uid, api_key)
     return CreateApiKeyResponse(
+        api_key_id=str(api_key_id),
         api_key=api_key,
         created_at=approx_created_at,
     )

@@ -18,6 +18,7 @@ async def execute(user: User, repo: UserRepository) -> GetApiKeysResponse:
 def _get_formatted_api_keys(api_keys: List[ApiKey]) -> List[UserApiKey]:
     return [
         UserApiKey(
+            api_key_id=str(key.uid),
             api_key_prefix=key.api_key[:API_KEY_PREFIX_LENGTH],
             created_at=utils.to_response_date_format(key.created_at),
         )

@@ -16,6 +16,8 @@ async def test_success():
     service.secrets.token_urlsafe.return_value = api_key
 
     repository = AsyncMock(spec=UserRepository)
+    api_key_id = UUID("a29d1a91-3268-4c3c-9b2d-1f5841702192")
+    repository.insert_api_key.return_value = api_key_id
 
     response = await service.execute(
         User(
@@ -28,5 +30,5 @@ async def test_success():
     )
 
     assert response == CreateApiKeyResponse(
-        api_key=f"gal-{api_key}", created_at="mock_datetime"
+        api_key_id=str(api_key_id), api_key=f"gal-{api_key}", created_at="mock_datetime"
     )

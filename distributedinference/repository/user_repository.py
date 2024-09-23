@@ -77,7 +77,9 @@ SELECT
     up.last_updated_at
 FROM user_profile up
 LEFT JOIN api_key ak on up.id = ak.user_profile_id
-WHERE ak.api_key = :api_key;
+WHERE 
+    ak.api_key = :api_key
+    AND ak.is_deleted IS FALSE;
 """
 
 SQL_GET_BY_USERNAME = """
@@ -109,10 +111,17 @@ WHERE up.authentication_id = :authentication_id;
 
 SQL_GET_USER_API_KEYS = """
 SELECT
+    id,
     api_key,
     created_at
 FROM api_key
-WHERE user_profile_id = :user_profile_id;
+WHERE user_profile_id = :user_profile_id AND is_deleted = false;
+"""
+
+SQL_DELETE_USER_API_KEY = """
+UPDATE api_key
+SET is_deleted = true
+WHERE user_profile_id = :user_profile_id AND id = :api_key_id;
 """
 
 
@@ -239,8 +248,20 @@ class UserRepository:
         async with self._session_provider.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_USER_API_KEYS), data)
             for row in rows:
-                api_keys.append(ApiKey(api_key=row.api_key, created_at=row.created_at))
+                api_keys.append(
+                    ApiKey(
+                        uid=row.id,
+                        api_key=row.api_key,
+                        created_at=row.created_at,
+                    )
+                )
         return api_keys
+
+    async def delete_api_key(self, user_profile_id: UUID, api_key_id: UUID) -> None:
+        data = {"user_profile_id": user_profile_id, "api_key_id": api_key_id}
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_DELETE_USER_API_KEY), data)
+            await session.commit()
 
 
 if __name__ == "__main__":
