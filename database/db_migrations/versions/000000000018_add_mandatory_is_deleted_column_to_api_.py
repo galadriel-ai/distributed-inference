@@ -1,7 +1,7 @@
 """Add mandatory is_deleted column to api_key table
 
-Revision ID: 000000000017
-Revises: 000000000016
+Revision ID: 000000000018
+Revises: 000000000017
 Create Date: 2024-09-23 11:07:32.624806
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "000000000017"
-down_revision = "000000000016"
+revision = "000000000018"
+down_revision = "000000000017"
 branch_labels = None
 depends_on = None
 
