@@ -24,7 +24,9 @@ from distributedinference.service.middleware.entitites import RequestStateKey
 logger = api_logger.get()
 
 response_status_codes_counter = Counter(
-    "response_status_codes", "Total number of HTTP status codes", ["status_code"]
+    "response_status_codes",
+    "Total number of HTTP status codes of each endpoint",
+    ["endpoint", "status_code"],
 )
 
 
@@ -52,9 +54,7 @@ class MainMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
             user_id = util.get_state(request, RequestStateKey.USER_ID)
 
-            response_status_codes_counter.labels(
-                f"{request.url.path}{{{response.status_code}}}"
-            ).inc()
+            response_status_codes_counter.labels(request.url.path, response.status_code).inc()
             analytics.track_event(
                 user_id,
                 AnalyticsEvent(
@@ -78,9 +78,7 @@ class MainMiddleware(BaseHTTPMiddleware):
             if isinstance(error, APIErrorResponse):
 
                 error_status_code = error.to_status_code()
-                response_status_codes_counter.labels(
-                    f"{request.url.path}{{{error_status_code}}}"
-                ).inc()
+                response_status_codes_counter.labels(request.url.path, error_status_code).inc()
 
                 user_id = util.get_state(request, RequestStateKey.USER_ID)
                 if user_id:
@@ -105,9 +103,9 @@ class MainMiddleware(BaseHTTPMiddleware):
                     exc_info=is_exc_info,
                 )
             else:
-                # Return UNKNOWN_ERROR(500) if it is not a APIErrorResponse
+                # Return INTERNAL_SERVER_ERROR(500) if it is not a APIErrorResponse
                 response_status_codes_counter.labels(
-                    InferenceStatusCodes.UNKNOWN_ERROR
+                    InferenceStatusCodes.INTERNAL_SERVER_ERROR
                 ).inc()
 
                 user_id = util.get_state(request, RequestStateKey.USER_ID)
@@ -118,7 +116,7 @@ class MainMiddleware(BaseHTTPMiddleware):
                             EventName.API_RESPONSE,
                             {
                                 "request_id": request_id,
-                                "status_code": InferenceStatusCodes.UNKNOWN_ERROR,
+                                "status_code": InferenceStatusCodes.INTERNAL_SERVER_ERROR,
                             },
                         ),
                     )
