@@ -9,7 +9,7 @@ from aiocache import cached
 
 from distributedinference import api_logger
 
-CACHE_LENGTH_SECONDS = 600
+CACHE_LENGTH_SECONDS = 300
 
 PROM_INFERENCE_REQUESTS_PER_HOUR = "sum(increase(node_requests[1h]))"
 # For 1 node_id
