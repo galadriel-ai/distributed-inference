@@ -29,15 +29,16 @@ async def validate_api_key_header(
     request: Request,
     api_key_header: str = Security(API_KEY_HEADER),
     user_repository: UserRepository = Depends(get_user_repository),
-) -> Optional[User]:
-    return await validate_api_key(request, api_key_header, user_repository)
+) -> User:
+    user = await validate_api_key(api_key_header, user_repository)
+    util.set_state(request, RequestStateKey.USER_ID, user.uid)
+    return user
 
 
 async def validate_api_key(
-    request: Optional[Request],
     api_key_header: Optional[str],
     user_repository: UserRepository,
-) -> Optional[User]:
+) -> User:
     if not api_key_header:
         raise error_responses.AuthorizationMissingAPIError()
 
@@ -48,11 +49,11 @@ async def validate_api_key(
 
     api_key_header = api_key_header.replace("Bearer ", "")
     user = await user_repository.get_user_by_api_key(api_key_header)
-    if user:
-        if request:
-            util.set_state(request, RequestStateKey.USER_ID, user.uid)
-        return user
-    raise error_responses.InvalidCredentialsAPIError(message_extra="API Key not found.")
+    if not user:
+        raise error_responses.InvalidCredentialsAPIError(
+            message_extra="API Key not found."
+        )
+    return user
 
 
 async def validate_session_token(
