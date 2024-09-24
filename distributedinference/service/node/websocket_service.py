@@ -3,9 +3,9 @@ import time
 from typing import Optional
 from uuid import UUID
 
-from fastapi import status
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from fastapi import status
 from fastapi.exceptions import WebSocketException
 from fastapi.exceptions import WebSocketRequestValidationError
 
@@ -24,6 +24,10 @@ from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service.node.protocol.ping_pong_protocol import (
+    PingPongProtocol,
+)
+from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 logger = api_logger.get()
 
@@ -37,6 +41,7 @@ async def execute(
     node_repository: NodeRepository,
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
+    protocol_handler: ProtocolHandler,
 ):
     logger.info(
         f"Node with user id {user.uid} and node id {node_info.node_id}, trying to connect"
@@ -80,13 +85,23 @@ async def execute(
             code=status.WS_1013_TRY_AGAIN_LATER,
             reason="Node with same node id already connected",
         )
+    ping_pong_protocol: PingPongProtocol = protocol_handler.get(
+        settings.PING_PONG_PROTOCOL_NAME
+    )
+    await ping_pong_protocol.add_node(node_uid, websocket)
     try:
         while True:
             data = await websocket.receive_text()
             request_id = None
             try:
                 parsed_data = json.loads(data)
-                request_id = parsed_data["request_id"]
+                # handle protocols
+                if "protocol" in parsed_data and "data" in parsed_data:
+                    await protocol_handler.handle(
+                        parsed_data["protocol"], parsed_data["data"]
+                    )
+                elif parsed_data["request_id"] is not None:
+                    request_id = parsed_data["request_id"]
             except json.JSONDecodeError:
                 raise WebSocketRequestValidationError("Invalid JSON data")
             try:
@@ -110,6 +125,8 @@ async def execute(
         analytics.track_event(
             user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {})
         )
+    finally:
+        await ping_pong_protocol.remove_node(node_uid)
 
 
 async def _increment_uptime(

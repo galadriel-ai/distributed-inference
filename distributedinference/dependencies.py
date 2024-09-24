@@ -13,7 +13,7 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
-from distributedinference.service.node.protocol_handler import ProtocolHandler
+from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 _node_repository_instance: NodeRepository
 _metrics_queue_repository: MetricsQueueRepository
@@ -21,7 +21,6 @@ _metrics_queue_repository: MetricsQueueRepository
 _authentication_api_repository: AuthenticationApiRepository
 _analytics: Analytics
 _protocol_handler: ProtocolHandler
-
 
 
 # pylint: disable=W0603
@@ -51,8 +50,8 @@ def init_globals():
         _authentication_api_repository = AuthenticationApiRepository()
 
     _protocol_handler = ProtocolHandler()
-    
-    
+
+
 def get_node_repository() -> NodeRepository:
     return _node_repository_instance
 
@@ -75,6 +74,7 @@ def get_authentication_api_repository() -> AuthenticationApiRepository:
 
 def get_analytics() -> Analytics:
     return _analytics
+
 
 def get_protocol_handler() -> ProtocolHandler:
     return _protocol_handler
