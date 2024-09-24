@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import Depends
 from fastapi import Security
 from fastapi.security import APIKeyHeader
-from starlette.requests import Request
+from fastapi import Request
 
 from distributedinference import api_logger
 from distributedinference.dependencies import get_authentication_api_repository

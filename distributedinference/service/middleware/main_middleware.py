@@ -52,7 +52,9 @@ class MainMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
             user_id = util.get_state(request, RequestStateKey.USER_ID)
 
-            response_status_codes_counter.labels(response.status_code).inc()
+            response_status_codes_counter.labels(
+                f"{request.url.path}{{{response.status_code}}}"
+            ).inc()
             analytics.track_event(
                 user_id,
                 AnalyticsEvent(
@@ -76,7 +78,9 @@ class MainMiddleware(BaseHTTPMiddleware):
             if isinstance(error, APIErrorResponse):
 
                 error_status_code = error.to_status_code()
-                response_status_codes_counter.labels(error_status_code).inc()
+                response_status_codes_counter.labels(
+                    f"{request.url.path}{{{error_status_code}}}"
+                ).inc()
 
                 user_id = util.get_state(request, RequestStateKey.USER_ID)
                 if user_id:
