@@ -39,7 +39,7 @@ async def test_api_key_success():
         name="mock_name",
         email="mock_email",
     )
-    user = await authentication.validate_api_key(None, "Bearer 123123", repo)
+    user = await authentication.validate_api_key("Bearer 123123", repo)
     assert "mock_name" == user.name
     assert "mock_email" == user.email
 
