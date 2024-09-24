@@ -8,6 +8,7 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -21,6 +22,8 @@ from distributedinference.service.auth import authentication
 from distributedinference.service.completions import chat_completions_handler_service
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
+from distributedinference.service.graphs import graph_service
+from distributedinference.service.graphs.entities import GetGraphResponse
 from distributedinference.service.network import get_network_stats_service
 from distributedinference.service.network.entities import CreateApiKeyResponse
 from distributedinference.service.network.entities import DeleteApiKeyRequest
@@ -167,3 +170,18 @@ async def completions(
     return await chat_completions_handler_service.execute(
         request, user, node_repository, tokens_repository, metrics_queue_repository
     )
+
+
+@router.get(
+    "/graph",
+    name="Get network/node graphs",
+    response_model=GetGraphResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def get_graph(
+    _: User = Depends(authentication.validate_session_token),
+    grafana_repository: GrafanaApiRepository = Depends(
+        dependencies.get_grafana_repository
+    ),
+):
+    return await graph_service.execute(grafana_repository)

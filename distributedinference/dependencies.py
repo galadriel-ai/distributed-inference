@@ -7,6 +7,7 @@ from distributedinference.repository.authentication_api_repository import (
 )
 
 from distributedinference.repository.connection import get_session_provider
+from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -20,6 +21,8 @@ _metrics_queue_repository: MetricsQueueRepository
 _authentication_api_repository: AuthenticationApiRepository
 _analytics: Analytics
 
+_grafana_api_repository: GrafanaApiRepository
+
 
 # pylint: disable=W0603
 def init_globals():
@@ -28,6 +31,7 @@ def init_globals():
     global _metrics_queue_repository
     global _authentication_api_repository
     global _analytics
+    global _grafana_api_repository
     _node_repository_instance = NodeRepository(
         get_session_provider(), settings.MAX_PARALLEL_REQUESTS_PER_NODE
     )
@@ -45,6 +49,11 @@ def init_globals():
         settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET
     ):
         _authentication_api_repository = AuthenticationApiRepository()
+
+    if settings.GRAFANA_API_BASE_URL and settings.GRAFANA_API_KEY:
+        _grafana_api_repository = GrafanaApiRepository(
+            settings.GRAFANA_API_BASE_URL, settings.GRAFANA_API_KEY
+        )
 
 
 def get_node_repository() -> NodeRepository:
@@ -69,3 +78,7 @@ def get_authentication_api_repository() -> AuthenticationApiRepository:
 
 def get_analytics() -> Analytics:
     return _analytics
+
+
+def get_grafana_repository() -> GrafanaApiRepository:
+    return _grafana_api_repository
