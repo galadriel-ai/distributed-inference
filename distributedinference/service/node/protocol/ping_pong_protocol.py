@@ -61,8 +61,8 @@ class PingPongProtocol:
 
     # Regularly check if we have received the pong responses and to send ping messages
     async def job(self):
-        await self.check_for_pongs()
         await self.send_pings()
+        await self.check_for_pongs()
 
     # Add a node to the active nodes dictionary
     # called when a new node connects to the server through websocket

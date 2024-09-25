@@ -86,5 +86,7 @@ def get_analytics() -> Analytics:
 
 def get_protocol_handler() -> ProtocolHandler:
     return _protocol_handler
+
+
 def get_grafana_repository() -> GrafanaApiRepository:
     return _grafana_api_repository
