@@ -72,6 +72,20 @@ WHERE ni.user_profile_id = :user_profile_id
 ORDER BY ni.id DESC;
 """
 
+SQL_GET_USER_NODE_IDS = """
+SELECT 
+    ni.id AS id
+FROM node_info ni
+WHERE ni.user_profile_id = :user_profile_id;
+"""
+
+SQL_GET_USER_NODE_ID_BY_NAME = """
+SELECT 
+    ni.id AS id
+FROM node_info ni
+WHERE ni.user_profile_id = :user_profile_id AND name = :name_alias;
+"""
+
 SQL_GET_NODE_METRICS_BY_IDS = """
 SELECT
     id,
@@ -333,6 +347,28 @@ class NodeRepository:
                     )
                 )
             return result
+
+    async def get_user_node_ids(self, user_profile_id: UUID) -> List[UUID]:
+        data = {"user_profile_id": user_profile_id}
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_USER_NODE_IDS), data)
+            results = []
+            for row in rows:
+                results.append(row.id)
+            return results
+
+    async def get_user_node_id_by_name(
+        self, user_profile_id: UUID, node_name: str
+    ) -> Optional[UUID]:
+        data = {"user_profile_id": user_profile_id, "name_alias": node_name}
+        async with self._session_provider.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_USER_NODE_ID_BY_NAME), data
+            )
+            row = result.first()
+            if row:
+                return row.id
+            return None
 
     def register_node(self, connected_node: ConnectedNode) -> bool:
         """

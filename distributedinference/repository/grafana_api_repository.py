@@ -2,6 +2,7 @@ import datetime
 from dataclasses import dataclass
 from typing import List
 from urllib.parse import urljoin
+from uuid import UUID
 
 import aiohttp
 from aiocache import SimpleMemoryCache
@@ -12,10 +13,13 @@ from distributedinference import api_logger
 CACHE_LENGTH_SECONDS = 300
 
 PROM_INFERENCE_REQUESTS_PER_HOUR = "sum(increase(node_requests[1h]))"
-# For 1 node_id
-# 'sum(increase(node_requests{node_uid="066d84e8-e195-76f0-8000-ff76fcc77b19"}[1h]))'
-# For multiple node_ids
-# 'sum(increase(node_requests{node_uid=~"066d84e8-e195-76f0-8000-ff76fcc77b19|066d8706-081e-7013-8000-72c23af95cd3"}[1h]))'
+
+
+def _get_query_for_node_ids(node_ids: List[UUID]) -> str:
+    query_prefix = 'sum(increase(node_requests{node_uid=~"'
+    query_suffix = '"}[1h]))'
+    return query_prefix + "|".join([str(n) for n in node_ids]) + query_suffix
+
 
 logger = api_logger.get()
 
@@ -41,6 +45,18 @@ class GrafanaApiRepository:
             PROM_INFERENCE_REQUESTS_PER_HOUR,
         )
 
+    async def get_node_inferences(
+        self, node_ids: List[UUID], hours: int = 24
+    ) -> List[GraphValue]:
+        if not node_ids:
+            return []
+        return await _get_cached_query_result(
+            self.api_base_url,
+            self.api_key,
+            hours,
+            _get_query_for_node_ids(node_ids),
+        )
+
 
 @cached(ttl=CACHE_LENGTH_SECONDS, cache=SimpleMemoryCache)
 async def _get_cached_query_result(
@@ -50,7 +66,7 @@ async def _get_cached_query_result(
     query: str,
 ) -> List[GraphValue]:
     try:
-        end_timestamp = _get_latest_15min_mark()
+        end_timestamp = get_latest_15min_mark()
         timeout = aiohttp.ClientTimeout(total=30)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             response = await session.post(
@@ -79,7 +95,7 @@ async def _get_cached_query_result(
         return []
 
 
-def _get_latest_15min_mark() -> int:
+def get_latest_15min_mark() -> int:
     now = datetime.datetime.now(datetime.UTC)
     minutes_to_subtract = now.minute % 15
     latest_15min_mark = now - datetime.timedelta(

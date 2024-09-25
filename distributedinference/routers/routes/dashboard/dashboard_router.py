@@ -1,3 +1,6 @@
+import typing
+from typing import Optional
+
 from fastapi import APIRouter
 from fastapi import Depends
 
@@ -24,6 +27,7 @@ from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 from distributedinference.service.graphs import graph_service
 from distributedinference.service.graphs.entities import GetGraphResponse
+from distributedinference.service.graphs.entities import GetGraphType
 from distributedinference.service.network import get_network_stats_service
 from distributedinference.service.network.entities import CreateApiKeyResponse
 from distributedinference.service.network.entities import DeleteApiKeyRequest
@@ -179,9 +183,14 @@ async def completions(
     include_in_schema=not settings.is_production(),
 )
 async def get_graph(
-    _: User = Depends(authentication.validate_session_token),
+    graph_type: GetGraphType = typing.get_args(GetGraphType)[0],
+    user: User = Depends(authentication.validate_session_token),
+    node_name: Optional[str] = None,
     grafana_repository: GrafanaApiRepository = Depends(
         dependencies.get_grafana_repository
     ),
+    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
 ):
-    return await graph_service.execute(grafana_repository)
+    return await graph_service.execute(
+        graph_type, node_name, user, grafana_repository, node_repository
+    )
