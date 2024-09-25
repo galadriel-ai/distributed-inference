@@ -33,7 +33,7 @@ class ProtocolHandler:
     async def handle(self, protocol_name: str, data: Any):
         if protocol_name in self.protocols:
             proto = self.protocols[protocol_name]
-            await proto.handler(data)
+            await proto.handle(data)
         else:
             raise WebSocketException(
                 code=status.WS_1002_PROTOCOL_ERROR,

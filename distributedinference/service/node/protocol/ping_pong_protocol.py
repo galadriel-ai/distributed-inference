@@ -39,11 +39,12 @@ class PingPongProtocol:
         self.node_repository = (
             node_repository  # TODO: Will be used to RTT in the NodeInfo table
         )
+
         self.active_nodes = {}
         logger.info(f"{settings.PING_PONG_PROTOCOL_NAME}: Protocol initialized")
 
     # Handle the responses from the client
-    async def handler(self, data: Any):
+    async def handle(self, data: Any):
         node_id = data.node_id
         node_info = self.active_nodes[node_id]
         if node_info.waiting_for_pong:
