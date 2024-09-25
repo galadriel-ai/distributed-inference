@@ -70,9 +70,12 @@ async def validate_session_token(
 
     formatted_session_token_header = session_token_header.replace("Bearer ", "")
 
-    authenticated_user = await auth_repository.authenticate_session(
-        formatted_session_token_header
-    )
+    try:
+        authenticated_user = await auth_repository.authenticate_session(
+            formatted_session_token_header
+        )
+    except Exception:
+        raise error_responses.InvalidCredentialsAPIError("Invalid session_token")
     user = await user_repository.get_user_by_authentication_id(
         authenticated_user.provider_user_id
     )

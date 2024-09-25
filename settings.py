@@ -45,6 +45,12 @@ STYTCH_SECRET = os.getenv("STYTCH_SECRET", None)
 # Logged in user session duration (can use one token for this duration)
 SESSION_DURATION_MINUTES = 2 * 24 * 60
 
+GRAFANA_API_BASE_URL = os.getenv("GRAFANA_API_BASE_URL", None)
+GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", None)
+
+RUN_CRON_JOBS = os.getenv("RUN_CRON_JOBS", False)
+TESTING_API_KEY = os.getenv("TESTING_API_KEY", "")
+
 
 def is_production():
     return ENVIRONMENT == "production"

@@ -1,3 +1,6 @@
+import typing
+from typing import Optional
+
 from fastapi import APIRouter
 from fastapi import Depends
 
@@ -8,6 +11,7 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -21,6 +25,9 @@ from distributedinference.service.auth import authentication
 from distributedinference.service.completions import chat_completions_handler_service
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
+from distributedinference.service.graphs import graph_service
+from distributedinference.service.graphs.entities import GetGraphResponse
+from distributedinference.service.graphs.entities import GetGraphType
 from distributedinference.service.network import get_network_stats_service
 from distributedinference.service.network.entities import CreateApiKeyResponse
 from distributedinference.service.network.entities import DeleteApiKeyRequest
@@ -171,4 +178,24 @@ async def completions(
         tokens_repository,
         metrics_queue_repository,
         analytics,
+    )
+
+
+@router.get(
+    "/graph",
+    name="Get network/node graphs",
+    response_model=GetGraphResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def get_graph(
+    graph_type: GetGraphType = typing.get_args(GetGraphType)[0],
+    user: User = Depends(authentication.validate_session_token),
+    node_name: Optional[str] = None,
+    grafana_repository: GrafanaApiRepository = Depends(
+        dependencies.get_grafana_repository
+    ),
+    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+):
+    return await graph_service.execute(
+        graph_type, node_name, user, grafana_repository, node_repository
     )

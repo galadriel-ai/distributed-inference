@@ -1,6 +1,7 @@
 black==24.8.0
 fastapi==0.112.2
 requests==2.32.3
+aiohttp==3.10.5
 uvicorn==0.30.6
 gunicorn==23.0.0
 prometheus_client==0.20.0
@@ -21,3 +22,4 @@ pylint==3.2.7
 starlette==0.38.2
 mnemonic==0.21
 posthog==3.6.5
+aiocache==0.12.2
