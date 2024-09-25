@@ -33,6 +33,9 @@ class EventName(Enum):
     DELETE_API_KEY = "delete_api_key"
     CREATE_NODE = "create_node"
 
+    # API call responses
+    API_RESPONSE = "api_response"
+
 
 @dataclass
 class AnalyticsEvent:

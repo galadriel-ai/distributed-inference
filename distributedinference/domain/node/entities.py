@@ -108,7 +108,7 @@ class InferenceStatusCodes(Enum):
     CONFLICT = 409
     UNPROCESSABLE_ENTITY = 422
     RATE_LIMIT = 429
-    UNKNOWN_ERROR = 500
+    INTERNAL_SERVER_ERROR = 500
 
 
 @dataclass
