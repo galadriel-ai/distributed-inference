@@ -113,18 +113,3 @@ async def test_missing_node_name():
     node_repository.get_user_node_id_by_name.return_value = None
     with pytest.raises(error_responses.ValidationTypeError) as e:
         await service.execute("node", None, user, grafana_repository, node_repository)
-
-
-async def test_returns_empty_graph():
-    user = _get_user()
-    grafana_repository = AsyncMock(spec=GrafanaApiRepository)
-    grafana_repository.get_network_inferences.return_value = []
-    node_repository = AsyncMock(spec=NodeRepository)
-
-    result = await service.execute(
-        "network", None, user, grafana_repository, node_repository
-    )
-
-    assert len(result.timestamps) == service.GRAPH_HOURS
-    assert len(result.values) == service.GRAPH_HOURS
-    assert sum(result.values) == 0

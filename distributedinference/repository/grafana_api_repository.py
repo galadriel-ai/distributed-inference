@@ -18,7 +18,12 @@ PROM_INFERENCE_REQUESTS_PER_HOUR = "sum(increase(node_requests[1h]))"
 def _get_query_for_node_ids(node_ids: List[UUID]) -> str:
     query_prefix = 'sum(increase(node_requests{node_uid=~"'
     query_suffix = '"}[1h]))'
-    return query_prefix + "|".join([str(n) for n in node_ids]) + query_suffix
+    node_ids_str = "|".join([str(n) for n in node_ids])
+
+    absent_query_prefix = ' or absent(node_requests{node_uid=~"'
+    absent_query_suffix = '"}) * 0'
+
+    return query_prefix + node_ids_str + query_suffix + absent_query_prefix + node_ids_str + absent_query_suffix
 
 
 logger = api_logger.get()
