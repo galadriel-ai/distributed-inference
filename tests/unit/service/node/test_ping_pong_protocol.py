@@ -70,7 +70,9 @@ async def test_job_check_for_pongs(ping_pong_protocol):
         "node1": NodePingInfo(
             websocket=AsyncMock(spec=WebSocket),
             waiting_for_pong=True,
-            last_ping_sent_time=current_time - settings.PING_TIMEOUT - 1000,
+            last_ping_sent_time=current_time
+            - (settings.PING_TIMEOUT_IN_SECONDS * 1000)
+            - 1000,
             miss_streak=0,
         ),
         "node2": NodePingInfo(
