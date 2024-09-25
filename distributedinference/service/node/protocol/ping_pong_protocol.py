@@ -16,15 +16,19 @@ from distributedinference.service.node.protocol.entities import (
 logger = api_logger.get()
 
 
+# NodePingInfo class to store the information of a active node
+# TODO: SOme of the state info needs to be persisted in DB
 class NodePingInfo(BaseModel):
     websocket: WebSocket
-    rtt: float = 0
-    next_ping_time: float = 0
-    ping_streak: int = 0
-    miss_streak: int = 0
-    waiting_for_pong: bool = False
-    last_ping_nonce: str = ""
-    last_ping_sent_time: float = 0
+    rtt: float = 0  # the last rtt of the node
+    next_ping_time: float = 0  # the scheduled time to send the bext ping to the node
+    ping_streak: int = 0  # no of consecutive pings that the node has responded to
+    miss_streak: int = 0  # no of consecutive pings that the node has missed
+    waiting_for_pong: bool = False  # flag to check if the node is waiting for pong
+    last_ping_nonce: str = (
+        ""  # the nonce of the last ping sent to the node to avoid replay attacks
+    )
+    last_ping_sent_time: float = 0  # the time when the last ping was sent to the node
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -37,7 +41,7 @@ class PingPongProtocol:
         self.active_nodes = {}
         logger.info(f"{settings.PING_PONG_PROTOCOL_NAME}: Protocol initialized")
 
-    # Implement abstract method from the base class
+    # Handle the responses from the client
     async def handler(self, data: Any):
         node_id = data.node_id
         node_info = self.active_nodes[node_id]
@@ -47,9 +51,13 @@ class PingPongProtocol:
                     f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong with invalid nonce from node {node_id}, expected {node_info.last_ping_nonce}, got {data.nonce}"
                 )
                 return
-        await self.got_pong_on_time(node_id, node_info)
+            await self.got_pong_on_time(node_id, node_info)
+        else:
+            logger.warning(
+                f"{settings.PING_PONG_PROTOCOL_NAME}: Received unexpected pong from node {node_id}"
+            )
 
-    # Implement abstract method from the base class
+    # Regularly check if we have received the pong responses and to send ping messages
     async def job(self):
         await self.check_for_pongs()
         await self.send_pings()
@@ -66,7 +74,7 @@ class PingPongProtocol:
         self.active_nodes[node_id] = NodePingInfo(
             websocket=websocket,
             rtt=0,
-            next_ping_time=current_time + settings.PING_INTERVAL,
+            next_ping_time=current_time + (settings.PING_INTERVAL_IN_SECONDS * 1000),
             ping_streak=0,
             miss_streak=0,
             waiting_for_pong=False,
@@ -94,31 +102,21 @@ class PingPongProtocol:
         return True
 
     async def send_pings(self):
-        nodes_to_ping = await self.get_next_nodes_to_ping()
-        for node_id in nodes_to_ping:
-            node_info = self.active_nodes[node_id]
-            if node_info.waiting_for_pong is False and (
-                node_info.next_ping_time < _current_milli_time()
-            ):
-                await self.send_ping_message(node_id)
-
-    async def check_for_pongs(self):
-        for node_id, node_info in self.active_nodes.items():
-            if node_info.waiting_for_pong:
-                if (
-                    round(_current_milli_time() - node_info.last_ping_sent_time)
-                    > settings.PING_TIMEOUT
-                ):
-                    await self.missed_pong(node_id, node_info)
-
-    async def get_next_nodes_to_ping(self):
         current_time = _current_milli_time()
-        nodes_to_ping = []
         for node_id, node_info in self.active_nodes.items():
             if current_time > node_info.next_ping_time:
                 if not node_info.waiting_for_pong:
-                    nodes_to_ping.append(node_id)
-        return nodes_to_ping
+                    await self.send_ping_message(node_id)
+
+    async def check_for_pongs(self):
+        for node_id, node_info in self.active_nodes.items():
+            if node_info.waiting_for_pong:  # waiting for pong
+                if round(_current_milli_time() - node_info.last_ping_sent_time) > (
+                    (settings.PING_TIMEOUT_IN_SECONDS * 1000)
+                ):
+                    await self.missed_pong(
+                        node_id, node_info
+                    )  # timed out, mark it as missed pong
 
     # Send a ping message to the client
     async def send_ping_message(self, node_id):
@@ -136,7 +134,7 @@ class PingPongProtocol:
             message_type=PingPongMessageType.PING,
             nonce=node_info.last_ping_nonce,
             timestamp=node_info.last_ping_sent_time,
-            response_timeout=settings.PING_TIMEOUT,
+            response_timeout=settings.PING_TIMEOUT_IN_SECONDS * 1000,
         )
         websocket = self.active_nodes[node_id].websocket
         message = {"protocol": settings.PING_PONG_PROTOCOL_NAME, "data": ping_request}
@@ -151,7 +149,7 @@ class PingPongProtocol:
         node_info.miss_streak += 1
         node_info.waiting_for_pong = False  # reset the waiting for pong flag
         if node_info.miss_streak > 3:
-            await self.remove_node(
+            self.remove_node(
                 node_id
             )  # remove the node from the active nodes if it has missed 3 pongs consecutively
             logger.error(
@@ -164,9 +162,9 @@ class PingPongProtocol:
 
     async def got_pong_on_time(self, node_id, node_info):
         # Got the right pong response
-        node_info.next_ping_time = (
-            _current_milli_time() + settings.PING_INTERVAL  # set the next ping time
-        )  # set the next ping time
+        node_info.next_ping_time = _current_milli_time() + (
+            settings.PING_INTERVAL_IN_SECONDS * 1000
+        )  # set the next ping time  # set the next ping time
         node_info.waiting_for_pong = False  # reset the waiting for pong flag
         node_info.miss_streak = 0  # resset miss streak if any
         node_info.ping_streak += 1  # increment the ping streak
@@ -174,7 +172,7 @@ class PingPongProtocol:
             _current_milli_time() - node_info.last_ping_sent_time
         )  # calculate the rtt
         logger.info(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong from node {node_id}, with nonce {node_info.last_ping_nonce} with rtt {node_info.rtt}"
+            f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong from node {node_id}, with nonce {node_info.last_ping_nonce} with rtt {node_info.rtt} in msec"
         )
 
 
