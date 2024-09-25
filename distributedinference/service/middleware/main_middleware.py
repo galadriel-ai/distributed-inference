@@ -110,7 +110,7 @@ class MainMiddleware(BaseHTTPMiddleware):
             else:
                 # Return INTERNAL_SERVER_ERROR(500) if it is not a APIErrorResponse
                 response_status_codes_counter.labels(
-                    InferenceStatusCodes.INTERNAL_SERVER_ERROR
+                    request.url.path, InferenceStatusCodes.INTERNAL_SERVER_ERROR.value
                 ).inc()
 
                 user_id = util.get_state(request, RequestStateKey.USER_ID)
