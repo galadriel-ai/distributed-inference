@@ -3,6 +3,7 @@ from typing import AsyncIterable
 from openai.types.chat import CompletionCreateParams
 from uuid_extensions import uuid7
 
+from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.node import run_inference_use_case
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
@@ -16,13 +17,14 @@ from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletionRequest
 
 
-# pylint: disable=R0801
+# pylint: disable=R0801, R0913
 async def execute(
     user: User,
     request: ChatCompletionRequest,
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
     metrics_queue_repository: MetricsQueueRepository,
+    analytics: Analytics,
 ) -> AsyncIterable:
     try:
         chat_request: CompletionCreateParams = await request.to_openai_chat_completion()
@@ -41,6 +43,7 @@ async def execute(
             node_repository,
             tokens_repository,
             metrics_queue_repository,
+            analytics,
         ):
             if chunk.error:
                 raise error_responses.InferenceError(
