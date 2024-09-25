@@ -10,7 +10,7 @@ ENVIRONMENT = os.getenv("PLATFORM_ENVIRONMENT", "local")
 
 APPLICATION_NAME = "DISTRIBUTED_INFERENCE"
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1")
-API_PORT = int(os.getenv("API_PORT", 5001))
+API_PORT = int(os.getenv("API_PORT", 5000))
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 LOG_FILE_PATH = "logs/logs.log"
 
@@ -48,7 +48,7 @@ SESSION_DURATION_MINUTES = 2 * 24 * 60
 PROTOCOL_RESPONSE_CHECK_INTERVAL = 3  # Protocol response check every 3 second
 PING_PONG_PROTOCOL_NAME = "ping-pong"  # Name of the protocol
 PING_PONG_PROTOCOL_VERSION = "1.0"  # Version of the protocol
-PING_INTERVAL = 60 * 1000  # Send ping every 60 seconds in milliseconds
+PING_INTERVAL = 600 * 1000  # Send ping every 10 minutes
 PING_TIMEOUT = 10 * 1000  # Wait for pong response for 10 seconds
 
 
