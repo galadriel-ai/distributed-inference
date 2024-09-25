@@ -77,7 +77,9 @@ class NotFoundAPIError(APIErrorResponse):
         return "not_found"
 
     def to_message(self) -> str:
-        return "Can't find the requested resource"
+        return "Can't find the requested resource" + (
+            f". {self.message_extra}" if self.message_extra else ""
+        )
 
 
 class UsernameAlreadyExistsAPIError(APIErrorResponse):

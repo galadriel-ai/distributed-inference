@@ -19,6 +19,7 @@ class EventName(Enum):
 
     CHAT_COMPLETIONS = "chat_completions"
     DASHBOARD_CHAT_COMPLETIONS = "dashboard_chat_completions"
+    INFERENCE_NODE_SELECTED = "inference_node_selected"
 
     WS_NODE_CONNECTED = "ws_node_connected"
     WS_NODE_DISCONNECTED = "ws_node_disconnected"
@@ -32,6 +33,9 @@ class EventName(Enum):
     CREATE_API_KEY = "create_api_key"
     DELETE_API_KEY = "delete_api_key"
     CREATE_NODE = "create_node"
+
+    # API call responses
+    API_RESPONSE = "api_response"
 
 
 @dataclass

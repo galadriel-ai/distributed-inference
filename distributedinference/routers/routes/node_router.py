@@ -61,11 +61,6 @@ async def websocket_endpoint(
         websocket.headers.get("Authorization"),
         user_repository,
     )
-    if not user:
-        raise WebSocketException(
-            code=status.WS_1008_POLICY_VIOLATION,
-            reason="Authorization header is required",
-        )
 
     node_id = websocket.headers.get("Node-Id")
     if not node_id:

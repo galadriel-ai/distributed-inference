@@ -31,7 +31,7 @@ logger = api_logger.get()
     response_description="Returns a chat completion object, or a streamed sequence of chat completion chunk objects if the request is streamed.",
     response_model=ChatCompletion,
 )
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, R0801
 async def completions(
     request: ChatCompletionRequest,
     user: User = Depends(authentication.validate_api_key_header),
@@ -44,5 +44,10 @@ async def completions(
 ):
     analytics.track_event(user.uid, AnalyticsEvent(EventName.CHAT_COMPLETIONS, {}))
     return await chat_completions_handler_service.execute(
-        request, user, node_repository, tokens_repository, metrics_queue_repository
+        request,
+        user,
+        node_repository,
+        tokens_repository,
+        metrics_queue_repository,
+        analytics,
     )

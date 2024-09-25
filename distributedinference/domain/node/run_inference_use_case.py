@@ -5,6 +5,11 @@ from uuid import UUID
 
 from openai.types import CompletionUsage
 
+from distributedinference.analytics.analytics import (
+    Analytics,
+    AnalyticsEvent,
+    EventName,
+)
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import NodeMetricsIncrement
@@ -17,17 +22,23 @@ from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 
 
-# pylint: disable=R0912
+# pylint: disable=R0912, R0913
 async def execute(
     user_uid: UUID,
     request: InferenceRequest,
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
     metrics_queue_repository: MetricsQueueRepository,
+    analytics: Analytics,
 ) -> AsyncGenerator[InferenceResponse, None]:
     node = node_repository.select_node(request.model)
     if not node:
         raise NoAvailableNodesError()
+
+    analytics.track_event(
+        user_uid,
+        AnalyticsEvent(EventName.INFERENCE_NODE_SELECTED, {"node_id": node.uid}),
+    )
     await node_repository.send_inference_request(node.uid, request)
 
     metrics_increment = NodeMetricsIncrement(node_id=node.uid)

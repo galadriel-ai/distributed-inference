@@ -7,6 +7,7 @@ from distributedinference.repository.authentication_api_repository import (
 )
 
 from distributedinference.repository.connection import get_session_provider
+from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -22,6 +23,8 @@ _authentication_api_repository: AuthenticationApiRepository
 _analytics: Analytics
 _protocol_handler: ProtocolHandler
 
+_grafana_api_repository: GrafanaApiRepository
+
 
 # pylint: disable=W0603
 def init_globals():
@@ -31,6 +34,7 @@ def init_globals():
     global _authentication_api_repository
     global _analytics
     global _protocol_handler
+    global _grafana_api_repository
     _node_repository_instance = NodeRepository(
         get_session_provider(), settings.MAX_PARALLEL_REQUESTS_PER_NODE
     )
@@ -50,6 +54,10 @@ def init_globals():
         _authentication_api_repository = AuthenticationApiRepository()
 
     _protocol_handler = ProtocolHandler()
+    if settings.GRAFANA_API_BASE_URL and settings.GRAFANA_API_KEY:
+        _grafana_api_repository = GrafanaApiRepository(
+            settings.GRAFANA_API_BASE_URL, settings.GRAFANA_API_KEY
+        )
 
 
 def get_node_repository() -> NodeRepository:
@@ -78,3 +86,5 @@ def get_analytics() -> Analytics:
 
 def get_protocol_handler() -> ProtocolHandler:
     return _protocol_handler
+def get_grafana_repository() -> GrafanaApiRepository:
+    return _grafana_api_repository

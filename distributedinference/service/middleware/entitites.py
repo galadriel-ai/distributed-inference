@@ -12,3 +12,4 @@ class RequestStateKey(str, Enum):
     REQUEST_USER_AGENT = "request_user_agent"
     IP_ADDRESS = "ip_address"
     COUNTRY = "country"
+    USER_ID = "user_id"

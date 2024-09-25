@@ -53,6 +53,12 @@ PING_PONG_PROTOCOL_VERSION = "1.0"  # Version of the protocol
 PING_INTERVAL_IN_SECONDS = 600  # Send ping every 10 minutes
 PING_TIMEOUT_IN_SECONDS = 10  # Wait for pong response for 10 seconds
 
+GRAFANA_API_BASE_URL = os.getenv("GRAFANA_API_BASE_URL", None)
+GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", None)
+
+RUN_CRON_JOBS = os.getenv("RUN_CRON_JOBS", False)
+TESTING_API_KEY = os.getenv("TESTING_API_KEY", "")
+
 
 def is_production():
     return ENVIRONMENT == "production"
