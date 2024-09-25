@@ -30,10 +30,15 @@ class ProtocolHandler:
     def get(self, protocol_name: str) -> Any:
         return self.protocols.get(protocol_name)
 
-    async def handle(self, protocol_name: str, data: Any):
+    async def handle(self, parsed_data: Any):
+        protocol_name = parsed_data.get("protocol")
+        protocol_data = parsed_data.get("data")
+        if protocol_name is None or protocol_data is None:
+            logger.error("Invalid protocol data")
+
         if protocol_name in self.protocols:
             proto = self.protocols[protocol_name]
-            await proto.handle(data)
+            await proto.handle(protocol_data)
         else:
             raise WebSocketException(
                 code=status.WS_1002_PROTOCOL_ERROR,

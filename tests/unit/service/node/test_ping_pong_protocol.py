@@ -35,7 +35,7 @@ async def test_handler_valid_pong(ping_pong_protocol):
     data = MagicMock(node_id=node_id, nonce=nonce)
 
     # Execute
-    await ping_pong_protocol.handler(data)
+    await ping_pong_protocol.handle(data)
 
     # Assert
     assert not ping_pong_protocol.active_nodes[node_id].waiting_for_pong
@@ -55,7 +55,7 @@ async def test_handler_invalid_nonce(ping_pong_protocol, caplog):
     data = MagicMock(node_id=node_id, nonce="wrong_nonce")
 
     # Execute
-    await ping_pong_protocol.handler(data)
+    await ping_pong_protocol.handle(data)
 
     # Assert
     assert "Received pong with invalid nonce" in caplog.text

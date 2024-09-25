@@ -88,12 +88,7 @@ async def execute(
                     request_id = parsed_data["request_id"]
                 else:
                     # handle protocols
-                    protocol_name = parsed_data.get("protocol")
-                    protocol_data = parsed_data.get("data")
-                    if protocol_name is not None and protocol_data is not None:
-                        await protocol_handler.handle(
-                            parsed_data["protocol"], parsed_data["data"]
-                        )
+                    await protocol_handler.handle(parsed_data)
             except json.JSONDecodeError:
                 raise WebSocketRequestValidationError("Invalid JSON data")
             try:
