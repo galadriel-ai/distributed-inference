@@ -23,7 +23,14 @@ def _get_query_for_node_ids(node_ids: List[UUID]) -> str:
     absent_query_prefix = ' or absent(node_requests{node_uid=~"'
     absent_query_suffix = '"}) * 0'
 
-    return query_prefix + node_ids_str + query_suffix + absent_query_prefix + node_ids_str + absent_query_suffix
+    return (
+        query_prefix
+        + node_ids_str
+        + query_suffix
+        + absent_query_prefix
+        + node_ids_str
+        + absent_query_suffix
+    )
 
 
 logger = api_logger.get()
