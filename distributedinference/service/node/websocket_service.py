@@ -48,23 +48,7 @@ async def execute(
     )
     await websocket.accept()
 
-    if not model_name:
-        raise WebSocketException(
-            code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
-        )
-    benchmark = await node_repository.get_node_benchmark(
-        user.uid, node_info.node_id, model_name
-    )
-    if not benchmark:
-        raise WebSocketException(
-            code=status.WS_1008_POLICY_VIOLATION,
-            reason="Benchmarking is not completed",
-        )
-    if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
-        raise WebSocketException(
-            code=status.WS_1008_POLICY_VIOLATION,
-            reason="Benchmarking performance is too low",
-        )
+    await _check_before_connecting(model_name, node_info, node_repository, user)
 
     node_uid = node_info.node_id
     node = ConnectedNode(
@@ -82,13 +66,18 @@ async def execute(
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
         raise WebSocketException(
-            code=status.WS_1013_TRY_AGAIN_LATER,
+            code=status.WS_1008_POLICY_VIOLATION,
             reason="Node with same node id already connected",
         )
     ping_pong_protocol: PingPongProtocol = protocol_handler.get(
         settings.PING_PONG_PROTOCOL_NAME
     )
-    await ping_pong_protocol.add_node(node_uid, websocket)
+
+    if not ping_pong_protocol.add_node(node_uid, websocket):
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Node could not be added to the active nodes",
+        )
     try:
         while True:
             data = await websocket.receive_text()
@@ -126,7 +115,27 @@ async def execute(
             user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {})
         )
     finally:
-        await ping_pong_protocol.remove_node(node_uid)
+        ping_pong_protocol.remove_node(node_uid)
+
+
+async def _check_before_connecting(model_name, node_info, node_repository, user):
+    if not model_name:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
+        )
+    benchmark = await node_repository.get_node_benchmark(
+        user.uid, node_info.node_id, model_name
+    )
+    if not benchmark:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Benchmarking is not completed",
+        )
+    if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Benchmarking performance is too low",
+        )
 
 
 async def _increment_uptime(

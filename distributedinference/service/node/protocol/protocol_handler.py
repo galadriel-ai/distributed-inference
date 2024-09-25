@@ -46,7 +46,7 @@ async def execute(
     node_repository: NodeRepository,
 ) -> None:
     try:
-        logger.debug("Started Protocol Handler")
+        logger.info("Started Protocol Handler")
 
         # Instantiate and Register the ping-pong protocol
         ping_pong_protocol = PingPongProtocol(node_repository)
@@ -55,6 +55,7 @@ async def execute(
         # trigger protocol jobs every X seconds
         while True:
             await asyncio.sleep(settings.PROTOCOL_RESPONSE_CHECK_INTERVAL)
+            logger.debug("Triggering protocol jobs")
             await ping_pong_protocol.job()
     except Exception:
         logger.error(
