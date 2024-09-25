@@ -2,6 +2,7 @@ import time
 import uuid
 from typing import Any
 
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from starlette.websockets import WebSocket
 
@@ -137,7 +138,8 @@ class PingPongProtocol:
             response_timeout=settings.PING_TIMEOUT_IN_SECONDS * 1000,
         )
         websocket = self.active_nodes[node_id].websocket
-        message = {"protocol": settings.PING_PONG_PROTOCOL_NAME, "data": ping_request}
+        data = jsonable_encoder(ping_request)
+        message = {"protocol": settings.PING_PONG_PROTOCOL_NAME, "data": data}
         await websocket.send_json(message)
         logger.info(
             f"{settings.PING_PONG_PROTOCOL_NAME}: Sent ping to node {node_id}, with nonce {node_info.last_ping_nonce}"
