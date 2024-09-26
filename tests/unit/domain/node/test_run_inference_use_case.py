@@ -1,7 +1,7 @@
 import time
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from uuid import UUID
+from uuid import UUID, uuid1
 
 import pytest
 from openai.types import CompletionUsage
@@ -30,7 +30,9 @@ def mock_websocket():
 @pytest.fixture
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
-        return ConnectedNode(uid, model, 16000, int(time.time()), mock_websocket, {})
+        return ConnectedNode(
+            uid, uuid1(), model, 16000, int(time.time()), mock_websocket, {}
+        )
 
     return _create_node
 

@@ -58,13 +58,19 @@ class MainMiddleware(BaseHTTPMiddleware):
             response_status_codes_counter.labels(
                 request.url.path, response.status_code
             ).inc()
-            analytics.track_event(
-                user_id,
-                AnalyticsEvent(
-                    EventName.API_RESPONSE,
-                    {"request_id": request_id, "status_code": response.status_code},
-                ),
-            )
+            if user_id:
+                analytics.track_event(
+                    user_id,
+                    AnalyticsEvent(
+                        EventName.API_RESPONSE,
+                        {
+                            "request_id": request_id,
+                            "request_path": request.url.path,
+                            "error_message": "",
+                            "status_code": response.status_code,
+                        },
+                    ),
+                )
 
             process_time = (time.time() - before) * 1000
             formatted_process_time = "{0:.2f}".format(process_time)
@@ -93,6 +99,8 @@ class MainMiddleware(BaseHTTPMiddleware):
                             EventName.API_RESPONSE,
                             {
                                 "request_id": request_id,
+                                "request_path": request.url.path,
+                                "error_message": error.to_message(),
                                 "status_code": error_status_code,
                             },
                         ),
@@ -110,7 +118,7 @@ class MainMiddleware(BaseHTTPMiddleware):
             else:
                 # Return INTERNAL_SERVER_ERROR(500) if it is not a APIErrorResponse
                 response_status_codes_counter.labels(
-                    InferenceStatusCodes.INTERNAL_SERVER_ERROR
+                    request.url.path, InferenceStatusCodes.INTERNAL_SERVER_ERROR.value
                 ).inc()
 
                 user_id = util.get_state(request, RequestStateKey.USER_ID)
@@ -121,6 +129,8 @@ class MainMiddleware(BaseHTTPMiddleware):
                             EventName.API_RESPONSE,
                             {
                                 "request_id": request_id,
+                                "request_path": request.url.path,
+                                "error_message": "",
                                 "status_code": InferenceStatusCodes.INTERNAL_SERVER_ERROR,
                             },
                         ),

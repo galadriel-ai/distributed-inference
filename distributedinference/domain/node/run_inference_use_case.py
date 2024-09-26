@@ -37,8 +37,18 @@ async def execute(
 
     analytics.track_event(
         user_uid,
-        AnalyticsEvent(EventName.INFERENCE_NODE_SELECTED, {"node_id": node.uid}),
+        AnalyticsEvent(
+            EventName.USER_EXECUTED_INFERENCE_REQUEST, {"node_id": node.uid}
+        ),
     )
+
+    analytics.track_event(
+        node.user_id,
+        AnalyticsEvent(
+            EventName.USER_NODE_SELECTED_FOR_INFERENCE, {"node_id": node.uid}
+        ),
+    )
+
     await node_repository.send_inference_request(node.uid, request)
 
     metrics_increment = NodeMetricsIncrement(node_id=node.uid)

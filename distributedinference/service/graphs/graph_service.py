@@ -2,8 +2,6 @@ from typing import Optional
 
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
-from distributedinference.repository.grafana_api_repository import GraphValue
-from distributedinference.repository.grafana_api_repository import get_latest_15min_mark
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
 from distributedinference.service.graphs.entities import GetGraphResponse
@@ -37,24 +35,7 @@ async def execute(
         )
     else:
         raise error_responses.NotFoundAPIError("graph_type not found")
-    if not graph:
-        return await _get_empty_graph(hours=GRAPH_HOURS)
     return _get_formatted_result(graph)
-
-
-async def _get_empty_graph(hours: int):
-    empty_graph = []
-    timestamp = get_latest_15min_mark()
-    while len(empty_graph) < hours:
-        empty_graph.insert(
-            0,
-            GraphValue(
-                timestamp=timestamp,
-                value=0,
-            ),
-        )
-        timestamp = timestamp - (60 * 60)
-    return _get_formatted_result(empty_graph)
 
 
 def _get_formatted_result(graph):

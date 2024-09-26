@@ -53,6 +53,7 @@ async def execute(
     node_uid = node_info.node_id
     node = ConnectedNode(
         uid=node_uid,
+        user_id=user.uid,
         model=model_name,
         vram=node_info.vram,
         connected_at=int(time.time()),
@@ -60,7 +61,9 @@ async def execute(
         request_incoming_queues={},
     )
     logger.info(f"Node {node_uid} connected")
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.WS_NODE_CONNECTED, {}))
+    analytics.track_event(
+        user.uid, AnalyticsEvent(EventName.WS_NODE_CONNECTED, {"node_id": node.uid})
+    )
 
     connect_time = time.time()
     if not node_repository.register_node(node):

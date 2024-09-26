@@ -297,7 +297,7 @@ class NodeRepository:
     ):
         self._session_provider = session_provider
         self._max_parallel_requests_per_node = max_parallel_requests_per_node
-        # user_id: ConnectedNode
+        # node_id: ConnectedNode
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
     async def create_node(

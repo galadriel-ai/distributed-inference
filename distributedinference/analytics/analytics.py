@@ -1,10 +1,13 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from logging import Logger
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 from uuid import UUID
 
 from posthog import Posthog
+
+from distributedinference.domain.user.entities import User
 
 
 class EventName(Enum):
@@ -19,7 +22,9 @@ class EventName(Enum):
 
     CHAT_COMPLETIONS = "chat_completions"
     DASHBOARD_CHAT_COMPLETIONS = "dashboard_chat_completions"
-    INFERENCE_NODE_SELECTED = "inference_node_selected"
+
+    USER_EXECUTED_INFERENCE_REQUEST = "user_executed_inference_request"
+    USER_NODE_SELECTED_FOR_INFERENCE = "user_node_selected_for_inference"
 
     WS_NODE_CONNECTED = "ws_node_connected"
     WS_NODE_DISCONNECTED = "ws_node_disconnected"
@@ -54,3 +59,13 @@ class Analytics:
             self.posthog.capture(user_id, event.name.value, event.metadata)
         except Exception as e:
             self.logger.error(f"Error tracking event: {str(e)}")
+
+    def identify_user(self, user: User):
+        try:
+            self.posthog.identify(
+                user.uid,
+                {"email": user.email},
+                disable_geoip=True,
+            )
+        except Exception as e:
+            self.logger.error(f"Error identifying user: {str(e)}")
