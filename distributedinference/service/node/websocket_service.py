@@ -72,7 +72,9 @@ async def execute(
         request_incoming_queues={},
     )
     logger.info(f"Node {node_uid} connected")
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.WS_NODE_CONNECTED, {}))
+    analytics.track_event(
+        user.uid, AnalyticsEvent(EventName.WS_NODE_CONNECTED, {"node_id": node.uid})
+    )
 
     connect_time = time.time()
     if not node_repository.register_node(node):
@@ -100,7 +102,10 @@ async def execute(
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
         logger.info(f"Node {node_uid} disconnected, because of invalid JSON")
         analytics.track_event(
-            user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED_WITH_ERROR, {})
+            user.uid,
+            AnalyticsEvent(
+                EventName.WS_NODE_DISCONNECTED_WITH_ERROR, {"node_id": node_uid}
+            ),
         )
         raise e
     except WebSocketDisconnect:
@@ -109,7 +114,8 @@ async def execute(
         await _increment_uptime(node.uid, uptime, metrics_queue_repository)
         logger.info(f"Node {node_uid} disconnected")
         analytics.track_event(
-            user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {})
+            user.uid,
+            AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {"node_id": node_uid}),
         )
 
 

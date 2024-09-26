@@ -90,7 +90,9 @@ async def get_info(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name(user, node_id, node_repository)
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_INFO, {}))
+    analytics.track_event(
+        user.uid, AnalyticsEvent(EventName.GET_NODE_INFO, {"node_id": node_id})
+    )
     return await get_node_info_service.execute(node_info, node_repository)
 
 
@@ -107,7 +109,9 @@ async def get_stats(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name(user, node_id, node_repository)
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_STATS, {}))
+    analytics.track_event(
+        user.uid, AnalyticsEvent(EventName.GET_NODE_STATS, {"node_id": node_id})
+    )
     return await get_node_stats_service.execute(
         user, node_info, node_repository, tokens_repository
     )
@@ -127,7 +131,10 @@ async def post_info(
     node_info = await authentication.validate_node_name(
         user, request.node_id, node_repository
     )
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.POST_NODE_INFO, {}))
+    analytics.track_event(
+        user.uid,
+        AnalyticsEvent(EventName.POST_NODE_INFO, {"node_id": node_info.node_id}),
+    )
     return await save_node_info_service.execute(
         request, node_info, user.uid, node_repository
     )
@@ -146,7 +153,9 @@ async def get_benchmark(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name(user, node_id, node_repository)
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.GET_NODE_BENCHMARK, {}))
+    analytics.track_event(
+        user.uid, AnalyticsEvent(EventName.GET_NODE_BENCHMARK, {"node_id": node_id})
+    )
     return await get_node_benchmark_service.execute(
         user, node_info, model, node_repository
     )
@@ -166,7 +175,10 @@ async def post_benchmark(
     node_info = await authentication.validate_node_name(
         user, request.node_id, node_repository
     )
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.POST_NODE_BENCHMARK, {}))
+    analytics.track_event(
+        user.uid,
+        AnalyticsEvent(EventName.POST_NODE_BENCHMARK, {"node_id": node_info.node_id}),
+    )
     return await save_node_benchmark_service.execute(
         request, node_info, user.uid, node_repository
     )
