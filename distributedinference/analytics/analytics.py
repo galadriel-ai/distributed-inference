@@ -1,10 +1,13 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from logging import Logger
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 from uuid import UUID
 
 from posthog import Posthog
+
+from distributedinference.domain.user.entities import User
 
 
 class EventName(Enum):
@@ -56,3 +59,13 @@ class Analytics:
             self.posthog.capture(user_id, event.name.value, event.metadata)
         except Exception as e:
             self.logger.error(f"Error tracking event: {str(e)}")
+
+    def identify_user(self, user: User):
+        try:
+            self.posthog.identify(
+                user.uid,
+                {"email": user.email},
+                disable_geoip=True,
+            )
+        except Exception as e:
+            self.logger.error(f"Error identifying user: {str(e)}")
