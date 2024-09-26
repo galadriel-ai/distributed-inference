@@ -37,7 +37,7 @@ async def execute(
 
     analytics.track_event(
         user_uid,
-        AnalyticsEvent(EventName.INFERENCE_NODE_SELECTED, {"node_id": node.uid}),
+        AnalyticsEvent(EventName.EXECUTE_INFERENCE_REQUEST, {"node_id": node.uid}),
     )
     await node_repository.send_inference_request(node.uid, request)
 
