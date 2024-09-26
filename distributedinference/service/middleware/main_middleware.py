@@ -63,7 +63,12 @@ class MainMiddleware(BaseHTTPMiddleware):
                     user_id,
                     AnalyticsEvent(
                         EventName.API_RESPONSE,
-                        {"request_id": request_id, "status_code": response.status_code},
+                        {
+                            "request_id": request_id,
+                            "request_path": request.url.path,
+                            "error_message": "",
+                            "status_code": response.status_code,
+                        },
                     ),
                 )
 
@@ -94,6 +99,8 @@ class MainMiddleware(BaseHTTPMiddleware):
                             EventName.API_RESPONSE,
                             {
                                 "request_id": request_id,
+                                "request_path": request.url.path,
+                                "error_message": error.to_message(),
                                 "status_code": error_status_code,
                             },
                         ),
@@ -122,6 +129,8 @@ class MainMiddleware(BaseHTTPMiddleware):
                             EventName.API_RESPONSE,
                             {
                                 "request_id": request_id,
+                                "request_path": request.url.path,
+                                "error_message": "",
                                 "status_code": InferenceStatusCodes.INTERNAL_SERVER_ERROR,
                             },
                         ),
