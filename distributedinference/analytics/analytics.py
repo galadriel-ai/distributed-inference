@@ -14,13 +14,14 @@ class EventName(Enum):
     POST_NODE_INFO = "post_node_info"
     GET_NODE_BENCHMARK = "get_node_benchmark"
     POST_NODE_BENCHMARK = "post_node_benchmark"
-    USER_NODE_SELECTED_FOR_INFERENCE = "user_node_selected_for_inference"
 
     GET_NETWORK_STATS = "get_network_stats"
 
     CHAT_COMPLETIONS = "chat_completions"
     DASHBOARD_CHAT_COMPLETIONS = "dashboard_chat_completions"
-    EXECUTE_INFERENCE_REQUEST = "execute_inference_request"
+
+    USER_EXECUTED_INFERENCE_REQUEST = "user_executed_inference_request"
+    USER_NODE_SELECTED_FOR_INFERENCE = "user_node_selected_for_inference"
 
     WS_NODE_CONNECTED = "ws_node_connected"
     WS_NODE_DISCONNECTED = "ws_node_disconnected"
