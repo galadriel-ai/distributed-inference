@@ -19,7 +19,9 @@ class EventName(Enum):
 
     CHAT_COMPLETIONS = "chat_completions"
     DASHBOARD_CHAT_COMPLETIONS = "dashboard_chat_completions"
-    INFERENCE_NODE_SELECTED = "inference_node_selected"
+
+    USER_EXECUTED_INFERENCE_REQUEST = "user_executed_inference_request"
+    USER_NODE_SELECTED_FOR_INFERENCE = "user_node_selected_for_inference"
 
     WS_NODE_CONNECTED = "ws_node_connected"
     WS_NODE_DISCONNECTED = "ws_node_disconnected"

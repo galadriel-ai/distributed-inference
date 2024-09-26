@@ -3,7 +3,7 @@ import time
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
-from uuid import UUID
+from uuid import UUID, uuid1
 
 import pytest
 from uuid_extensions import uuid7
@@ -45,7 +45,9 @@ def mock_websocket():
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model", small_node=False):
         vram = 8000 if small_node else 16000
-        return ConnectedNode(uid, model, vram, int(time.time()), mock_websocket, {})
+        return ConnectedNode(
+            uid, uuid1(), model, vram, int(time.time()), mock_websocket, {}
+        )
 
     return _create_node
 
