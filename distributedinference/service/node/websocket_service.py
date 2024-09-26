@@ -64,6 +64,7 @@ async def execute(
     node_uid = node_info.node_id
     node = ConnectedNode(
         uid=node_uid,
+        user_id=user.uid,
         model=model_name,
         vram=node_info.vram,
         connected_at=int(time.time()),

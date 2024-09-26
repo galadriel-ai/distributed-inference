@@ -83,6 +83,7 @@ class UserAggregatedStats:
 @dataclass(frozen=True)
 class ConnectedNode:
     uid: UUID
+    user_id: UUID
     model: str
     vram: int
     connected_at: int

@@ -14,6 +14,7 @@ class EventName(Enum):
     POST_NODE_INFO = "post_node_info"
     GET_NODE_BENCHMARK = "get_node_benchmark"
     POST_NODE_BENCHMARK = "post_node_benchmark"
+    USER_NODE_SELECTED_FOR_INFERENCE = "user_node_selected_for_inference"
 
     GET_NETWORK_STATS = "get_network_stats"
 
