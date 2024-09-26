@@ -34,8 +34,10 @@ class ProtocolHandler:
         protocol_name = parsed_data.get("protocol")
         protocol_data = parsed_data.get("data")
         if protocol_name is None or protocol_data is None:
-            logger.error("Invalid protocol data")
-
+            raise WebSocketException(
+                code=status.WS_1002_PROTOCOL_ERROR,
+                reason="Invalid protocol name or data",
+            )
         if protocol_name in self.protocols:
             proto = self.protocols[protocol_name]
             await proto.handle(protocol_data)

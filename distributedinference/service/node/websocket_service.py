@@ -73,7 +73,7 @@ async def execute(
         settings.PING_PONG_PROTOCOL_NAME
     )
 
-    if not ping_pong_protocol.add_node(node_uid, websocket):
+    if not ping_pong_protocol.add_node(node_info.name, websocket):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Node could not be added to the active nodes",
@@ -81,39 +81,87 @@ async def execute(
     try:
         while True:
             data = await websocket.receive_text()
-            request_id = None
-            try:
-                parsed_data = json.loads(data)
-                if parsed_data["request_id"] is not None:
-                    request_id = parsed_data["request_id"]
+            parsed_data = json.loads(data)
+            if "request_id" in parsed_data:
+                request_id = parsed_data["request_id"]
+                if request_id is not None:
+                    try:
+                        await node.request_incoming_queues[request_id].put(parsed_data)
+                    except KeyError:
+                        logger.error(f"Received chunk for unknown request {request_id}")
                 else:
-                    # handle protocols
-                    await protocol_handler.handle(parsed_data)
-            except json.JSONDecodeError:
-                raise WebSocketRequestValidationError("Invalid JSON data")
-            try:
-                await node.request_incoming_queues[request_id].put(parsed_data)
-            except KeyError:
-                logger.error(f"Received chunk for unknown request {request_id}")
+                    logger.error("Invalid request id")
+            else:
+                # handle protocols
+                print("handling_protocols")
+                await protocol_handler.handle(parsed_data)
+    except json.JSONDecodeError:
+        await _websocket_error(
+            analytics,
+            connect_time,
+            metrics_queue_repository,
+            node,
+            node_info,
+            node_repository,
+            node_uid,
+            ping_pong_protocol,
+            user,
+            analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
+            log_message=f"Node {node_uid} disconnected, because of invalid JSON",
+        )
     except WebSocketRequestValidationError as e:
-        node_repository.deregister_node(node_uid)
-        uptime = int(time.time() - connect_time)
-        await _increment_uptime(node.uid, uptime, metrics_queue_repository)
-        logger.info(f"Node {node_uid} disconnected, because of invalid JSON")
-        analytics.track_event(
-            user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED_WITH_ERROR, {})
+        await _websocket_error(
+            analytics,
+            connect_time,
+            metrics_queue_repository,
+            node,
+            node_info,
+            node_repository,
+            node_uid,
+            ping_pong_protocol,
+            user,
+            analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
+            log_message=f"Node {node_uid} disconnected, because of invalid JSON",
         )
         raise e
     except WebSocketDisconnect:
-        node_repository.deregister_node(node_uid)
-        uptime = int(time.time() - connect_time)
-        await _increment_uptime(node.uid, uptime, metrics_queue_repository)
-        logger.info(f"Node {node_uid} disconnected")
-        analytics.track_event(
-            user.uid, AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {})
+        await _websocket_error(
+            analytics,
+            connect_time,
+            metrics_queue_repository,
+            node,
+            node_info,
+            node_repository,
+            node_uid,
+            ping_pong_protocol,
+            user,
+            analytics_event=EventName.WS_NODE_DISCONNECTED,
+            log_message=f"Node {node_uid} disconnected",
         )
-    finally:
-        ping_pong_protocol.remove_node(node_uid)
+
+
+async def _websocket_error(
+    analytics,
+    connect_time,
+    metrics_queue_repository,
+    node,
+    node_info,
+    node_repository,
+    node_uid,
+    ping_pong_protocol,
+    user,
+    analytics_event,
+    log_message,
+):
+    ping_pong_protocol.remove_node(node_info.name)
+    node_repository.deregister_node(node_uid)
+    uptime = int(time.time() - connect_time)
+    await _increment_uptime(node.uid, uptime, metrics_queue_repository)
+    logger.info(log_message)
+    analytics.track_event(
+        user.uid,
+        AnalyticsEvent(analytics_event, {"node_id": node_uid}),
+    )
 
 
 async def _check_before_connecting(model_name, node_info, node_repository, user):

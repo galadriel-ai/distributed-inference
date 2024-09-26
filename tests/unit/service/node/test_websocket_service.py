@@ -1,5 +1,6 @@
 import json
 import time
+import uuid
 from unittest.mock import AsyncMock
 from unittest.mock import Mock
 from uuid import UUID
@@ -26,12 +27,12 @@ from distributedinference.service.node.protocol.ping_pong_protocol import (
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
-NODE_INFO = NodeInfo(node_id=NODE_UUID, name="name", name_alias="name_alias")
+NODE_INFO = NodeInfo(node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias")
 
 
 async def test_execute_node_no_model_header():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_name", email="test_user_email")
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -60,7 +61,7 @@ async def test_execute_node_no_model_header():
 
 async def test_execute_node_no_benchmark():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_name", email="test_user_email")
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -89,7 +90,7 @@ async def test_execute_node_no_benchmark():
 
 async def test_execute_node_benchmark_too_low():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_name", email="test_user_email")
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -122,7 +123,7 @@ async def test_execute_node_benchmark_too_low():
 
 async def test_execute_node_already_connected():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid="test_user_id", name="test_name", email="test_user_email")
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics()
@@ -158,7 +159,7 @@ async def test_execute_websocket_disconnect():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
-    user = User(uid="test_user_id", name="test_name", email="test_user_email")
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
     metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
 
@@ -193,7 +194,7 @@ async def test_execute_metrics_update_after_disconnect():
         side_effect=[json.dumps({"request_id": "123"}), WebSocketDisconnect()]
     )
 
-    user = User(uid="test_user_id", name="test_name", email="test_user_email")
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_repository.register_node = Mock(return_value=True)
@@ -233,7 +234,7 @@ async def test_execute_ping_pong_protocol():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
-    user = User(uid="test_user_id", name="test_name", email="test_user_email")
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
     metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
@@ -260,10 +261,10 @@ async def test_execute_ping_pong_protocol():
     )
 
     # Check if add_node was called
-    ping_pong_protocol.add_node.assert_called_once_with(NODE_UUID, websocket)
+    ping_pong_protocol.add_node.assert_called_once_with(str(NODE_UUID), websocket)
 
     # Check if remove_node was called
-    ping_pong_protocol.remove_node.assert_called_once_with(NODE_UUID)
+    ping_pong_protocol.remove_node.assert_called_once_with(str(NODE_UUID))
 
     # Verify other expected method calls
     websocket.accept.assert_called_once()

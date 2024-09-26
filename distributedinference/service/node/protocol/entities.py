@@ -14,16 +14,21 @@ class PingRequest(BaseModel):
         description="Protocol version of the ping-pong protocol"
     )
     message_type: PingPongMessageType = Field(description="Message type")
+    node_id: str = Field(description="Node ID")
     nonce: str = Field(description="A random number to prevent replay attacks")
-    timestamp: int = Field(description="Timestamp of the request in milliseconds")
-    response_timeout: int = Field(
-        description="Number of milliseconds the client has to respond to the ping"
+    rtt: int = Field(description="RTT as observed by the server in milliseconds")
+    ping_streak: int = Field(
+        description="Number of consecutive pings as observed by the server"
+    )
+    miss_streak: int = Field(
+        description="Number of consecutive pings misses as observed by the server"
     )
 
 
-class PingResponse(BaseModel):
+class PongResponse(BaseModel):
     protocol_version: str = Field(
         description="Protocol version of the ping-pong protocol"
     )
     message_type: PingPongMessageType = Field(description="Message type")
+    node_id: str = Field(description="Node ID")
     nonce: str = Field(description="The same nonce as in the request")
