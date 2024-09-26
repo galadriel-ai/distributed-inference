@@ -2,8 +2,6 @@ from typing import Optional
 
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
-from distributedinference.repository.grafana_api_repository import GraphValue
-from distributedinference.repository.grafana_api_repository import get_latest_15min_mark
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
 from distributedinference.service.graphs.entities import GetGraphResponse

@@ -41,4 +41,5 @@ async def execute(
         )
         await user_repository.insert_user(user)
         analytics.track_event(user.uid, AnalyticsEvent(EventName.SIGNUP, {}))
+        analytics.identify_user(user)
     return SignupResponse()
