@@ -45,6 +45,14 @@ STYTCH_SECRET = os.getenv("STYTCH_SECRET", None)
 # Logged in user session duration (can use one token for this duration)
 SESSION_DURATION_MINUTES = 2 * 24 * 60
 
+PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS = (
+    3  # Protocol response check every 3 second
+)
+PING_PONG_PROTOCOL_NAME = "ping-pong"  # Name of the protocol
+PING_PONG_PROTOCOL_VERSION = "1.0"  # Version of the protocol
+PING_INTERVAL_IN_SECONDS = 600  # Send ping every 10 minutes
+PING_TIMEOUT_IN_SECONDS = 10  # Wait for pong response for 10 seconds
+
 GRAFANA_API_BASE_URL = os.getenv("GRAFANA_API_BASE_URL", None)
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", None)
 
