@@ -3,9 +3,9 @@ import time
 from typing import Optional
 from uuid import UUID
 
-from fastapi import status
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from fastapi import status
 from fastapi.exceptions import WebSocketException
 from fastapi.exceptions import WebSocketRequestValidationError
 
@@ -25,6 +25,10 @@ from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service.node.protocol.ping_pong_protocol import (
+    PingPongProtocol,
+)
+from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 logger = api_logger.get()
 
@@ -39,29 +43,14 @@ async def execute(
     benchmark_repository: BenchmarkRepository,
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
+    protocol_handler: ProtocolHandler,
 ):
     logger.info(
         f"Node with user id {user.uid} and node id {node_info.node_id}, trying to connect"
     )
     await websocket.accept()
 
-    if not model_name:
-        raise WebSocketException(
-            code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
-        )
-    benchmark = await benchmark_repository.get_node_benchmark(
-        user.uid, node_info.node_id, model_name
-    )
-    if not benchmark:
-        raise WebSocketException(
-            code=status.WS_1008_POLICY_VIOLATION,
-            reason="Benchmarking is not completed",
-        )
-    if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
-        raise WebSocketException(
-            code=status.WS_1008_POLICY_VIOLATION,
-            reason="Benchmarking performance is too low",
-        )
+    await _check_before_connecting(model_name, node_info, benchmark_repository, user)
 
     node_uid = node_info.node_id
     node = ConnectedNode(
@@ -82,42 +71,121 @@ async def execute(
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
         raise WebSocketException(
-            code=status.WS_1013_TRY_AGAIN_LATER,
+            code=status.WS_1008_POLICY_VIOLATION,
             reason="Node with same node id already connected",
+        )
+    ping_pong_protocol: PingPongProtocol = protocol_handler.get(
+        settings.PING_PONG_PROTOCOL_NAME
+    )
+
+    if not ping_pong_protocol.add_node(node_info.name, websocket):
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Node could not be added to the active nodes",
         )
     try:
         while True:
             data = await websocket.receive_text()
-            request_id = None
-            try:
-                parsed_data = json.loads(data)
+            parsed_data = json.loads(data)
+            if "request_id" in parsed_data:
                 request_id = parsed_data["request_id"]
-            except json.JSONDecodeError:
-                raise WebSocketRequestValidationError("Invalid JSON data")
-            try:
-                await node.request_incoming_queues[request_id].put(parsed_data)
-            except KeyError:
-                logger.error(f"Received chunk for unknown request {request_id}")
+                if request_id is not None:
+                    try:
+                        await node.request_incoming_queues[request_id].put(parsed_data)
+                    except KeyError:
+                        logger.error(f"Received chunk for unknown request {request_id}")
+                else:
+                    logger.error("Invalid request id")
+            else:
+                # handle protocols
+                print("handling_protocols")
+                await protocol_handler.handle(parsed_data)
+    except json.JSONDecodeError:
+        await _websocket_error(
+            analytics,
+            connect_time,
+            metrics_queue_repository,
+            node,
+            node_info,
+            node_repository,
+            node_uid,
+            ping_pong_protocol,
+            user,
+            analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
+            log_message=f"Node {node_uid} disconnected, because of invalid JSON",
+        )
     except WebSocketRequestValidationError as e:
-        node_repository.deregister_node(node_uid)
-        uptime = int(time.time() - connect_time)
-        await _increment_uptime(node.uid, uptime, metrics_queue_repository)
-        logger.info(f"Node {node_uid} disconnected, because of invalid JSON")
-        analytics.track_event(
-            user.uid,
-            AnalyticsEvent(
-                EventName.WS_NODE_DISCONNECTED_WITH_ERROR, {"node_id": node_uid}
-            ),
+        await _websocket_error(
+            analytics,
+            connect_time,
+            metrics_queue_repository,
+            node,
+            node_info,
+            node_repository,
+            node_uid,
+            ping_pong_protocol,
+            user,
+            analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
+            log_message=f"Node {node_uid} disconnected, because of invalid JSON",
         )
         raise e
     except WebSocketDisconnect:
-        node_repository.deregister_node(node_uid)
-        uptime = int(time.time() - connect_time)
-        await _increment_uptime(node.uid, uptime, metrics_queue_repository)
-        logger.info(f"Node {node_uid} disconnected")
-        analytics.track_event(
-            user.uid,
-            AnalyticsEvent(EventName.WS_NODE_DISCONNECTED, {"node_id": node_uid}),
+        await _websocket_error(
+            analytics,
+            connect_time,
+            metrics_queue_repository,
+            node,
+            node_info,
+            node_repository,
+            node_uid,
+            ping_pong_protocol,
+            user,
+            analytics_event=EventName.WS_NODE_DISCONNECTED,
+            log_message=f"Node {node_uid} disconnected",
+        )
+
+
+async def _websocket_error(
+    analytics,
+    connect_time,
+    metrics_queue_repository,
+    node,
+    node_info,
+    node_repository,
+    node_uid,
+    ping_pong_protocol,
+    user,
+    analytics_event,
+    log_message,
+):
+    ping_pong_protocol.remove_node(node_info.name)
+    node_repository.deregister_node(node_uid)
+    uptime = int(time.time() - connect_time)
+    await _increment_uptime(node.uid, uptime, metrics_queue_repository)
+    logger.info(log_message)
+    analytics.track_event(
+        user.uid,
+        AnalyticsEvent(analytics_event, {"node_id": node_uid}),
+    )
+
+
+async def _check_before_connecting(model_name, node_info, node_repository, user):
+    if not model_name:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
+        )
+    benchmark = await node_repository.get_node_benchmark(
+        user.uid, node_info.node_id, model_name
+    )
+    if not benchmark:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Benchmarking is not completed",
+        )
+    if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Benchmarking performance is too low",
         )
 
 

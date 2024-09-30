@@ -1,8 +1,8 @@
-from fastapi import status
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Query
 from fastapi import WebSocket
+from fastapi import status
 from fastapi.exceptions import WebSocketException
 
 from distributedinference import api_logger
@@ -35,6 +35,7 @@ from distributedinference.service.node.entities import PostNodeBenchmarkRequest
 from distributedinference.service.node.entities import PostNodeBenchmarkResponse
 from distributedinference.service.node.entities import PostNodeInfoRequest
 from distributedinference.service.node.entities import PostNodeInfoResponse
+from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 TAG = "Node"
 router = APIRouter(prefix="/node")
@@ -47,7 +48,7 @@ logger = api_logger.get()
     "/ws",
     name="Node WebSocket",
 )
-# pylint: disable=too-many-arguments, R0913
+# pylint: disable=too-many-arguments
 async def websocket_endpoint(
     websocket: WebSocket,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
@@ -57,6 +58,7 @@ async def websocket_endpoint(
         dependencies.get_metrics_queue_repository
     ),
     analytics: Analytics = Depends(dependencies.get_analytics),
+    protocol_handler: ProtocolHandler = Depends(dependencies.get_protocol_handler),
 ):
     user = await authentication.validate_api_key(
         websocket.headers.get("Authorization"),
@@ -80,6 +82,7 @@ async def websocket_endpoint(
         benchmark_repository,
         metrics_queue_repository,
         analytics,
+        protocol_handler,
     )
 
 

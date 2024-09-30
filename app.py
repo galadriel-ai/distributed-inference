@@ -21,6 +21,7 @@ from distributedinference.service.middleware.main_middleware import MainMiddlewa
 from distributedinference.service.middleware.request_enrichment_middleware import (
     RequestEnrichmentMiddleware,
 )
+from distributedinference.service.node.protocol import protocol_handler
 
 
 @asynccontextmanager
@@ -30,6 +31,12 @@ async def lifespan(_: FastAPI):
     asyncio.create_task(
         metrics_update_job.execute(
             dependencies.get_metrics_queue_repository(),
+            dependencies.get_node_repository(),
+        )
+    )
+    asyncio.create_task(
+        protocol_handler.execute(
+            dependencies.get_protocol_handler(),
             dependencies.get_node_repository(),
         )
     )

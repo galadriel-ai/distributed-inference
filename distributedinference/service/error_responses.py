@@ -171,7 +171,7 @@ class UnsupportedClientError(APIErrorResponse):
 
 
 class UnsupportedClientVersionError(APIErrorResponse):
-    def __init__(self, client_name: str, client_version: str, min_version: str | None):
+    def __init__(self, client_name: str, client_version: str, min_version: str):
         self.client_name = client_name
         self.client_version = client_version
         self.min_version = min_version
