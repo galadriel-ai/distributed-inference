@@ -1,6 +1,6 @@
 from enum import Enum
-from typing import NamedTuple
 
+from packaging import version
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
@@ -10,9 +10,10 @@ from starlette.types import ASGIApp
 from distributedinference.service import error_responses
 
 
-class SupportedVersionRange(NamedTuple):
-    min_version: str
-    max_version: str
+class SupportedVersionRange:
+    def __init__(self, min_version: str, max_version: str):
+        self.min_version = version.parse(min_version)
+        self.max_version = version.parse(max_version)
 
 
 # pylint: disable=E1120
@@ -26,8 +27,9 @@ class Client(str, Enum):
         obj.max_version = version_info.max_version
         return obj
 
-    def is_version_supported(self, version: str) -> bool:
-        return self.min_version <= version <= self.max_version
+    def is_version_supported(self, ver: str) -> bool:
+        parsed_version = version.parse(ver)
+        return self.min_version <= parsed_version <= self.max_version
 
 
 class ClientVersionValidationMiddleware(BaseHTTPMiddleware):
