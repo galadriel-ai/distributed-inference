@@ -20,6 +20,7 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -35,6 +36,7 @@ async def execute(
     node_info: NodeInfo,
     model_name: Optional[str],
     node_repository: NodeRepository,
+    benchmark_repository: BenchmarkRepository,
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
 ):
@@ -47,7 +49,7 @@ async def execute(
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
         )
-    benchmark = await node_repository.get_node_benchmark(
+    benchmark = await benchmark_repository.get_node_benchmark(
         user.uid, node_info.node_id, model_name
     )
     if not benchmark:

@@ -13,10 +13,12 @@ from distributedinference.analytics.analytics import (
     Analytics,
 )
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.auth import authentication
@@ -45,9 +47,11 @@ logger = api_logger.get()
     "/ws",
     name="Node WebSocket",
 )
+# pylint: disable=too-many-arguments, R0913
 async def websocket_endpoint(
     websocket: WebSocket,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    benchmark_repository: BenchmarkRepository = Depends(dependencies.get_benchmark_repository),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
@@ -73,6 +77,7 @@ async def websocket_endpoint(
         node_info,
         websocket.headers.get("Model"),
         node_repository,
+        benchmark_repository,
         metrics_queue_repository,
         analytics,
     )
@@ -104,6 +109,7 @@ async def get_info(
 async def get_stats(
     node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    node_stats_repository: NodeStatsRepository = Depends(dependencies.get_node_stats_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
@@ -113,7 +119,7 @@ async def get_stats(
         user.uid, AnalyticsEvent(EventName.GET_NODE_STATS, {"node_id": node_id})
     )
     return await get_node_stats_service.execute(
-        user, node_info, node_repository, tokens_repository
+        user, node_info, node_stats_repository, tokens_repository
     )
 
 
@@ -145,10 +151,12 @@ async def post_info(
     name="Node Benchmark",
     response_model=GetNodeBenchmarkResponse,
 )
+# pylint: disable=too-many-arguments, R0913
 async def get_benchmark(
     node_id: str = Query(..., description="Node id"),
     model: str = Query(..., description="Model name"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    benchmark_repository: BenchmarkRepository = Depends(dependencies.get_benchmark_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
@@ -157,7 +165,7 @@ async def get_benchmark(
         user.uid, AnalyticsEvent(EventName.GET_NODE_BENCHMARK, {"node_id": node_id})
     )
     return await get_node_benchmark_service.execute(
-        user, node_info, model, node_repository
+        user, node_info, model, benchmark_repository
     )
 
 
@@ -169,6 +177,7 @@ async def get_benchmark(
 async def post_benchmark(
     request: PostNodeBenchmarkRequest,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    benchmark_repository: BenchmarkRepository = Depends(dependencies.get_benchmark_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
@@ -180,5 +189,5 @@ async def post_benchmark(
         AnalyticsEvent(EventName.POST_NODE_BENCHMARK, {"node_id": node_info.node_id}),
     )
     return await save_node_benchmark_service.execute(
-        request, node_info, user.uid, node_repository
+        request, node_info, user.uid, benchmark_repository
     )

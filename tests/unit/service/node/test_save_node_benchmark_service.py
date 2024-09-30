@@ -5,7 +5,7 @@ from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.service.node import save_node_benchmark_service as service
 from distributedinference.service.node.entities import PostNodeBenchmarkRequest
 from distributedinference.service.node.entities import PostNodeBenchmarkResponse
@@ -32,9 +32,9 @@ async def test_execute_success():
         tokens_per_second=request.tokens_per_second,
     )
 
-    mock_repository = AsyncMock(spec=NodeRepository)
-    response = await service.execute(request, NODE_INFO, user_id, mock_repository)
-    mock_repository.save_node_benchmark.assert_called_once_with(
+    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
+    response = await service.execute(request, NODE_INFO, user_id, benchmark_repository)
+    benchmark_repository.save_node_benchmark.assert_called_once_with(
         user_id, expected_node_info
     )
 
