@@ -47,7 +47,8 @@ async def execute(
         ):
             if inference_response.error:
                 raise error_responses.InferenceError(
-                    inference_response.error.status_code, inference_response.error.message
+                    status_code=inference_response.error.status_code,
+                    message_extra=inference_response.error.message
                 )
             if inference_response.chunk:
                 yield f"data: {inference_response.chunk.to_json(indent=None)}\n\n"
