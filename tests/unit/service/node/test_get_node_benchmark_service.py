@@ -7,7 +7,7 @@ from uuid_extensions import uuid7
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.service import error_responses
 from distributedinference.service.node import get_node_benchmark_service as service
 from distributedinference.service.node.entities import GetNodeBenchmarkResponse
@@ -30,7 +30,7 @@ async def test_execute_success():
     )
     user = User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
 
-    mock_repository = AsyncMock(spec=NodeRepository)
+    mock_repository = AsyncMock(spec=BenchmarkRepository)
     mock_repository.get_node_benchmark.return_value = node_benchmark
     response = await service.execute(user, NODE_INFO, model_name, mock_repository)
     mock_repository.get_node_benchmark.assert_called_once_with(
@@ -43,7 +43,7 @@ async def test_execute_success():
 async def test_execute_not_found():
     user = User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
 
-    mock_repository = AsyncMock(spec=NodeRepository)
+    mock_repository = AsyncMock(spec=BenchmarkRepository)
     mock_repository.get_node_benchmark.return_value = None
 
     with pytest.raises(error_responses.NotFoundAPIError) as e:
