@@ -1,29 +1,26 @@
 import asyncio
 import random
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
 
-from uuid_extensions import uuid7
-from openai.types.chat import ChatCompletionChunk
 import sqlalchemy
+from openai.types.chat import ChatCompletionChunk
+from uuid_extensions import uuid7
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import NodeBenchmark
-from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node.entities import NodeMetrics
-from distributedinference.domain.node.entities import UserAggregatedStats
-from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import NodeMetricsIncrement
-from distributedinference.domain.node.entities import NodeStats
-from distributedinference.repository import utils
+from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
@@ -45,6 +42,32 @@ INSERT INTO node_info (
     :created_at,
     :last_updated_at
 )
+"""
+
+SQL_UPDATE_NODE_INFO = """
+UPDATE node_info 
+SET 
+    name_alias = :name_alias,
+    user_profile_id = :user_profile_id,
+    gpu_model = :gpu_model,
+    vram = :vram,
+    cpu_model = :cpu_model,
+    cpu_count = :cpu_count,
+    ram = :ram,
+    network_download_speed = :network_download_speed,
+    network_upload_speed = :network_upload_speed,
+    operating_system = :operating_system,
+    created_at = :created_at,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
+"""
+
+SQL_UPDATE_NODE_NAME_ALIAS = """
+UPDATE node_info 
+SET 
+    name_alias = :name_alias,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
 """
 
 SQL_GET_USER_NODE_INFOS = """
@@ -360,6 +383,40 @@ class NodeRepository:
             await session.commit()
             return NodeInfo(node_id=node_id, name=name, name_alias=name_alias)
 
+    async def save_node_info(self, user_profile_id: UUID, info: NodeInfo):
+        data = {
+            "id": str(info.node_id),
+            "name_alias": info.name_alias,
+            "user_profile_id": user_profile_id,
+            "gpu_model": info.gpu_model,
+            "vram": info.vram,
+            "cpu_model": info.cpu_model,
+            "cpu_count": info.cpu_count,
+            "ram": info.ram,
+            "network_download_speed": info.network_download_speed,
+            "network_upload_speed": info.network_upload_speed,
+            "operating_system": info.operating_system,
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_INFO), data)
+            await session.commit()
+
+    async def update_node_name_alias(
+        self,
+        node_id: UUID,
+        updated_name_alias: str,
+    ):
+        data = {
+            "id": node_id,
+            "name_alias": updated_name_alias,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_NAME_ALIAS), data)
+            await session.commit()
+
     async def get_user_nodes(self, user_profile_id: UUID) -> List[UserNodeInfo]:
         data = {"user_profile_id": user_profile_id}
         async with self._session_provider.get() as session:
@@ -427,6 +484,7 @@ class NodeRepository:
             ].request_incoming_queues.items():
                 queue.put_nowait(
                     InferenceResponse(
+                        node_id=node_id,
                         request_id=request_id,
                         error=InferenceError(
                             status_code=InferenceStatusCodes.UNPROCESSABLE_ENTITY,
@@ -732,24 +790,6 @@ class NodeRepository:
                 for row in rows
             ]
 
-    async def save_node_benchmark(
-        self, user_profile_id: UUID, benchmark: NodeBenchmark
-    ):
-        data = {
-            "id": str(uuid7()),
-            "node_id": benchmark.node_id,
-            "user_profile_id": user_profile_id,
-            "model_name": benchmark.model_name,
-            "tokens_per_second": benchmark.tokens_per_second,
-            "created_at": utcnow(),
-            "last_updated_at": utcnow(),
-        }
-        async with self._session_provider.get() as session:
-            await session.execute(
-                sqlalchemy.text(SQL_INSERT_OR_UPDATE_NODE_BENCHMARK), data
-            )
-            await session.commit()
-
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest
     ) -> bool:
@@ -768,6 +808,7 @@ class NodeRepository:
             data = await connected_node.request_incoming_queues[request_id].get()
             try:
                 return InferenceResponse(
+                    node_id=node_id,
                     request_id=data["request_id"],
                     chunk=(
                         ChatCompletionChunk(**data["chunk"])

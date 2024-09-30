@@ -88,7 +88,7 @@ async def validate_node_name(
     user: User,
     node_name: Optional[str],
     node_repository: NodeRepository,
-) -> Optional[NodeInfo]:
+) -> NodeInfo:
     if not node_name:
         raise error_responses.NotFoundAPIError(message_extra="Node ID not provided")
     node_info = await node_repository.get_node_info_by_name(user.uid, node_name)
