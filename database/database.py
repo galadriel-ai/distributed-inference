@@ -76,7 +76,9 @@ class NodeInfo(Base):
     )
     name_alias = Column(String(), nullable=False)
 
-    is_active = Column(Boolean(), nullable=False, default=False, server_default=sqlalchemy.false())
+    is_active = Column(
+        Boolean(), nullable=False, default=False, server_default=sqlalchemy.false()
+    )
 
     gpu_model = Column(String(), nullable=True)
     vram = Column(Integer(), nullable=True)  # VRAM in MB

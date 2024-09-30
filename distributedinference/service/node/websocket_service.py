@@ -158,6 +158,7 @@ async def execute(
         )
         raise e
 
+
 async def _websocket_error(
     analytics,
     connect_time,

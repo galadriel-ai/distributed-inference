@@ -498,7 +498,9 @@ class NodeRepository:
     async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
         async with self._session_provider.get() as session:
             data = {"id": node_id}
-            result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_METRIC), data)
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_CONNECTED_NODE_METRIC), data
+            )
             row = result.first()
             if row:
                 return NodeMetrics(
@@ -636,7 +638,9 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             for node_id in self._connected_nodes:
                 data["id"] = node_id
-                await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data)
+                await session.execute(
+                    sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data
+                )
             await session.commit()
 
     async def get_node_benchmark(
