@@ -54,7 +54,7 @@ async def execute(
                 raise error_responses.InferenceError(
                     node_id=inference_response.node_id,
                     status_code=inference_response.error.status_code,
-                    message_extra=inference_response.error.message
+                    message_extra=inference_response.error.message,
                 )
             if (
                 inference_response.chunk

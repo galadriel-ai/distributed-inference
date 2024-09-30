@@ -36,7 +36,9 @@ def connected_node_factory(mock_websocket):
 
     return _create_node
 
+
 TEST_NODE_ID = uuid1()
+
 
 async def test_success(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
@@ -99,8 +101,12 @@ async def test_success(connected_node_factory):
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(TEST_NODE_ID, request)
-    mock_node_repository.cleanup_request.assert_awaited_once_with(TEST_NODE_ID, "request_id")
+    mock_node_repository.send_inference_request.assert_awaited_once_with(
+        TEST_NODE_ID, request
+    )
+    mock_node_repository.cleanup_request.assert_awaited_once_with(
+        TEST_NODE_ID, "request_id"
+    )
 
 
 async def test_no_nodes():
@@ -193,8 +199,12 @@ async def test_streaming_no_usage(connected_node_factory):
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(TEST_NODE_ID, request)
-    mock_node_repository.cleanup_request.assert_awaited_once_with(TEST_NODE_ID, "request_id")
+    mock_node_repository.send_inference_request.assert_awaited_once_with(
+        TEST_NODE_ID, request
+    )
+    mock_node_repository.cleanup_request.assert_awaited_once_with(
+        TEST_NODE_ID, "request_id"
+    )
 
 
 async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
@@ -261,8 +271,12 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(TEST_NODE_ID, request)
-    mock_node_repository.cleanup_request.assert_awaited_once_with(TEST_NODE_ID, "request_id")
+    mock_node_repository.send_inference_request.assert_awaited_once_with(
+        TEST_NODE_ID, request
+    )
+    mock_node_repository.cleanup_request.assert_awaited_once_with(
+        TEST_NODE_ID, "request_id"
+    )
 
 
 async def test_inference_error_stops_loop(connected_node_factory):
@@ -315,5 +329,9 @@ async def test_inference_error_stops_loop(connected_node_factory):
     assert responses[0].chunk == None
     assert responses[0].error.status_code == InferenceStatusCodes.NOT_FOUND
     assert responses[0].error.message == "No model found"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(TEST_NODE_ID, request)
-    mock_node_repository.cleanup_request.assert_awaited_once_with(TEST_NODE_ID, "request_id")
+    mock_node_repository.send_inference_request.assert_awaited_once_with(
+        TEST_NODE_ID, request
+    )
+    mock_node_repository.cleanup_request.assert_awaited_once_with(
+        TEST_NODE_ID, "request_id"
+    )
