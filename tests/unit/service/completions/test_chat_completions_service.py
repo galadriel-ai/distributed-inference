@@ -1,7 +1,7 @@
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from uuid import UUID
+from uuid import UUID, uuid1
 
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk
@@ -9,6 +9,7 @@ from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice as CompletionChoice
 from openai.types.chat.chat_completion_chunk import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
+from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.user.entities import User
@@ -38,6 +39,7 @@ class MockInference:
     ) -> AsyncGenerator[InferenceResponse, None]:
         for i in range(3):
             yield InferenceResponse(
+                node_id=uuid1(),
                 request_id=str(MOCK_UUID),
                 chunk=ChatCompletionChunk(
                     id=f"mock-{i}",
@@ -57,6 +59,7 @@ class MockInference:
                 ),
             )
         yield InferenceResponse(
+            node_id=uuid1(),
             request_id=str(MOCK_UUID),
             chunk=ChatCompletionChunk(
                 id=f"mock-{self.chunk_count}",
@@ -73,6 +76,7 @@ class MockInference:
             ),
         )
         yield InferenceResponse(
+            node_id=uuid1(),
             request_id=str(MOCK_UUID),
             chunk=ChatCompletionChunk(
                 id=f"mock-{self.chunk_count}",

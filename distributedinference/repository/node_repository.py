@@ -387,6 +387,7 @@ class NodeRepository:
             ].request_incoming_queues.items():
                 queue.put_nowait(
                     InferenceResponse(
+                        node_id=node_id,
                         request_id=request_id,
                         error=InferenceError(
                             status_code=InferenceStatusCodes.UNPROCESSABLE_ENTITY,
@@ -673,6 +674,7 @@ class NodeRepository:
             data = await connected_node.request_incoming_queues[request_id].get()
             try:
                 return InferenceResponse(
+                    node_id=node_id,
                     request_id=data["request_id"],
                     chunk=(
                         ChatCompletionChunk(**data["chunk"])

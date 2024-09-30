@@ -133,6 +133,7 @@ class InferenceRequest:
 
 @dataclass
 class InferenceResponse:
+    node_id: UUID
     request_id: str
     chunk: Optional[ChatCompletionChunk] = None
     error: Optional[InferenceError] = None
