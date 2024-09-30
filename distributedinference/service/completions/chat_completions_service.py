@@ -42,7 +42,7 @@ async def execute(
     try:
         response = ""
         usage = None
-        async for chunk in run_inference_use_case.execute(
+        async for inference_response in run_inference_use_case.execute(
             user.uid,
             inference_request,
             node_repository,
@@ -50,18 +50,20 @@ async def execute(
             metrics_queue_repository,
             analytics,
         ):
-            if chunk.error:
+            if inference_response.error:
                 raise error_responses.InferenceError(
-                    chunk.error.status_code, chunk.error.message
+                    node_id=inference_response.node_id,
+                    status_code=inference_response.error.status_code,
+                    message_extra=inference_response.error.message,
                 )
             if (
-                chunk.chunk
-                and chunk.chunk.choices
-                and chunk.chunk.choices[0].delta.content
+                inference_response.chunk
+                and inference_response.chunk.choices
+                and inference_response.chunk.choices[0].delta.content
             ):
-                response += chunk.chunk.choices[0].delta.content
-            if chunk.chunk and chunk.chunk.usage:
-                usage = chunk.chunk.usage
+                response += inference_response.chunk.choices[0].delta.content
+            if inference_response.chunk and inference_response.chunk.usage:
+                usage = inference_response.chunk.usage
         chat_completion = ChatCompletion(
             id="id",
             choices=[
