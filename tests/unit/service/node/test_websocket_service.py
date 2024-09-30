@@ -268,12 +268,20 @@ async def test_execute_ping_pong_protocol():
         )
     )
 
+    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
+    benchmark_repository.get_node_benchmark = AsyncMock(
+        return_value=NodeBenchmark(
+            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
+        )
+    )
+
     await websocket_service.execute(
         websocket,
         user,
         NODE_INFO,
         "model",
         node_repository,
+        benchmark_repository,
         metrics_queue_repository,
         Mock(),
         protocol_handler,

@@ -58,9 +58,7 @@ WHERE
 
 class BenchmarkRepository:
 
-    def __init__(
-        self, session_provider: SessionProvider
-    ):
+    def __init__(self, session_provider: SessionProvider):
         self._session_provider = session_provider
 
     async def save_node_benchmark(

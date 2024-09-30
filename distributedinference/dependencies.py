@@ -44,12 +44,8 @@ def init_globals():
     _node_repository_instance = NodeRepository(
         get_session_provider(), settings.MAX_PARALLEL_REQUESTS_PER_NODE
     )
-    _node_stats_repository_instance = NodeStatsRepository(
-        get_session_provider()
-    )
-    _benchmark_repository_instance = BenchmarkRepository(
-        get_session_provider()
-    )
+    _node_stats_repository_instance = NodeStatsRepository(get_session_provider())
+    _benchmark_repository_instance = BenchmarkRepository(get_session_provider())
     _metrics_queue_repository = MetricsQueueRepository()
 
     _analytics = Analytics(

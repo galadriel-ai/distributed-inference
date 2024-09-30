@@ -146,17 +146,17 @@ async def execute(
 
 
 async def _websocket_error(
-    analytics,
-    connect_time,
-    metrics_queue_repository,
-    node,
-    node_info,
-    node_repository,
-    node_uid,
-    ping_pong_protocol,
-    user,
-    analytics_event,
-    log_message,
+    analytics: Analytics,
+    connect_time: float,
+    metrics_queue_repository: MetricsQueueRepository,
+    node: ConnectedNode,
+    node_info: NodeInfo,
+    node_repository: NodeRepository,
+    node_uid: UUID,
+    ping_pong_protocol: PingPongProtocol,
+    user: User,
+    analytics_event: EventName,
+    log_message: str,
 ):
     ping_pong_protocol.remove_node(node_info.name)
     node_repository.deregister_node(node_uid)
@@ -169,12 +169,17 @@ async def _websocket_error(
     )
 
 
-async def _check_before_connecting(model_name, node_info, node_repository, user):
+async def _check_before_connecting(
+    model_name: Optional[str],
+    node_info: NodeInfo,
+    benchmark_repository: BenchmarkRepository,
+    user: User,
+):
     if not model_name:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
         )
-    benchmark = await node_repository.get_node_benchmark(
+    benchmark = await benchmark_repository.get_node_benchmark(
         user.uid, node_info.node_id, model_name
     )
     if not benchmark:

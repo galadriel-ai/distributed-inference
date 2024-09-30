@@ -36,9 +36,7 @@ WHERE ni.user_profile_id = :user_profile_id;
 
 class NodeStatsRepository:
 
-    def __init__(
-        self, session_provider: SessionProvider
-    ):
+    def __init__(self, session_provider: SessionProvider):
         self._session_provider = session_provider
 
     async def get_node_stats(self, user_id: UUID, node_id: UUID) -> Optional[NodeStats]:

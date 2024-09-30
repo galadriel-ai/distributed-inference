@@ -60,7 +60,9 @@ logger = api_logger.get()
     include_in_schema=not settings.is_production(),
 )
 async def get_node_stats(
-    node_stats_repository: NodeStatsRepository = Depends(dependencies.get_node_stats_repository),
+    node_stats_repository: NodeStatsRepository = Depends(
+        dependencies.get_node_stats_repository
+    ),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_session_token),
 ):
@@ -148,7 +150,9 @@ async def update_node(
     user: User = Depends(authentication.validate_session_token),
     analytics=Depends(dependencies.get_analytics),
 ):
-    node_info = await authentication.validate_node_name(user, request.node_id, node_repository)
+    node_info = await authentication.validate_node_name(
+        user, request.node_id, node_repository
+    )
     analytics.track_event(
         user.uid,
         AnalyticsEvent(EventName.UPDATE_NODE, {"node_name": request.node_name}),

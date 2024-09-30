@@ -52,7 +52,9 @@ logger = api_logger.get()
 async def websocket_endpoint(
     websocket: WebSocket,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    benchmark_repository: BenchmarkRepository = Depends(dependencies.get_benchmark_repository),
+    benchmark_repository: BenchmarkRepository = Depends(
+        dependencies.get_benchmark_repository
+    ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
@@ -109,10 +111,13 @@ async def get_info(
     name="Node Stats",
     response_model=GetNodeStatsResponse,
 )
+# pylint: disable=too-many-arguments, R0913
 async def get_stats(
     node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    node_stats_repository: NodeStatsRepository = Depends(dependencies.get_node_stats_repository),
+    node_stats_repository: NodeStatsRepository = Depends(
+        dependencies.get_node_stats_repository
+    ),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
@@ -159,7 +164,9 @@ async def get_benchmark(
     node_id: str = Query(..., description="Node id"),
     model: str = Query(..., description="Model name"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    benchmark_repository: BenchmarkRepository = Depends(dependencies.get_benchmark_repository),
+    benchmark_repository: BenchmarkRepository = Depends(
+        dependencies.get_benchmark_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
@@ -180,7 +187,9 @@ async def get_benchmark(
 async def post_benchmark(
     request: PostNodeBenchmarkRequest,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    benchmark_repository: BenchmarkRepository = Depends(dependencies.get_benchmark_repository),
+    benchmark_repository: BenchmarkRepository = Depends(
+        dependencies.get_benchmark_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
