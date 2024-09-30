@@ -24,6 +24,7 @@ async def test_execute_success():
         network_download_speed=1000,
         network_upload_speed=1000,
         operating_system="Linux",
+        version="0.10.0",
     )
 
     expected_node_info = NodeInfo(
@@ -38,6 +39,7 @@ async def test_execute_success():
         network_download_speed=request.network_download_speed,
         network_upload_speed=request.network_upload_speed,
         operating_system=request.operating_system,
+        version=request.version,
     )
 
     mock_repository = AsyncMock(spec=NodeRepository)

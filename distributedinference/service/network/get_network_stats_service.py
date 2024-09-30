@@ -11,7 +11,7 @@ async def execute(
     tokens_repository: TokensRepository,
 ) -> NetworkStatsResponse:
     nodes_count = await repository.get_nodes_count()
-    connected_nodes_count = repository.get_connected_nodes_count()
+    connected_nodes_count = await repository.get_connected_nodes_count()
     throughput = 0
     network_models_stats = []
     if connected_nodes_count:

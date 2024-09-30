@@ -52,6 +52,7 @@ SELECT
     ni.id,
     ni.name,
     ni.name_alias,
+    ni.is_active,
     ni.gpu_model,
     ni.vram,
     ni.cpu_model,
@@ -60,6 +61,7 @@ SELECT
     ni.network_download_speed,
     ni.network_upload_speed,
     ni.operating_system,
+    ni.version,
     ni.created_at,
     ni.last_updated_at,
     nm.requests_served,
@@ -136,6 +138,7 @@ SQL_GET_NODE_INFO = """
 SELECT
     id,
     user_profile_id,
+    is_active,
     gpu_model,
     vram,
     cpu_model,
@@ -144,6 +147,7 @@ SELECT
     network_download_speed,
     network_upload_speed,
     operating_system,
+    version,
     created_at,
     last_updated_at
 FROM node_info
@@ -156,6 +160,7 @@ SELECT
     name,
     name_alias,
     user_profile_id,
+    is_active,
     gpu_model,
     vram,
     cpu_model,
@@ -164,6 +169,7 @@ SELECT
     network_download_speed,
     network_upload_speed,
     operating_system,
+    version,
     created_at,
     last_updated_at
 FROM node_info
@@ -175,6 +181,7 @@ UPDATE node_info
 SET 
     name_alias = :name_alias,
     user_profile_id = :user_profile_id,
+    is_active = :is_active,
     gpu_model = :gpu_model,
     vram = :vram,
     cpu_model = :cpu_model,
@@ -183,9 +190,42 @@ SET
     network_download_speed = :network_download_speed,
     network_upload_speed = :network_upload_speed,
     operating_system = :operating_system,
+    version = :version,
     created_at = :created_at,
     last_updated_at = :last_updated_at
 WHERE id = :id;
+"""
+
+SQL_UPDATE_NODE_ACTIVE_FLAG = """
+UPDATE node_info
+SET
+    is_active = :is_active,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
+"""
+
+SQL_GET_CONNECTED_NODES = """
+SELECT
+    ni.id,
+    ni.name,
+    nb.model_name,
+    nb.tokens_per_second
+FROM node_info ni
+LEFT JOIN node_benchmark nb on ni.id = nb.node_id
+WHERE ni.is_active = True;
+"""
+
+SQL_GET_CONNECTED_NODE_METRIC = """
+SELECT
+    ni.id,
+    nm.requests_served,
+    nm.requests_successful,
+    nm.requests_failed,
+    nm.time_to_first_token,
+    nm.uptime
+FROM node_info ni
+LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
+WHERE ni.is_active = True AND ni.id = :id;
 """
 
 SQL_GET_NODE_BENCHMARK = """
@@ -341,7 +381,7 @@ class NodeRepository:
                         operating_system=row.operating_system,
                         requests_served=row.requests_served,
                         uptime=row.uptime,
-                        connected=(row.id in self._connected_nodes),
+                        connected=row.is_active,
                         tokens_per_second=row.tokens_per_second,
                         created_at=row.created_at,
                     )
@@ -433,17 +473,41 @@ class NodeRepository:
 
         return 1 - node.active_requests_count()
 
-    def get_connected_nodes(self) -> List[ConnectedNode]:
-        return list(self._connected_nodes.values())
+    async def get_connected_node_benchmarks(self) -> List[NodeBenchmark]:
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
+            return [
+                NodeBenchmark(
+                    node_id=row.id,
+                    model_name=row.model_name,
+                    tokens_per_second=row.tokens_per_second,
+                )
+                for row in rows
+            ]
 
-    def get_connected_nodes_count(self) -> int:
-        return len(self._connected_nodes)
+    async def get_connected_nodes_count(self) -> int:
+        async with self._session_provider.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
+            return len(rows)
 
-    def get_connected_node_ids(self) -> List[UUID]:
-        return [k for k, _ in self._connected_nodes.items()]
+    async def get_connected_node_ids(self) -> List[UUID]:
+        async with self._session_provider.get() as session:
+            rows = session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
+            return [row.id for row in rows]
 
-    def get_connected_node_info(self, node_id: UUID) -> Optional[ConnectedNode]:
-        return self._connected_nodes.get(node_id)
+    async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
+        async with self._session_provider.get() as session:
+            data = {"id": node_id}
+            result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_METRIC), data)
+            row = result.first()
+            if row:
+                return NodeMetrics(
+                    requests_served=row.requests_served,
+                    requests_successful=row.requests_successful,
+                    requests_failed=row.requests_failed,
+                    time_to_first_token=row.time_to_first_token,
+                    uptime=row.uptime,
+                )
 
     async def get_node_metrics_by_ids(
         self, node_ids: List[UUID]
@@ -490,6 +554,7 @@ class NodeRepository:
                     node_id=row.id,
                     name=row.name,
                     name_alias=row.name_alias,
+                    is_active=row.is_active,
                     gpu_model=row.gpu_model,
                     vram=row.vram,
                     cpu_model=row.cpu_model,
@@ -498,6 +563,7 @@ class NodeRepository:
                     network_download_speed=row.network_download_speed,
                     network_upload_speed=row.network_upload_speed,
                     operating_system=row.operating_system,
+                    version=row.version,
                     created_at=row.created_at,
                 )
         return None
@@ -516,6 +582,7 @@ class NodeRepository:
                     node_id=row.id,
                     name=row.name,
                     name_alias=row.name_alias,
+                    is_active=row.is_active,
                     gpu_model=row.gpu_model,
                     vram=row.vram,
                     cpu_model=row.cpu_model,
@@ -524,6 +591,7 @@ class NodeRepository:
                     network_download_speed=row.network_download_speed,
                     network_upload_speed=row.network_upload_speed,
                     operating_system=row.operating_system,
+                    version=row.version,
                     created_at=row.created_at,
                 )
         return None
@@ -532,6 +600,7 @@ class NodeRepository:
         data = {
             "id": str(info.node_id),
             "name_alias": info.name_alias,
+            "is_active": info.is_active,
             "user_profile_id": user_profile_id,
             "gpu_model": info.gpu_model,
             "vram": info.vram,
@@ -541,11 +610,33 @@ class NodeRepository:
             "network_download_speed": info.network_download_speed,
             "network_upload_speed": info.network_upload_speed,
             "operating_system": info.operating_system,
+            "version": info.version,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_INFO), data)
+            await session.commit()
+
+    async def set_node_active_status(self, node_id: UUID, is_active: bool):
+        data = {
+            "id": node_id,
+            "is_active": is_active,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data)
+            await session.commit()
+
+    async def set_all_nodes_inactive(self):
+        data = {
+            "is_active": False,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            for node_id in self._connected_nodes:
+                data["id"] = node_id
+                await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data)
             await session.commit()
 
     async def get_node_benchmark(
@@ -608,7 +699,7 @@ class NodeRepository:
         return 0
 
     async def get_network_throughput(self) -> float:
-        connected_node_ids = self.get_connected_node_ids()
+        connected_node_ids = await self.get_connected_node_ids()
         if not connected_node_ids:
             return 0
         data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
@@ -622,7 +713,7 @@ class NodeRepository:
         return 0
 
     async def get_network_model_stats(self) -> List[ModelStats]:
-        connected_node_ids = self.get_connected_node_ids()
+        connected_node_ids = await self.get_connected_node_ids()
         if not connected_node_ids:
             return []
         data = {"node_ids": tuple(str(i) for i in connected_node_ids)}

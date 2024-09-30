@@ -30,6 +30,7 @@ class NodeInfoRequest(BaseModel):
         description="Network upload speed in Mbps", default=None
     )
     operating_system: Optional[str] = Field(description="Operating system")
+    version: Optional[str] = Field(description="Node version", default=None)
 
 
 class ListNodeRequestNode(NodeInfoRequest):

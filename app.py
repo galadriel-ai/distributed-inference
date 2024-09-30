@@ -28,19 +28,25 @@ from distributedinference.service.node.protocol import protocol_handler
 async def lifespan(_: FastAPI):
     connection.init_defaults()
     dependencies.init_globals()
-    asyncio.create_task(
+    metrics_task = asyncio.create_task(
         metrics_update_job.execute(
             dependencies.get_metrics_queue_repository(),
             dependencies.get_node_repository(),
         )
     )
-    asyncio.create_task(
+    protocol_task = asyncio.create_task(
         protocol_handler.execute(
             dependencies.get_protocol_handler(),
             dependencies.get_node_repository(),
         )
     )
-    yield
+    try:
+        yield
+    finally:
+        await dependencies.get_node_repository().set_all_nodes_inactive()
+        metrics_task.cancel()
+        protocol_task.cancel()
+        await asyncio.gather(metrics_task, protocol_task, return_exceptions=True)
 
 
 app = FastAPI(lifespan=lifespan)
