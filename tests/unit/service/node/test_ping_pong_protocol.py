@@ -1,69 +1,81 @@
 import time
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
+from uuid import UUID
 
 import pytest
 from fastapi import WebSocket
 
 import settings
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.service.node.protocol.ping_pong_protocol import (
     PingPongProtocol,
     NodePingInfo,
 )
 
+NODE_NAME = "test_node"
+NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
+NODE_NONCE = "test_nonce"
+
 
 @pytest.fixture
-def node_repository():
-    return AsyncMock(spec=NodeRepository)
+def metrics_queue_repository():
+    return AsyncMock(spec=MetricsQueueRepository)
 
 
 @pytest.fixture
-def ping_pong_protocol(node_repository):
-    return PingPongProtocol(node_repository)
+def ping_pong_protocol(metrics_queue_repository):
+    return PingPongProtocol(metrics_queue_repository)
 
 
 @pytest.mark.asyncio
 async def test_handler_valid_pong(ping_pong_protocol):
     # Setup
-    node_id = "test_node"
-    nonce = "test_nonce"
-    ping_pong_protocol.active_nodes[node_id] = NodePingInfo(
+    _update_rtt = AsyncMock()
+    ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
         waiting_for_pong=True,
-        ping_nonce=nonce,
+        ping_nonce=NODE_NONCE,
     )
     data = {
         "protocol_version": settings.PING_PONG_PROTOCOL_VERSION,
         "message_type": 2,  # Pong message type
-        "node_id": node_id,
-        "nonce": nonce,
+        "node_id": NODE_NAME,
+        "nonce": NODE_NONCE,
     }
 
     # Execute
     await ping_pong_protocol.handle(data)
 
     # Assert
-    assert not ping_pong_protocol.active_nodes[node_id].waiting_for_pong
-    assert ping_pong_protocol.active_nodes[node_id].ping_streak == 1
-    assert ping_pong_protocol.active_nodes[node_id].miss_streak == 0
+    assert not ping_pong_protocol.active_nodes[NODE_NAME].waiting_for_pong
+    assert ping_pong_protocol.active_nodes[NODE_NAME].ping_streak == 1
+    assert ping_pong_protocol.active_nodes[NODE_NAME].miss_streak == 0
 
 
 @pytest.mark.asyncio
 async def test_handler_invalid_nonce(ping_pong_protocol, caplog):
     # Setup
-    node_id = "test_node"
-    ping_pong_protocol.active_nodes[node_id] = NodePingInfo(
+    ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
         waiting_for_pong=True,
         ping_nonce="correct_nonce",
     )
-    data = MagicMock(node_id=node_id, nonce="wrong_nonce")
+    data = {
+        "protocol_version": settings.PING_PONG_PROTOCOL_VERSION,
+        "message_type": 2,  # Pong message type
+        "node_id": NODE_NAME,
+        "nonce": "wrong_nonce",
+    }
 
     # Execute
     await ping_pong_protocol.handle(data)
 
     # Assert
-    assert ping_pong_protocol.active_nodes[node_id].waiting_for_pong
+    assert ping_pong_protocol.active_nodes[NODE_NAME].waiting_for_pong
 
 
 @pytest.mark.asyncio
@@ -73,6 +85,7 @@ async def test_job_check_for_pongs(ping_pong_protocol):
     ping_pong_protocol.active_nodes = {
         "node1": NodePingInfo(
             websocket=AsyncMock(spec=WebSocket),
+            node_uuid=NODE_UUID,
             waiting_for_pong=True,
             ping_sent_time=current_time
             - (settings.PING_TIMEOUT_IN_SECONDS * 1000)
@@ -81,6 +94,7 @@ async def test_job_check_for_pongs(ping_pong_protocol):
         ),
         "node2": NodePingInfo(
             websocket=AsyncMock(spec=WebSocket),
+            node_uuid=UUID("40c95432-8b2c-4208-bdf4-84f49ff957a4"),
             waiting_for_pong=False,
             next_ping_time=(current_time - 1000),
         ),
@@ -98,18 +112,17 @@ async def test_job_check_for_pongs(ping_pong_protocol):
 @pytest.mark.asyncio
 async def test_add_node(ping_pong_protocol):
     # Setup
-    node_id = "test_node"
     websocket = AsyncMock(spec=WebSocket)
 
     # Execute
-    ping_pong_protocol.add_node(node_id, websocket)
+    ping_pong_protocol.add_node(NODE_UUID, NODE_NAME, websocket)
 
     # Assert
-    assert node_id in ping_pong_protocol.active_nodes
-    assert ping_pong_protocol.active_nodes[node_id].websocket == websocket
-    assert ping_pong_protocol.active_nodes[node_id].ping_streak == 0
-    assert ping_pong_protocol.active_nodes[node_id].miss_streak == 0
-    assert not ping_pong_protocol.active_nodes[node_id].waiting_for_pong
+    assert NODE_NAME in ping_pong_protocol.active_nodes
+    assert ping_pong_protocol.active_nodes[NODE_NAME].websocket == websocket
+    assert ping_pong_protocol.active_nodes[NODE_NAME].ping_streak == 0
+    assert ping_pong_protocol.active_nodes[NODE_NAME].miss_streak == 0
+    assert not ping_pong_protocol.active_nodes[NODE_NAME].waiting_for_pong
 
 
 @pytest.mark.asyncio
@@ -117,7 +130,8 @@ async def test_remove_node(ping_pong_protocol):
     # Setup
     node_id = "test_node"
     ping_pong_protocol.active_nodes[node_id] = NodePingInfo(
-        websocket=AsyncMock(spec=WebSocket)
+        websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
     )
 
     # Execute
@@ -134,6 +148,7 @@ async def test_got_pong_on_time(ping_pong_protocol):
     current_time = round(time.time() * 1000)
     ping_pong_protocol.active_nodes[node_id] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
         waiting_for_pong=True,
         ping_sent_time=current_time - 500,
         ping_streak=0,
@@ -142,7 +157,7 @@ async def test_got_pong_on_time(ping_pong_protocol):
 
     # Execute
     await ping_pong_protocol.got_pong_on_time(
-        node_id, ping_pong_protocol.active_nodes[node_id]
+        node_id, ping_pong_protocol.active_nodes[node_id], (current_time - 100)
     )
 
     # Assert

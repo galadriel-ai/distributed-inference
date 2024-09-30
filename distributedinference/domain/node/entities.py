@@ -1,6 +1,5 @@
 import asyncio
 import time
-
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -20,6 +19,7 @@ class NodeMetricsIncrement:
     requests_successful_incerement: int = 0
     requests_failed_increment: int = 0
     time_to_first_token: Optional[float] = None
+    rtt: int = 0
     uptime_increment: int = 0
 
 
@@ -29,6 +29,7 @@ class NodeMetrics:
     requests_successful: int = 0
     requests_failed: int = 0
     time_to_first_token: Optional[float] = None
+    rtt: int = 0
     uptime: int = 0
 
 

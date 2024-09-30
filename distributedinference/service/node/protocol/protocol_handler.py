@@ -7,7 +7,9 @@ from fastapi.exceptions import WebSocketException
 
 import settings
 from distributedinference import api_logger
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.service.node.protocol.ping_pong_protocol import (
     PingPongProtocol,
 )
@@ -50,13 +52,13 @@ class ProtocolHandler:
 
 async def execute(
     protocol_handler: ProtocolHandler,
-    node_repository: NodeRepository,
+    metrics_queue_repository: MetricsQueueRepository,
 ) -> None:
     try:
         logger.info("Started Protocol Handler")
 
         # Instantiate and Register the ping-pong protocol
-        ping_pong_protocol = PingPongProtocol(node_repository)
+        ping_pong_protocol = PingPongProtocol(metrics_queue_repository)
         protocol_handler.register(settings.PING_PONG_PROTOCOL_NAME, ping_pong_protocol)
 
         # trigger protocol jobs every X seconds

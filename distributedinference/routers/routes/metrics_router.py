@@ -1,19 +1,18 @@
 from fastapi import APIRouter
-from fastapi.responses import Response
 from fastapi import Depends
-
-from prometheus_client import REGISTRY
+from fastapi.responses import Response
 from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client import CollectorRegistry
-from prometheus_client import generate_latest
 from prometheus_client import Gauge
+from prometheus_client import REGISTRY
+from prometheus_client import generate_latest
 from prometheus_client.multiprocess import MultiProcessCollector
 
 import settings
 from distributedinference import api_logger
+from distributedinference import dependencies
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
-from distributedinference import dependencies
 
 TAG = "Metrics"
 router = APIRouter(prefix="/metrics")
@@ -49,6 +48,11 @@ node_time_to_first_token_gauge = Gauge(
     "node_time_to_first_token",
     "Time to first token in seconds by model and node uid",
     ["model_name", "node_uid"],
+)
+node_rtt_gauge = Gauge(
+    "node_rtt",
+    "Round Trip Time for the node",
+    ["node_uid"],
 )
 
 
@@ -93,6 +97,7 @@ async def get_metrics(
             node_time_to_first_token_gauge.labels(
                 node_model_names[node_uid], node_uid
             ).set(metrics.time_to_first_token)
+        node_rtt_gauge.labels(node_uid).set(metrics.rtt)
 
     for usage in node_usage_total_tokens:
         node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(

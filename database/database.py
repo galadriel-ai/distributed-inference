@@ -5,13 +5,13 @@ import sqlalchemy
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
-from sqlalchemy import ForeignKey
-from sqlalchemy import String
-from sqlalchemy import Integer
 from sqlalchemy import Float
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -116,6 +116,7 @@ class NodeMetrics(Base):
         Integer(), nullable=False, default=0, server_default="0"
     )
     requests_failed = Column(Integer(), nullable=False, default=0, server_default="0")
+    rtt = Column(Integer(), nullable=False, default=0, server_default="0")  # In ms
     time_to_first_token = Column(Float(), nullable=True)  # In seconds
     uptime = Column(
         Integer(), nullable=False, default=0, server_default="0"

@@ -1,6 +1,7 @@
 import time
 import uuid
 from typing import Any
+from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
@@ -8,7 +9,10 @@ from starlette.websockets import WebSocket
 
 import settings
 from distributedinference import api_logger
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.service.node.protocol.entities import (
     PingRequest,
     PingPongMessageType,
@@ -22,6 +26,7 @@ logger = api_logger.get()
 # TODO: SOme of the state info needs to be persisted in DB
 class NodePingInfo(BaseModel):
     websocket: WebSocket
+    node_uuid: UUID  # the UUID of the node, need this to update the metrics
     rtt: float = 0  # the last rtt of the node
     next_ping_time: float = 0  # the scheduled time to send the bext ping to the node
     ping_streak: int = 0  # no of consecutive pings that the node has responded to
@@ -36,16 +41,15 @@ class NodePingInfo(BaseModel):
 
 
 class PingPongProtocol:
-    def __init__(self, node_repository: NodeRepository):
-        self.node_repository = (
-            node_repository  # TODO: Will be used to RTT in the NodeInfo table
-        )
-
+    def __init__(self, metrics_queue_repository: MetricsQueueRepository):
+        self.metrics_queue_repository = metrics_queue_repository
         self.active_nodes = {}
         logger.info(f"{settings.PING_PONG_PROTOCOL_NAME}: Protocol initialized")
 
     # Handle the responses from the client
     async def handle(self, data: Any):
+        # record the time ASAP so that we exclude processing time of the pong.
+        pong_received_time = _current_milli_time()
         # TODO: we should replace these mess with direct pydantic model objects once the
         # inference is inside the protocol. Until then, we will use the dict objects and manually
         # validate them.
@@ -66,7 +70,9 @@ class PingPongProtocol:
         if _pong_protocol_validations(node_info, pong_response) is False:
             return
 
-        await self.got_pong_on_time(pong_response.node_id, node_info)
+        await self.got_pong_on_time(
+            pong_response.node_id, node_info, pong_received_time
+        )
 
     # Regularly check if we have received the pong responses and to send ping messages
     async def job(self):
@@ -75,7 +81,7 @@ class PingPongProtocol:
 
     # Add a node to the active nodes dictionary
     # called when a new node connects to the server through websocket
-    def add_node(self, node_id, websocket: WebSocket) -> bool:
+    def add_node(self, node_uuid: UUID, node_id: str, websocket: WebSocket) -> bool:
         if node_id in self.active_nodes:
             logger.warning(
                 f"{settings.PING_PONG_PROTOCOL_NAME}: Node {node_id} already exists in the active nodes"
@@ -84,6 +90,7 @@ class PingPongProtocol:
         current_time = _current_milli_time()
         self.active_nodes[node_id] = NodePingInfo(
             websocket=websocket,
+            node_uuid=node_uuid,
             rtt=0,
             next_ping_time=current_time + (settings.PING_INTERVAL_IN_SECONDS * 1000),
             ping_streak=0,
@@ -177,7 +184,7 @@ class PingPongProtocol:
                 f"{settings.PING_PONG_PROTOCOL_NAME}: Missed pong from node {node_id}, with nonce {node_info.ping_nonce}"
             )
 
-    async def got_pong_on_time(self, node_id, node_info):
+    async def got_pong_on_time(self, node_id, node_info, pong_received_time):
         # Update the state of the client
         node_info.next_ping_time = _current_milli_time() + (
             settings.PING_INTERVAL_IN_SECONDS * 1000
@@ -186,9 +193,12 @@ class PingPongProtocol:
         node_info.miss_streak = 0  # resset miss streak if any
         node_info.ping_streak += 1  # increment the ping streak
         node_info.rtt = (
-            _current_milli_time() - node_info.ping_sent_time
+            pong_received_time - node_info.ping_sent_time
         )  # calculate the rtt
         node_info.ping_sent_time = 0  # reset the ping sent time
+        await _update_rtt(
+            node_info.node_uuid, node_info.rtt, self.metrics_queue_repository
+        )
         logger.info(
             f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong from node {node_id}, with nonce {node_info.ping_nonce} with rtt {node_info.rtt} in msec"
         )
@@ -199,20 +209,19 @@ def _current_milli_time():
 
 
 def _extract_and_validate(data: Any) -> PongResponse | None:
+    try:
+        message_type = PingPongMessageType(data.get("message_type"))
+    except KeyError:
+        return None
+
     pong_response = PongResponse(
-        protocol_version="", message_type=2, node_id="", nonce=""
+        protocol_version=data.get("protocol_version"),
+        message_type=message_type,
+        node_id=data.get("node_id"),
+        nonce=data.get("nonce"),
     )
-    if "protocol_version" in data:
-        pong_response.protocol_version = data["protocol_version"]
-    if "message_type" in data:
-        pong_response.message_type = data["message_type"]
-    if "node_id" in data:
-        pong_response.node_id = data["node_id"]
-    if "nonce" in data:
-        pong_response.nonce = data["nonce"]
     if (
         pong_response.protocol_version is None
-        or pong_response.message_type is None
         or pong_response.node_id is None
         or pong_response.nonce is None
     ):
@@ -252,3 +261,13 @@ def _pong_protocol_validations(
         return False
 
     return True
+
+
+async def _update_rtt(
+    node_uuid: UUID,
+    rtt: int,
+    metrics_queue_repository: MetricsQueueRepository,
+) -> None:
+    node_metrics_increment = NodeMetricsIncrement(node_id=node_uuid)
+    node_metrics_increment.rtt = rtt  # dont increment, just update the rtt
+    await metrics_queue_repository.push(node_metrics_increment)
