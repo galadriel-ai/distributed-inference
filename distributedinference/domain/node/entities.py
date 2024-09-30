@@ -1,8 +1,7 @@
 import asyncio
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict
-from typing import List
 from typing import Optional
 from uuid import UUID
 
@@ -11,10 +10,46 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
 
-@dataclass
+import asyncio
+from typing import Optional
+
+
 class NodeMetrics:
-    requests_served: int = 0
-    time_to_first_token: Optional[float] = None
+    def __init__(
+        self,
+        requests_served: int = 0,
+        time_to_first_token: Optional[float] = None,
+        uptime: int = 0,
+    ):
+        self._requests_served = requests_served
+        self._time_to_first_token = time_to_first_token
+        self._uptime = uptime
+        self._lock = asyncio.Lock()
+
+    async def get_requests_served(self) -> int:
+        async with self._lock:
+            return self._requests_served
+
+    async def increment_requests_served(self, value: int):
+        async with self._lock:
+            self._requests_served = value
+
+    async def get_time_to_first_token(self) -> Optional[float]:
+        async with self._lock:
+            return self._time_to_first_token
+
+    async def set_time_to_first_token(self, value: float):
+        async with self._lock:
+            if self._time_to_first_token > value or self._time_to_first_token is None:
+                self._time_to_first_token = value
+
+    async def get_uptime(self) -> int:
+        async with self._lock:
+            return self._uptime
+
+    async def add_uptime(self, value: int):
+        async with self._lock:
+            self._uptime += value
 
 
 @dataclass

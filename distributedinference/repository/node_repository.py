@@ -29,6 +29,7 @@ SELECT
     user_profile_id,
     requests_served,
     time_to_first_token,
+    uptime,
     created_at,
     last_updated_at
 FROM node_metrics
@@ -41,6 +42,7 @@ INSERT INTO node_metrics (
     user_profile_id,
     requests_served,
     time_to_first_token,
+    uptime,
     created_at,
     last_updated_at
 ) VALUES (
@@ -48,13 +50,14 @@ INSERT INTO node_metrics (
     :user_profile_id,
     :requests_served,
     :time_to_first_token,
+    :uptime,
     :created_at,
     :last_updated_at
 )
 ON CONFLICT (user_profile_id) DO UPDATE SET
     requests_served = EXCLUDED.requests_served,
     time_to_first_token = EXCLUDED.time_to_first_token,
-    operating_system = EXCLUDED.operating_system,
+    uptime = EXCLUDED.uptime,
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
@@ -122,17 +125,23 @@ class NodeRepository:
     def __init__(self):
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
-    def register_node(self, connected_node: ConnectedNode):
-        self._connected_nodes[connected_node.uid] = connected_node
+    def register_node(self, connected_node: ConnectedNode) -> bool:
+        """
+        Register a connected node, returns True if the node was successfully registered, False if the node is already registered
+        """
+        if connected_node.uid not in self._connected_nodes:
+            self._connected_nodes[connected_node.uid] = connected_node
+            return True
+        return False
 
     def deregister_node(self, node_id: UUID):
         if node_id in self._connected_nodes:
             del self._connected_nodes[node_id]
 
-    def select_node(self, model: str) -> Optional[UUID]:
+    def select_node(self, model: str) -> Optional[ConnectedNode]:
         if not len(self._connected_nodes):
             return None
-        return random.choice(list(self._connected_nodes.keys()))
+        return random.choice(list(self._connected_nodes.values()))
 
     def get_connected_nodes_count(self) -> int:
         return len(self._connected_nodes)
@@ -147,6 +156,7 @@ class NodeRepository:
             return NodeMetrics(
                 requests_served=row.requests_served,
                 time_to_first_token=row.time_to_first_token,
+                uptime=row.uptime,
             )
         return None
 
@@ -154,8 +164,9 @@ class NodeRepository:
         data = {
             "id": str(uuid7()),
             "user_profile_id": node_id,
-            "requests_served": metrics.requests_served,
-            "time_to_first_token": metrics.time_to_first_token,
+            "requests_served": await metrics.get_requests_served(),
+            "time_to_first_token": await metrics.get_time_to_first_token(),
+            "uptime": await metrics.get_uptime(),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
