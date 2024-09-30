@@ -32,7 +32,7 @@ class InferenceError(APIErrorResponse):
         return "inference_error"
 
     def to_message(self) -> str:
-        result = "Inference error"
+        result = f"Inference error (Node ID: {self.node_id})"
         if self.message_extra:
             result += f" - {self.message_extra}"
         return result
