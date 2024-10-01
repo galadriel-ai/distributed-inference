@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock
 import pytest
 from uuid_extensions import uuid7
 
-from distributedinference.domain.node_stats.entities import UserAggregatedStats
+from distributedinference.domain.node.entities import UserAggregatedStats
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
 from distributedinference.service.node import (
@@ -21,7 +21,7 @@ def _get_user():
 async def test_not_found():
     user = _get_user()
 
-    mock_repository = AsyncMock(spec=NodeStatsRepository)
+    mock_repository = AsyncMock(spec=NodeRepository)
     mock_repository.get_user_aggregated_stats.return_value = None
 
     # Not even sure this is possible though
@@ -33,7 +33,7 @@ async def test_not_found():
 async def test_success():
     user = _get_user()
 
-    mock_repository = AsyncMock(spec=NodeStatsRepository)
+    mock_repository = AsyncMock(spec=NodeRepository)
     aggregated_stats = UserAggregatedStats(
         total_requests_served=12,
         average_time_to_first_token=1.23,

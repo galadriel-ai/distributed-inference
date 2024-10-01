@@ -16,7 +16,6 @@ from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
-from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.api_key import create_api_key_service
@@ -38,13 +37,10 @@ from distributedinference.service.network.entities import NetworkStatsResponse
 from distributedinference.service.node import create_node_service
 from distributedinference.service.node import get_user_aggregated_stats_service
 from distributedinference.service.node import get_user_nodes_service
-from distributedinference.service.node import update_node_service
 from distributedinference.service.node.entities import CreateNodeRequest
 from distributedinference.service.node.entities import CreateNodeResponse
 from distributedinference.service.node.entities import GetUserAggregatedStatsResponse
 from distributedinference.service.node.entities import ListNodeResponse
-from distributedinference.service.node.entities import UpdateNodeRequest
-from distributedinference.service.node.entities import UpdateNodeResponse
 
 TAG = "Dashboard Network"
 router = APIRouter(prefix="/dashboard")
@@ -60,14 +56,12 @@ logger = api_logger.get()
     include_in_schema=not settings.is_production(),
 )
 async def get_node_stats(
-    node_stats_repository: NodeStatsRepository = Depends(
-        dependencies.get_node_stats_repository
-    ),
+    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_session_token),
 ):
     return await get_user_aggregated_stats_service.execute(
-        user, node_stats_repository, tokens_repository
+        user, node_repository, tokens_repository
     )
 
 
@@ -141,27 +135,6 @@ async def create_node(
         AnalyticsEvent(EventName.CREATE_NODE, {"node_name": request.node_name}),
     )
     return await create_node_service.execute(request, user.uid, node_repository)
-
-
-@router.put("/node", name="Update Node", response_model=UpdateNodeResponse)
-async def update_node(
-    request: UpdateNodeRequest,
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    user: User = Depends(authentication.validate_session_token),
-    analytics=Depends(dependencies.get_analytics),
-):
-    node_info = await authentication.validate_node_name(
-        user, request.node_id, node_repository
-    )
-    analytics.track_event(
-        user.uid,
-        AnalyticsEvent(EventName.UPDATE_NODE, {"node_name": request.node_name}),
-    )
-    return await update_node_service.execute(
-        request,
-        node_info,
-        node_repository,
-    )
 
 
 @router.get("/nodes", name="List all nodes", response_model=ListNodeResponse)

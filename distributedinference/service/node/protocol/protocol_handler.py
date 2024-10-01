@@ -62,7 +62,7 @@ async def execute(
         # trigger protocol jobs every X seconds
         while True:
             await asyncio.sleep(settings.PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS)
-            # await ping_pong_protocol.job() # dont trigger the job for now
+            await ping_pong_protocol.job()
     except Exception:
         logger.error(
             "Failed to while running protocol handler",

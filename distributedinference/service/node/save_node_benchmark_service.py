@@ -2,7 +2,7 @@ from uuid import UUID
 
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.repository.benchmark_repository import BenchmarkRepository
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.entities import PostNodeBenchmarkRequest
 from distributedinference.service.node.entities import PostNodeBenchmarkResponse
 
@@ -11,8 +11,9 @@ async def execute(
     request: PostNodeBenchmarkRequest,
     node_info: NodeInfo,
     user_profile_id: UUID,
-    repository: BenchmarkRepository,
+    repository: NodeRepository,
 ) -> PostNodeBenchmarkResponse:
+    # TODO: validate if tokens_per_second is enough
     node_benchmark = NodeBenchmark(
         node_id=node_info.node_id,
         model_name=request.model_name,

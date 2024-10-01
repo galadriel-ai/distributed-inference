@@ -1,8 +1,8 @@
 from typing import Optional
 
-from distributedinference.domain.node_stats.entities import UserAggregatedStats
+from distributedinference.domain.node.entities import UserAggregatedStats
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
 from distributedinference.service.node.entities import GetUserAggregatedStatsResponse
@@ -10,7 +10,7 @@ from distributedinference.service.node.entities import GetUserAggregatedStatsRes
 
 async def execute(
     user: User,
-    repository: NodeStatsRepository,
+    repository: NodeRepository,
     tokens_repository: TokensRepository,
 ) -> GetUserAggregatedStatsResponse:
     user_aggregated_stats: Optional[UserAggregatedStats] = (

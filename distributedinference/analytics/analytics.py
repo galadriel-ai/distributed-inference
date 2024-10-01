@@ -3,7 +3,6 @@ from enum import Enum
 from logging import Logger
 from typing import Any
 from typing import Dict
-from typing import Optional
 from uuid import UUID
 
 from posthog import Posthog
@@ -39,7 +38,6 @@ class EventName(Enum):
     CREATE_API_KEY = "create_api_key"
     DELETE_API_KEY = "delete_api_key"
     CREATE_NODE = "create_node"
-    UPDATE_NODE = "update_node"
 
     # API call responses
     API_RESPONSE = "api_response"
@@ -62,11 +60,11 @@ class Analytics:
         except Exception as e:
             self.logger.error(f"Error tracking event: {str(e)}")
 
-    def identify_user(self, user: User, profile_data: Optional[Dict] = None):
+    def identify_user(self, user: User):
         try:
             self.posthog.identify(
                 user.uid,
-                {"email": user.email, "profile_data": profile_data or {}},
+                {"email": user.email},
                 disable_geoip=True,
             )
         except Exception as e:

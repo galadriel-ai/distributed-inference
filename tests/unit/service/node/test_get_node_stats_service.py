@@ -7,9 +7,9 @@ import pytest
 from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node_stats.entities import NodeStats
+from distributedinference.domain.node.entities import NodeStats
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
@@ -32,7 +32,7 @@ def _get_user():
 async def test_execute_not_found():
     user = _get_user()
 
-    mock_repository = AsyncMock(spec=NodeStatsRepository)
+    mock_repository = AsyncMock(spec=NodeRepository)
     mock_repository.get_node_stats.return_value = None
 
     with pytest.raises(error_responses.NotFoundAPIError) as e:
@@ -44,7 +44,7 @@ async def test_success():
     user = _get_user()
     created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
 
-    mock_repository = AsyncMock(spec=NodeStatsRepository)
+    mock_repository = AsyncMock(spec=NodeRepository)
     node_stats = NodeStats(
         requests_served=12,
         average_time_to_first_token=0.34,

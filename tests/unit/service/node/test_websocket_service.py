@@ -16,7 +16,6 @@ from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -39,9 +38,7 @@ async def test_execute_node_no_model_header():
     node_metrics = NodeMetrics()
     node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
     node_repository.register_node = Mock(return_value=False)
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(return_value=None)
+    node_repository.get_node_benchmark = AsyncMock(return_value=None)
 
     with pytest.raises(
         WebSocketException, match='No "Model" header provided'
@@ -52,7 +49,6 @@ async def test_execute_node_no_model_header():
             NODE_INFO,
             None,
             node_repository,
-            benchmark_repository,
             AsyncMock(),
             Mock(),
             Mock(),
@@ -71,9 +67,7 @@ async def test_execute_node_no_benchmark():
     node_metrics = NodeMetrics()
     node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
     node_repository.register_node = Mock(return_value=False)
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(return_value=None)
+    node_repository.get_node_benchmark = AsyncMock(return_value=None)
 
     with pytest.raises(
         WebSocketException, match="Benchmarking is not completed"
@@ -84,7 +78,6 @@ async def test_execute_node_no_benchmark():
             NODE_INFO,
             "model",
             node_repository,
-            benchmark_repository,
             AsyncMock(),
             Mock(),
             Mock(),
@@ -103,9 +96,7 @@ async def test_execute_node_benchmark_too_low():
     node_metrics = NodeMetrics()
     node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
     node_repository.register_node = Mock(return_value=False)
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(
+    node_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
             node_id=NODE_UUID, model_name="model", tokens_per_second=1
         )
@@ -120,7 +111,6 @@ async def test_execute_node_benchmark_too_low():
             NODE_INFO,
             "model",
             node_repository,
-            benchmark_repository,
             AsyncMock(),
             Mock(),
             Mock(),
@@ -139,9 +129,7 @@ async def test_execute_node_already_connected():
     node_metrics = NodeMetrics()
     node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
     node_repository.register_node = Mock(return_value=False)
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(
+    node_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
             node_id=NODE_UUID, model_name="model", tokens_per_second=10000
         )
@@ -157,7 +145,6 @@ async def test_execute_node_already_connected():
             NODE_INFO,
             "model",
             node_repository,
-            benchmark_repository,
             AsyncMock(),
             Mock(),
             Mock(),
@@ -177,9 +164,7 @@ async def test_execute_websocket_disconnect():
     metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
 
     node_repository.register_node = Mock(return_value=True)
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(
+    node_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
             node_id=NODE_UUID, model_name="model", tokens_per_second=10000
         )
@@ -191,7 +176,6 @@ async def test_execute_websocket_disconnect():
         NODE_INFO,
         "model",
         node_repository,
-        benchmark_repository,
         metrics_queue_repository,
         AsyncMock(),
         Mock(),
@@ -215,9 +199,7 @@ async def test_execute_metrics_update_after_disconnect():
 
     node_repository.register_node = Mock(return_value=True)
     node_repository.increment_node_metrics = AsyncMock()
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(
+    node_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
             node_id=NODE_UUID, model_name="model", tokens_per_second=10000
         )
@@ -232,7 +214,6 @@ async def test_execute_metrics_update_after_disconnect():
         NODE_INFO,
         "model",
         node_repository,
-        benchmark_repository,
         metrics_queue_repository,
         Mock(),
         Mock(),
@@ -268,20 +249,12 @@ async def test_execute_ping_pong_protocol():
         )
     )
 
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(
-        return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
-        )
-    )
-
     await websocket_service.execute(
         websocket,
         user,
         NODE_INFO,
         "model",
         node_repository,
-        benchmark_repository,
         metrics_queue_repository,
         Mock(),
         protocol_handler,

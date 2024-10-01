@@ -2,9 +2,9 @@ from typing import List
 from typing import Optional
 
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node_stats.entities import NodeStats
+from distributedinference.domain.node.entities import NodeStats
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
@@ -17,7 +17,7 @@ INFERENCES_COUNT = 10
 async def execute(
     user: User,
     node_info: NodeInfo,
-    repository: NodeStatsRepository,
+    repository: NodeRepository,
     tokens_repository: TokensRepository,
 ) -> GetNodeStatsResponse:
     node_stats: Optional[NodeStats] = await repository.get_node_stats(

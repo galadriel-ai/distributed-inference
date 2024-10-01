@@ -16,19 +16,6 @@ class CreateNodeResponse(ApiResponse):
     node_id: str = Field(description="Unique ID of the Node")
 
 
-class UpdateNodeRequest(BaseModel):
-    node_id: str = Field(description="Unique ID of the Node")
-    node_name: str = Field(
-        description="User defined node name to use as the new value",
-        min_length=3,
-        max_length=40,
-    )
-
-
-class UpdateNodeResponse(ApiResponse):
-    pass
-
-
 class NodeInfoRequest(BaseModel):
     node_id: str = Field(description="Unique ID of the Node")
     gpu_model: Optional[str] = Field(description="GPU model", default=None)

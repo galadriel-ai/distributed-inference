@@ -37,7 +37,7 @@ async def execute(
         chat_request=chat_request,
     )
     try:
-        async for inference_response in run_inference_use_case.execute(
+        async for chunk in run_inference_use_case.execute(
             user.uid,
             inference_request,
             node_repository,
@@ -45,14 +45,12 @@ async def execute(
             metrics_queue_repository,
             analytics,
         ):
-            if inference_response.error:
+            if chunk.error:
                 raise error_responses.InferenceError(
-                    node_id=inference_response.node_id,
-                    status_code=inference_response.error.status_code,
-                    message_extra=inference_response.error.message,
+                    chunk.error.status_code, chunk.error.message
                 )
-            if inference_response.chunk:
-                yield f"data: {inference_response.chunk.to_json(indent=None)}\n\n"
+            if chunk.chunk:
+                yield f"data: {chunk.chunk.to_json(indent=None)}\n\n"
             # TODO: what if chunk.chunk is None?
         yield "data: [DONE]"
     except NoAvailableNodesError:
