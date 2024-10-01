@@ -16,15 +16,12 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
-from distributedinference.domain.node.entities import UserAggregatedStats
 from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeMetricsIncrement
-from distributedinference.domain.node.entities import NodeStats
-from distributedinference.repository import utils
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
@@ -203,6 +200,7 @@ SET
     name_alias = :name_alias,
     last_updated_at = :last_updated_at
 WHERE id = :id;
+"""
 
 SQL_UPDATE_NODE_ACTIVE_FLAG = """
 UPDATE node_info
@@ -236,74 +234,6 @@ LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
 WHERE ni.is_active = True AND ni.id = :id;
 """
 
-SQL_GET_NODE_BENCHMARK = """
-SELECT
-    nb.id,
-    nb.node_id,
-    nb.model_name,
-    nb.tokens_per_second,
-    nb.created_at,
-    nb.last_updated_at
-FROM node_benchmark nb
-LEFT JOIN node_info ni on nb.node_id = ni.id
-WHERE 
-    ni.id = :id
-    AND ni.user_profile_id = :user_profile_id
-    AND nb.model_name = :model_name;
-"""
-
-SQL_INSERT_OR_UPDATE_NODE_BENCHMARK = """
-WITH node_exists AS (
-    SELECT id
-    FROM node_info
-    WHERE id = :node_id
-      AND user_profile_id = :user_profile_id
-)
-INSERT INTO node_benchmark (
-    id,
-    node_id,
-    model_name,
-    tokens_per_second,
-    created_at,
-    last_updated_at
-) 
-SELECT 
-    :id, 
-    ne.id, 
-    :model_name, 
-    :tokens_per_second, 
-    :created_at, 
-    :last_updated_at
-FROM node_exists ne
-ON CONFLICT (node_id, model_name) DO UPDATE SET
-    tokens_per_second = EXCLUDED.tokens_per_second,
-    last_updated_at = EXCLUDED.last_updated_at;
-"""
-
-SQL_GET_NODE_STATS = """
-SELECT
-    nm.requests_served,
-    nm.time_to_first_token,
-    nb.tokens_per_second AS benchmark_tokens_per_second,
-    nb.model_name AS benchmark_model_name,
-    nb.created_at AS benchmark_created_at
-FROM node_info ni
-LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
-LEFT JOIN node_benchmark nb on ni.id = nb.node_id
-WHERE ni.user_profile_id = :user_profile_id AND ni.id = :id
-LIMIT 1;
-"""
-
-SQL_GET_USER_STATS = """
-SELECT
-    SUM(nm.requests_served) AS total_requests_served,
-    AVG(nm.time_to_first_token) AS average_time_to_first_token,
-    SUM(nb.tokens_per_second) AS total_tokens_per_second
-FROM node_info ni
-LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
-LEFT JOIN node_benchmark nb on ni.id = nb.node_id
-WHERE ni.user_profile_id = :user_profile_id;
-"""
 
 SQL_GET_NODES_COUNT = """
 SELECT COUNT(id) AS node_count
@@ -628,7 +558,7 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_INFO), data)
             await session.commit()
-			
+
     async def update_node_name_alias(
         self,
         node_id: UUID,
@@ -665,57 +595,6 @@ class NodeRepository:
                     sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data
                 )
             await session.commit()
-
-    async def get_node_benchmark(
-        self, user_id: UUID, node_id: UUID, model_name: str
-    ) -> Optional[NodeBenchmark]:
-        data = {"id": node_id, "user_profile_id": user_id, "model_name": model_name}
-        async with self._session_provider.get() as session:
-            result = await session.execute(
-                sqlalchemy.text(SQL_GET_NODE_BENCHMARK), data
-            )
-            row = result.first()
-            if row:
-                return NodeBenchmark(
-                    node_id=node_id,
-                    model_name=row.model_name,
-                    tokens_per_second=row.tokens_per_second,
-                )
-        return None
-
-    async def get_node_stats(self, user_id: UUID, node_id: UUID) -> Optional[NodeStats]:
-        data = {"id": node_id, "user_profile_id": user_id}
-        async with self._session_provider.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATS), data)
-            row = result.first()
-            if row:
-                return NodeStats(
-                    requests_served=utils.parse_int(row.requests_served),
-                    average_time_to_first_token=utils.parse_float(
-                        row.time_to_first_token
-                    ),
-                    benchmark_tokens_per_second=utils.parse_float(
-                        row.benchmark_tokens_per_second
-                    ),
-                    benchmark_model_name=row.benchmark_model_name,
-                    benchmark_created_at=row.benchmark_created_at,
-                )
-        return None
-
-    async def get_user_aggregated_stats(
-        self, user_id: UUID
-    ) -> Optional[UserAggregatedStats]:
-        data = {"user_profile_id": user_id}
-        async with self._session_provider.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_USER_STATS), data)
-            row = result.first()
-            if row:
-                return UserAggregatedStats(
-                    total_requests_served=row.total_requests_served,
-                    average_time_to_first_token=row.average_time_to_first_token,
-                    total_tokens_per_second=row.total_tokens_per_second,
-                )
-        return None
 
     async def get_nodes_count(self) -> int:
         async with self._session_provider.get() as session:
@@ -754,24 +633,6 @@ class NodeRepository:
                 )
                 for row in rows
             ]
-
-    async def save_node_benchmark(
-        self, user_profile_id: UUID, benchmark: NodeBenchmark
-    ):
-        data = {
-            "id": str(uuid7()),
-            "node_id": benchmark.node_id,
-            "user_profile_id": user_profile_id,
-            "model_name": benchmark.model_name,
-            "tokens_per_second": benchmark.tokens_per_second,
-            "created_at": utcnow(),
-            "last_updated_at": utcnow(),
-        }
-        async with self._session_provider.get() as session:
-            await session.execute(
-                sqlalchemy.text(SQL_INSERT_OR_UPDATE_NODE_BENCHMARK), data
-            )
-            await session.commit()
 
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest
