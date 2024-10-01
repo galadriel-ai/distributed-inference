@@ -43,7 +43,7 @@ async def lifespan(_: FastAPI):
     try:
         yield
     finally:
-        await dependencies.get_node_repository().set_all_nodes_inactive()
+        await dependencies.get_node_repository().set_all_connected_nodes_inactive()
         metrics_task.cancel()
         protocol_task.cancel()
         await asyncio.gather(metrics_task, protocol_task, return_exceptions=True)

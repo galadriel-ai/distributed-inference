@@ -583,7 +583,7 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data)
             await session.commit()
 
-    async def set_all_nodes_inactive(self):
+    async def set_all_connected_nodes_inactive(self):
         data = {
             "is_active": False,
             "last_updated_at": utcnow(),
