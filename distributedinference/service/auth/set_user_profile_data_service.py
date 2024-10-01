@@ -19,6 +19,7 @@ async def execute(
     try:
         await user_repository.update_user_profile_data(user.uid, request.data)
         analytics.track_event(user.uid, AnalyticsEvent(EventName.SET_PROFILE_DATA, {}))
+        analytics.identify_user(user, request.data)
     except:
         raise error_responses.ValidationError()
     return SetUserProfileDataResponse()

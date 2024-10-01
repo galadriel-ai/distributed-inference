@@ -1,6 +1,7 @@
 import asyncio
 import random
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -195,6 +196,13 @@ SET
     last_updated_at = :last_updated_at
 WHERE id = :id;
 """
+
+SQL_UPDATE_NODE_NAME_ALIAS = """
+UPDATE node_info 
+SET 
+    name_alias = :name_alias,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
 
 SQL_UPDATE_NODE_ACTIVE_FLAG = """
 UPDATE node_info
@@ -427,6 +435,7 @@ class NodeRepository:
             ].request_incoming_queues.items():
                 queue.put_nowait(
                     InferenceResponse(
+                        node_id=node_id,
                         request_id=request_id,
                         error=InferenceError(
                             status_code=InferenceStatusCodes.UNPROCESSABLE_ENTITY,
@@ -619,6 +628,20 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_INFO), data)
             await session.commit()
+			
+    async def update_node_name_alias(
+        self,
+        node_id: UUID,
+        updated_name_alias: str,
+    ):
+        data = {
+            "id": node_id,
+            "name_alias": updated_name_alias,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_NAME_ALIAS), data)
+            await session.commit()
 
     async def set_node_active_status(self, node_id: UUID, is_active: bool):
         data = {
@@ -768,6 +791,7 @@ class NodeRepository:
             data = await connected_node.request_incoming_queues[request_id].get()
             try:
                 return InferenceResponse(
+                    node_id=node_id,
                     request_id=data["request_id"],
                     chunk=(
                         ChatCompletionChunk(**data["chunk"])
