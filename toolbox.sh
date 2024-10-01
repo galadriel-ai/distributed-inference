@@ -13,3 +13,11 @@ function unit-test {
 function ci {
   format && lint && unit-test
 }
+
+function cov {
+  python -m pytest tests/unit \
+    --cov-report html:tests/reports/coverage/htmlcov \
+    --cov-report xml:tests/reports/coverage/cobertura-coverage.xml \
+    --cov-report term \
+    --cov=distributedinference
+}
