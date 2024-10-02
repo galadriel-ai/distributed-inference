@@ -24,6 +24,9 @@ async def execute(
     user_repository: UserRepository,
     analytics: Analytics,
 ) -> SignupResponse:
+    if signup_request.is_existing_user:
+        if not await user_repository.get_user_by_email(signup_request.email):
+            raise error_responses.NotFoundAPIError("Email not found")
     try:
         authentication_user_id = await auth_repo.signup_user(signup_request.email)
     except:
