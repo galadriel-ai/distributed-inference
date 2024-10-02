@@ -13,7 +13,6 @@ async def execute(
     repository: NodeRepository,
 ) -> PostNodeInfoResponse:
     node_info_update = _request_to_node_info(request, node_info)
-    print(f"node info updates: {node_info_update}")
     await repository.save_node_info(user_profile_id, node_info_update)
     return PostNodeInfoResponse()
 
