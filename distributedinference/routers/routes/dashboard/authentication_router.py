@@ -11,12 +11,15 @@ from distributedinference.repository.authentication_api_repository import (
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.domain.user.entities import User
 from distributedinference.service.auth import login_service
+from distributedinference.service.auth import reset_username_and_password_service
 from distributedinference.service.auth import set_username_and_password_service
 from distributedinference.service.auth import signup_service
 from distributedinference.service.auth import authentication
 from distributedinference.service.auth import set_user_profile_data_service
 from distributedinference.service.auth.entities import LoginRequest
 from distributedinference.service.auth.entities import LoginResponse
+from distributedinference.service.auth.entities import ResetUserPasswordRequest
+from distributedinference.service.auth.entities import ResetUserPasswordResponse
 from distributedinference.service.auth.entities import SetUserPasswordRequest
 from distributedinference.service.auth.entities import SetUserPasswordResponse
 from distributedinference.service.auth.entities import SignupRequest
@@ -69,6 +72,27 @@ async def set_user_password(
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     return await set_username_and_password_service.execute(
+        request, auth_repository, user_repository, analytics
+    )
+
+
+@router.post(
+    "/reset_user_password",
+    summary="Validate magic link and reset user password",
+    description="Validate magic link, after using the /signup endpoint and save user password.",
+    response_description="Returns a session token, or a helpful error.",
+    response_model=ResetUserPasswordResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def reset_user_password(
+    request: ResetUserPasswordRequest,
+    auth_repository: AuthenticationApiRepository = Depends(
+        dependencies.get_authentication_api_repository
+    ),
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    analytics: Analytics = Depends(dependencies.get_analytics),
+):
+    return await reset_username_and_password_service.execute(
         request, auth_repository, user_repository, analytics
     )
 

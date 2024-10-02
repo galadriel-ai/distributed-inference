@@ -38,6 +38,27 @@ class InferenceError(APIErrorResponse):
         return result
 
 
+class AuthorizationProviderAPIError(APIErrorResponse):
+    """
+    Wrapper for our authorization provider errors
+    User is expected to take some action to resolve these
+    e.g. reset their password
+    """
+
+    def __init__(self, code: str, message: str):
+        self.code = code
+        self.message = message
+
+    def to_status_code(self) -> status:
+        return status.HTTP_400_BAD_REQUEST
+
+    def to_code(self) -> str:
+        return self.code
+
+    def to_message(self) -> str:
+        return self.message
+
+
 class AuthorizationMissingAPIError(APIErrorResponse):
     def __init__(self):
         pass

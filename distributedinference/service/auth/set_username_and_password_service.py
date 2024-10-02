@@ -3,6 +3,7 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
+from distributedinference.domain.auth import set_auth_provider_user_password_use_case
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
@@ -20,13 +21,11 @@ async def execute(
 ) -> SetUserPasswordResponse:
     if await user_repository.get_user_by_username(link_request.username):
         raise error_responses.UsernameAlreadyExistsAPIError()
-    try:
-        authentication = await auth_repo.authenticate_magic_link(link_request.token)
-        updated_authentication = await auth_repo.set_user_password(
-            link_request.password, authentication.session_token
-        )
-    except:
-        raise error_responses.InvalidCredentialsAPIError()
+    authentication = await set_auth_provider_user_password_use_case.execute(
+        link_request.token,
+        link_request.password,
+        auth_repo,
+    )
     await user_repository.update_user_username_and_password_by_authentication_id(
         authentication.provider_user_id,
         username=link_request.username,
@@ -36,4 +35,4 @@ async def execute(
         authentication.provider_user_id
     )
     analytics.track_event(user.uid, AnalyticsEvent(EventName.SET_USER_PASSWORD, {}))
-    return SetUserPasswordResponse(session_token=updated_authentication.session_token)
+    return SetUserPasswordResponse(session_token=authentication.session_token)

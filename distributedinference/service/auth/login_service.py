@@ -1,3 +1,5 @@
+from stytch.core.response_base import StytchError
+
 from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
@@ -24,6 +26,14 @@ async def execute(
     try:
         authentication = await auth_repo.login(user.email, login_request.password)
         analytics.track_event(user.uid, AnalyticsEvent(EventName.LOGIN, {}))
+    except StytchError as e:
+        if e.details.is_client_error and e.details.status_code == 400:
+            # User is expected to do something if status code is 400
+            # 401 would just mean invalid credentials
+            raise error_responses.AuthorizationProviderAPIError(
+                e.details.error_type, e.details.error_message
+            )
+        raise error_responses.InvalidCredentialsAPIError(e.details.error_message)
     except:
         raise error_responses.InvalidCredentialsAPIError()
     return LoginResponse(

@@ -24,6 +24,17 @@ class SetUserPasswordResponse(ApiResponse):
     session_token: str = Field(description="Session token")
 
 
+class ResetUserPasswordRequest(BaseModel):
+    token: str = Field(
+        description="Token gotten from magic link in email from /signup request"
+    )
+    password: str = Field(description="User password")
+
+
+class ResetUserPasswordResponse(SetUserPasswordResponse):
+    pass
+
+
 class LoginRequest(BaseModel):
     username: str = Field(description="Username")
     password: str = Field(description="User password")
