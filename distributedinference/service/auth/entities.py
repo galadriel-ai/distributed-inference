@@ -6,6 +6,9 @@ from distributedinference.service.entities import ApiResponse
 
 class SignupRequest(BaseModel):
     email: str = Field(description="User email")
+    is_existing_user: bool = Field(
+        description="Indicates if it is a user signup or a reset request"
+    )
 
 
 class SignupResponse(ApiResponse):

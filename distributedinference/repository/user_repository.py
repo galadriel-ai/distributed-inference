@@ -109,6 +109,19 @@ FROM user_profile up
 WHERE up.authentication_id = :authentication_id;
 """
 
+SQL_GET_BY_EMAIL = """
+SELECT
+    up.id,
+    up.name,
+    up.email,
+    up.authentication_id,
+    up.profile_data,
+    up.created_at,
+    up.last_updated_at
+FROM user_profile up
+WHERE up.email ILIKE :email;
+"""
+
 SQL_GET_USER_API_KEYS = """
 SELECT
     id,
@@ -231,6 +244,21 @@ class UserRepository:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_BY_AUTHENTICATION_ID), data
             )
+            row = result.first()
+            if row:
+                return User(
+                    uid=row.id,
+                    name=row.name,
+                    email=row.email,
+                    profile_data=row.profile_data,
+                    authentication_id=row.authentication_id,
+                )
+        return None
+
+    async def get_user_by_email(self, email: str) -> Optional[User]:
+        data = {"email": email.strip()}
+        async with self._session_provider.get() as session:
+            result = await session.execute(sqlalchemy.text(SQL_GET_BY_EMAIL), data)
             row = result.first()
             if row:
                 return User(
