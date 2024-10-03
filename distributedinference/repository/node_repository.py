@@ -447,7 +447,7 @@ class NodeRepository:
     async def get_connected_node_ids(self) -> List[UUID]:
         async with self._session_provider.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_IDS))
-            return result.all()
+            return [row.id for row in result]
 
     async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
         async with self._session_provider.get() as session:
