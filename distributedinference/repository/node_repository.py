@@ -210,6 +210,13 @@ SET
 WHERE id = :id;
 """
 
+SQL_UPDATE_ALL_NODE_ACTIVE_FLAG = """
+UPDATE node_info
+SET
+    is_active = :is_active,
+    last_updated_at = :last_updated_at;
+"""
+
 SQL_GET_CONNECTED_NODES = """
 SELECT
     ni.id,
@@ -596,6 +603,17 @@ class NodeRepository:
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data)
+            await session.commit()
+
+    async def set_all_nodes_inactive(self):
+        data = {
+            "is_active": False,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(
+                sqlalchemy.text(SQL_UPDATE_ALL_NODE_ACTIVE_FLAG), data
+            )
             await session.commit()
 
     async def set_all_connected_nodes_inactive(self):
