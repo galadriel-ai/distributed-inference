@@ -61,6 +61,7 @@ async def test_execute_node_no_model_header():
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
+    node_repository.set_node_active_status.assert_not_called()
 
 
 async def test_execute_node_no_benchmark():
@@ -93,6 +94,7 @@ async def test_execute_node_no_benchmark():
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
+    node_repository.set_node_active_status.assert_not_called()
 
 
 async def test_execute_node_benchmark_too_low():
@@ -129,6 +131,48 @@ async def test_execute_node_benchmark_too_low():
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
+    node_repository.set_node_active_status.assert_not_called()
+
+
+async def test_node_already_connected_with_other_worker():
+    websocket = AsyncMock(spec=WebSocket)
+    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    node_repository = AsyncMock(spec=NodeRepository)
+    node_info = NodeInfo(
+        node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias", is_active=True
+    )
+
+    node_metrics = NodeMetrics()
+    node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
+    node_repository.register_node = Mock(return_value=False)
+
+    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
+    benchmark_repository.get_node_benchmark = AsyncMock(
+        return_value=NodeBenchmark(
+            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
+        )
+    )
+
+    with pytest.raises(
+        WebSocketException,
+        match="A existing connection has already been established",
+    ) as exc_info:
+        await websocket_service.execute(
+            websocket,
+            user,
+            node_info,
+            "model",
+            node_repository,
+            benchmark_repository,
+            AsyncMock(),
+            Mock(),
+            Mock(),
+        )
+
+    assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
+    websocket.accept.assert_called_once()
+    node_repository.register_node.assert_not_called()
+    node_repository.set_node_active_status.assert_not_called()
 
 
 async def test_execute_node_already_connected():
@@ -201,6 +245,10 @@ async def test_execute_websocket_disconnect():
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
+    # assert set_node_active_status was called once with True and once with False
+    node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
+    node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
+    node_repository.set_node_active_status.call_count == 2
     metrics_queue_repository.push.assert_called_once()
 
 
@@ -297,3 +345,6 @@ async def test_execute_ping_pong_protocol():
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
+    node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
+    node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
+    node_repository.set_node_active_status.call_count == 2

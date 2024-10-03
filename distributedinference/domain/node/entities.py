@@ -37,6 +37,7 @@ class NodeInfo:
     node_id: UUID
     name: str
     name_alias: str
+    is_active: bool = False
     cpu_model: Optional[str] = None
     cpu_count: Optional[int] = None
     gpu_model: Optional[str] = None
@@ -45,6 +46,7 @@ class NodeInfo:
     network_download_speed: Optional[float] = None
     network_upload_speed: Optional[float] = None
     operating_system: Optional[str] = None
+    version: Optional[str] = None
     created_at: Optional[datetime] = None
 
 

@@ -24,8 +24,8 @@ async def _format(
 ) -> ListNodeResponse:
     result = []
     for node in nodes:
-        connected_node = repository.get_connected_node_info(node.node_id)
-        current_uptime = 0 if not connected_node else connected_node.current_uptime
+        connected_node = await repository.get_connected_node_metrics(node.node_id)
+        current_uptime = 0 if not connected_node else connected_node.uptime
         result.append(
             ListNodeRequestNode(
                 node_id=node.name,

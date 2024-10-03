@@ -68,6 +68,7 @@ async def execute(
     )
 
     connect_time = time.time()
+    await node_repository.set_node_active_status(node.uid, True)
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
         raise WebSocketException(
@@ -143,6 +144,21 @@ async def execute(
             analytics_event=EventName.WS_NODE_DISCONNECTED,
             log_message=f"Node {node_uid} disconnected",
         )
+    except Exception as e:
+        await _websocket_error(
+            analytics,
+            connect_time,
+            metrics_queue_repository,
+            node,
+            node_info,
+            node_repository,
+            node_uid,
+            ping_pong_protocol,
+            user,
+            analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
+            log_message=f"Node {node_uid} disconnected, because of {e}",
+        )
+        raise e
 
 
 async def _websocket_error(
@@ -158,6 +174,7 @@ async def _websocket_error(
     analytics_event: EventName,
     log_message: str,
 ):
+    await node_repository.set_node_active_status(node.uid, False)
     ping_pong_protocol.remove_node(node_info.name)
     node_repository.deregister_node(node_uid)
     uptime = int(time.time() - connect_time)
@@ -175,6 +192,11 @@ async def _check_before_connecting(
     benchmark_repository: BenchmarkRepository,
     user: User,
 ):
+    if node_info.is_active:
+        raise WebSocketException(
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="A existing connection has already been established",
+        )
     if not model_name:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'

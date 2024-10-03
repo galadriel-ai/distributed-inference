@@ -64,11 +64,11 @@ async def get_metrics(
         registry = REGISTRY
 
     network_nodes_gauge.clear()
-    nodes = node_repository.get_connected_nodes()
-    node_model_names = {node.uid: node.model for node in nodes}
+    nodes = await node_repository.get_connected_node_benchmarks()
+    node_model_names = {node.node_id: node.model_name for node in nodes}
     for node in nodes:
-        network_nodes_gauge.labels(node.model).inc()
-    connected_node_ids = node_repository.get_connected_node_ids()
+        network_nodes_gauge.labels(node.model_name).inc()
+    connected_node_ids = [node.node_id for node in nodes]
     node_metrics = await node_repository.get_node_metrics_by_ids(connected_node_ids)
     node_usage_total_tokens = await tokens_repository.get_total_tokens_by_node_ids(
         connected_node_ids

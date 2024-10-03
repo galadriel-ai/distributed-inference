@@ -48,14 +48,12 @@ async def test_execute_success():
 
     mock_repository = AsyncMock(spec=NodeRepository)
     mock_repository.get_node_info.return_value = node_info
-    mock_repository.get_connected_node_info.return_value = MagicMock(
-        uid=uuid7(),
-        model="model",
-        vram=16000,
-        connected_at=1337,
-        websocket=MagicMock(),
-        request_incoming_queues={},
-        current_uptime=1,
+    mock_repository.get_connected_node_metrics.return_value = MagicMock(
+        requests_served=1,
+        requests_successful=1,
+        requests_failed=0,
+        time_to_first_token=1.0,
+        uptime=1,
     )
     response = await service.execute(node_info, mock_repository)
 
@@ -98,7 +96,7 @@ async def test_execute_success_node_offline():
 
     mock_repository = AsyncMock(spec=NodeRepository)
     mock_repository.get_node_info.return_value = node_info
-    mock_repository.get_connected_node_info.return_value = None
+    mock_repository.get_connected_node_metrics.return_value = None
 
     response = await service.execute(node_info, mock_repository)
 
