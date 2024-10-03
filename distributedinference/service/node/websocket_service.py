@@ -64,7 +64,11 @@ async def execute(
     )
     logger.info(f"Node {node_uid} connected")
     analytics.track_event(
-        user.uid, AnalyticsEvent(EventName.WS_NODE_CONNECTED, {"node_id": node.uid})
+        user.uid,
+        AnalyticsEvent(
+            EventName.WS_NODE_CONNECTED,
+            {"node_id": node.uid, "node_version": node_info.version},
+        ),
     )
 
     connect_time = time.time()

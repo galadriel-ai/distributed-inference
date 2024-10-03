@@ -149,7 +149,7 @@ async def post_info(
         user.uid,
         AnalyticsEvent(
             EventName.POST_NODE_INFO,
-            {"node_id": node_info.node_id, "node_version": node_info.version},
+            {"node_id": node_info.node_id},
         ),
     )
     return await save_node_info_service.execute(
