@@ -621,7 +621,6 @@ class NodeRepository:
 
     async def get_network_throughput(self) -> float:
         connected_node_ids = await self.get_connected_node_ids()
-        print(f"node ids: {connected_node_ids}")
         if not connected_node_ids:
             return 0
         data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
