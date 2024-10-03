@@ -439,7 +439,9 @@ class NodeRepository:
 
     async def get_connected_nodes_count(self) -> int:
         async with self._session_provider.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_COUNT))
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_CONNECTED_NODE_COUNT)
+            )
             return int(result.scalar())
 
     async def get_connected_node_ids(self) -> List[UUID]:
