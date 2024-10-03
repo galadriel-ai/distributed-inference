@@ -221,6 +221,19 @@ LEFT JOIN node_benchmark nb on ni.id = nb.node_id
 WHERE ni.is_active = True;
 """
 
+SQL_GET_CONNECTED_NODE_COUNT = """
+SELECT COUNT(id) AS node_count
+FROM node_info
+WHERE is_active = True;
+"""
+
+# Get all the node id of connected nodes
+SQL_GET_CONNECTED_NODE_IDS = """
+SELECT id
+FROM node_info
+WHERE is_active = True;
+"""
+
 SQL_GET_CONNECTED_NODE_METRIC = """
 SELECT
     ni.id,
@@ -426,13 +439,13 @@ class NodeRepository:
 
     async def get_connected_nodes_count(self) -> int:
         async with self._session_provider.get() as session:
-            rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
-            return len(rows)
+            result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_COUNT))
+            return int(result.scalar())
 
     async def get_connected_node_ids(self) -> List[UUID]:
         async with self._session_provider.get() as session:
-            rows = session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
-            return [row.id for row in rows]
+            result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_IDS))
+            return result.all()
 
     async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
         async with self._session_provider.get() as session:
@@ -606,6 +619,7 @@ class NodeRepository:
 
     async def get_network_throughput(self) -> float:
         connected_node_ids = await self.get_connected_node_ids()
+        print(f"node ids: {connected_node_ids}")
         if not connected_node_ids:
             return 0
         data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
