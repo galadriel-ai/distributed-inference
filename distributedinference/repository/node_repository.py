@@ -22,6 +22,7 @@ from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.repository import utils
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
@@ -465,11 +466,11 @@ class NodeRepository:
             row = result.first()
             if row:
                 return NodeMetrics(
-                    requests_served=row.requests_served,
-                    requests_successful=row.requests_successful,
-                    requests_failed=row.requests_failed,
-                    time_to_first_token=row.time_to_first_token,
-                    uptime=row.uptime,
+                    requests_served=utils.parse_int(row.requests_served),
+                    requests_successful=utils.parse_int(row.requests_successful),
+                    requests_failed=utils.parse_int(row.requests_failed),
+                    time_to_first_token=utils.parse_float(row.time_to_first_token),
+                    uptime=utils.parse_int(row.uptime),
                 )
 
     async def get_node_metrics_by_ids(

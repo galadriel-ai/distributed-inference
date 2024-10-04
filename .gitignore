@@ -5,6 +5,7 @@ venv
 *.log
 
 .idea
+.vscode
 
 prometheus
 
