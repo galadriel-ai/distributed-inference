@@ -1,4 +1,4 @@
-import json
+import orjson
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
@@ -95,7 +95,7 @@ async def test_success():
     async for chunk in res:
         chunks.append(chunk)
         try:
-            parsed = json.loads(chunk.split("data: ")[1])
+            parsed = orjson.loads(chunk.split("data: ")[1])
             c = parsed["choices"][0]["delta"].get("content")
             if c:
                 content += c

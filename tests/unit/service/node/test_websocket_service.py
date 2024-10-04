@@ -1,4 +1,4 @@
-import json
+import orjson
 import time
 import uuid
 from unittest.mock import AsyncMock
@@ -255,7 +255,7 @@ async def test_execute_websocket_disconnect():
 async def test_execute_metrics_update_after_disconnect():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(
-        side_effect=[json.dumps({"request_id": "123"}), WebSocketDisconnect()]
+        side_effect=[orjson.dumps({"request_id": "123"}), WebSocketDisconnect()]
     )
 
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
