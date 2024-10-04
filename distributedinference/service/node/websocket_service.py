@@ -1,8 +1,8 @@
-import json
 import time
 from typing import Optional
 from uuid import UUID
 
+import orjson
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from fastapi import status
@@ -91,7 +91,7 @@ async def execute(
     try:
         while True:
             data = await websocket.receive_text()
-            parsed_data = json.loads(data)
+            parsed_data = orjson.loads(data)
             if "request_id" in parsed_data:
                 request_id = parsed_data["request_id"]
                 if request_id is not None:
@@ -105,7 +105,7 @@ async def execute(
                 # handle protocols
                 print("handling_protocols")
                 await protocol_handler.handle(parsed_data)
-    except json.JSONDecodeError:
+    except orjson.JSONDecodeError:
         await _websocket_error(
             analytics,
             connect_time,

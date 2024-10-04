@@ -24,3 +24,4 @@ starlette==0.38.2
 mnemonic==0.21
 posthog==3.6.5
 aiocache==0.12.2
+orjson==3.10.7
