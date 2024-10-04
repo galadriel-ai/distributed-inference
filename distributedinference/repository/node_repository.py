@@ -404,7 +404,7 @@ class NodeRepository:
         eligible_nodes = [
             node
             for node in self._connected_nodes.values()
-            if self._can_handle_new_request(node)
+            if node.model == model and self._can_handle_new_request(node)
         ]
 
         if not eligible_nodes:

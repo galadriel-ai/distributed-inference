@@ -83,6 +83,37 @@ def test_select_node_with_nodes(node_repository, connected_node_factory):
 
     selected_node = node_repository.select_node("model")
     assert selected_node.uid in ["1", "2"]
+    assert selected_node.model == "model"
+
+
+def test_select_node_with_nodes_hosting_different_models(
+    node_repository, connected_node_factory
+):
+    node1 = connected_node_factory("1", "model1")
+    node2 = connected_node_factory("2", "model2")
+
+    node_repository.register_node(node1)
+    node_repository.register_node(node2)
+
+    selected_node = node_repository.select_node("model1")
+    assert selected_node.uid == "1"
+    assert selected_node.model == "model1"
+
+    selected_node = node_repository.select_node("model2")
+    assert selected_node.uid == "2"
+    assert selected_node.model == "model2"
+
+    selected_node = node_repository.select_node("model3")
+    assert selected_node is None
+
+
+def test_select_node_but_unavailable_model(node_repository, connected_node_factory):
+    node1 = connected_node_factory("1")
+
+    node_repository.register_node(node1)
+
+    selected_node = node_repository.select_node("model2")
+    assert selected_node is None
 
 
 def test_select_node_after_deregistration(node_repository, connected_node_factory):
