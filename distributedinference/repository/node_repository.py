@@ -465,11 +465,11 @@ class NodeRepository:
             row = result.first()
             if row:
                 return NodeMetrics(
-                    requests_served=row.requests_served,
-                    requests_successful=row.requests_successful,
-                    requests_failed=row.requests_failed,
+                    requests_served=row.requests_served or 0,
+                    requests_successful=row.requests_successful or 0,
+                    requests_failed=row.requests_failed or 0,
                     time_to_first_token=row.time_to_first_token,
-                    uptime=row.uptime,
+                    uptime=row.uptime or 0,
                 )
 
     async def get_node_metrics_by_ids(
