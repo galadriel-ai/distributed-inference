@@ -28,6 +28,11 @@ from distributedinference.service.node.protocol import protocol_handler
 async def lifespan(_: FastAPI):
     connection.init_defaults()
     dependencies.init_globals()
+
+    # FIXME: This is a temporary fix to set all nodes to inactive on startup
+    # Make sure to remove this once we have multiple backend workers
+    await dependencies.get_node_repository().set_all_nodes_inactive()
+
     metrics_task = asyncio.create_task(
         metrics_update_job.execute(
             dependencies.get_metrics_queue_repository(),
