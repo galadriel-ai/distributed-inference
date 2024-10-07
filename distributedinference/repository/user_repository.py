@@ -1,8 +1,8 @@
+import json
 from typing import List
 from typing import Optional
 from uuid import UUID
 
-import orjson
 import sqlalchemy
 from uuid_extensions import uuid7
 
@@ -184,7 +184,7 @@ class UserRepository:
     ):
         data = {
             "user_profile_id": user_profile_id,
-            "profile_data": orjson.dumps(profile_data),
+            "profile_data": json.dumps(profile_data),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
