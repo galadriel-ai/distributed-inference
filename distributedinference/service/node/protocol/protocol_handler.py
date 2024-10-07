@@ -30,6 +30,7 @@ class ProtocolHandler:
     def get(self, protocol_name: str) -> Any:
         return self.protocols.get(protocol_name)
 
+    # Give the parsed data to the respective protocol
     async def handle(self, parsed_data: Any):
         protocol_name = parsed_data.get("protocol")
         protocol_data = parsed_data.get("data")
@@ -47,6 +48,11 @@ class ProtocolHandler:
                 reason=f"Invalid protocol name {protocol_name}",
             )
 
+    # Give a chance to run protocol jobs every PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS seconds
+    async def run(self):
+        for protocol in self.protocols.values():
+            await protocol.run()
+
 
 async def execute(
     protocol_handler: ProtocolHandler,
@@ -55,14 +61,18 @@ async def execute(
     try:
         logger.info("Started Protocol Handler")
 
-        # Instantiate and Register the ping-pong protocol
-        ping_pong_protocol = PingPongProtocol(node_repository)
-        protocol_handler.register(settings.PING_PONG_PROTOCOL_NAME, ping_pong_protocol)
+        # Instantiate and Register the protocols
+        for protocol_name, config in settings.GALADRIEL_PROTOCOL_CONFIG.items():
+            if protocol_name == settings.PING_PONG_PROTOCOL_NAME:
+                ping_pong_protocol = PingPongProtocol(
+                    node_repository, protocol_name, config
+                )
+                protocol_handler.register(protocol_name, ping_pong_protocol)
 
-        # trigger protocol jobs every X seconds
         while True:
+            # trigger protocol runs every PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS seconds
             await asyncio.sleep(settings.PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS)
-            # await ping_pong_protocol.job() # dont trigger the job for now
+            await protocol_handler.run()
     except Exception:
         logger.error(
             "Failed to while running protocol handler",
