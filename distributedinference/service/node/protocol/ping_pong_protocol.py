@@ -36,7 +36,7 @@ class NodePingInfo(BaseModel):
     miss_streak: int = 0  # no of consecutive pings that the node has missed
     histogram: dict = {}  # Histogram of rtt values
     # State
-    next_ping_time: float = 0  # the scheduled time to send the bext ping to the node
+    next_ping_time: float = 0  # the scheduled time to send the next ping to the node
     waiting_for_pong: bool = False  # flag to check if the node is waiting for pong
     ping_nonce: str = (
         ""  # the nonce of the last ping sent to the node to avoid replay attacks
@@ -317,9 +317,7 @@ def _pong_protocol_validations(
 
 
 def _validate_config(protocol_name, config):
-    if protocol_name != settings.PING_PONG_PROTOCOL_NAME:
-        return False
-    if config is None:
+    if protocol_name != settings.PING_PONG_PROTOCOL_NAME or config is None:
         return False
     if config.get("version") is None or config.get("version") == "":
         return False
