@@ -233,7 +233,9 @@ class PingPongProtocol:
                 f"{self.config.name}: Missed pong from node {node_id}, nonce = {node_info.ping_nonce}, miss_streak = {node_info.miss_streak}"
             )
 
-    async def got_pong_on_time(self, node_id: str, node_info: NodePingInfo):
+    async def got_pong_on_time(
+        self, node_id: str, node_info: NodePingInfo, pong_received_time: int
+    ):
         # Update the state of the client
         current_rtt = pong_received_time - node_info.ping_sent_time
         node_info.sum_rtt = node_info.sum_rtt + current_rtt
