@@ -25,8 +25,12 @@ def metrics_queue_repository():
 
 
 @pytest.fixture
-def ping_pong_protocol(metrics_queue_repository):
-    return PingPongProtocol(metrics_queue_repository)
+def ping_pong_protocol(node_repository):
+    return PingPongProtocol(
+        node_repository,
+        settings.PING_PONG_PROTOCOL_NAME,
+        settings.GALADRIEL_PROTOCOL_CONFIG[settings.PING_PONG_PROTOCOL_NAME],
+    )
 
 
 @pytest.mark.asyncio
@@ -40,7 +44,7 @@ async def test_handler_valid_pong(ping_pong_protocol):
         ping_nonce=NODE_NONCE,
     )
     data = {
-        "protocol_version": settings.PING_PONG_PROTOCOL_VERSION,
+        "protocol_version": ping_pong_protocol.config.version,
         "message_type": 2,  # Pong message type
         "node_id": NODE_NAME,
         "nonce": NODE_NONCE,
@@ -88,7 +92,7 @@ async def test_job_check_for_pongs(ping_pong_protocol):
             node_uuid=NODE_UUID,
             waiting_for_pong=True,
             ping_sent_time=current_time
-            - (settings.PING_TIMEOUT_IN_SECONDS * 1000)
+            - ping_pong_protocol.config.ping_timeout_in_msec
             - 1000,
             miss_streak=0,
         ),
@@ -101,7 +105,7 @@ async def test_job_check_for_pongs(ping_pong_protocol):
     }
 
     # Execute
-    await ping_pong_protocol.job()
+    await ping_pong_protocol.run()
 
     # Assert
     assert ping_pong_protocol.active_nodes["node1"].miss_streak == 1
