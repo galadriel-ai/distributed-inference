@@ -202,7 +202,7 @@ class PingPongProtocol:
         node_info.ping_nonce = ""  # reset the ping nonce
         node_info.ping_sent_time = 0  # reset the ping sent time
         node_info.next_ping_time = (
-            _current_milli_time() + node_info.config.ping_interval_in_msec
+            _current_milli_time() + self.config.ping_interval_in_msec
         )  # set the next ping time
 
         # Update counters if the pog is missed
