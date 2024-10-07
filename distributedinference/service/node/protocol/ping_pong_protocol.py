@@ -9,7 +9,6 @@ from starlette.websockets import WebSocket
 
 import settings
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -52,9 +51,12 @@ class NodePingInfo(BaseModel):
 
 class PingPongProtocol:
     def __init__(
-        self, metrics_queue_repository: MetricsQueueRepository, protocol_name: str, config: dict
+        self,
+        metrics_queue_repository: MetricsQueueRepository,
+        protocol_name: str,
+        config: dict,
     ):
-        
+
         if _validate_config(protocol_name, config) is False:
             raise ValueError(f"Invalid configuration for {protocol_name}")
 
