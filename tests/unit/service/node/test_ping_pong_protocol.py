@@ -25,9 +25,9 @@ def metrics_queue_repository():
 
 
 @pytest.fixture
-def ping_pong_protocol(node_repository):
+def ping_pong_protocol(metrics_queue_repository):
     return PingPongProtocol(
-        node_repository,
+        metrics_queue_repository,
         settings.PING_PONG_PROTOCOL_NAME,
         settings.GALADRIEL_PROTOCOL_CONFIG[settings.PING_PONG_PROTOCOL_NAME],
     )
@@ -69,7 +69,7 @@ async def test_handler_invalid_nonce(ping_pong_protocol, caplog):
         ping_nonce="correct_nonce",
     )
     data = {
-        "protocol_version": settings.PING_PONG_PROTOCOL_VERSION,
+        "protocol_version": ping_pong_protocol.config.version,
         "message_type": 2,  # Pong message type
         "node_id": NODE_NAME,
         "nonce": "wrong_nonce",

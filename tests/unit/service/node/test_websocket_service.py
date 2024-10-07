@@ -1,10 +1,10 @@
-import orjson
 import time
 import uuid
 from unittest.mock import AsyncMock
 from unittest.mock import Mock
 from uuid import UUID
 
+import orjson
 import pytest
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -248,7 +248,7 @@ async def test_execute_websocket_disconnect():
     # assert set_node_active_status was called once with True and once with False
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
-    node_repository.set_node_active_status.call_count == 2
+    assert node_repository.set_node_active_status.call_count == 2
     metrics_queue_repository.push.assert_called_once()
 
 

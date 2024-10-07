@@ -67,7 +67,7 @@ async def execute(
         for protocol_name, config in settings.GALADRIEL_PROTOCOL_CONFIG.items():
             if protocol_name == settings.PING_PONG_PROTOCOL_NAME:
                 ping_pong_protocol = PingPongProtocol(
-                    node_repository, protocol_name, config
+                    metrics_queue_repository, protocol_name, config
                 )
                 protocol_handler.register(protocol_name, ping_pong_protocol)
 
