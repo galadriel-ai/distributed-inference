@@ -82,6 +82,7 @@ async def get_metrics(
     node_requests_successful_gauge.clear()
     node_requests_failed_gauge.clear()
     node_time_to_first_token_gauge.clear()
+    node_rtt_gauge.clear()
 
     for node_uid, metrics in node_metrics.items():
         node_requests_gauge.labels(node_model_names[node_uid], node_uid).set(
