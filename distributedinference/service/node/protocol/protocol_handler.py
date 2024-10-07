@@ -7,7 +7,9 @@ from fastapi.exceptions import WebSocketException
 
 import settings
 from distributedinference import api_logger
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.service.node.protocol.ping_pong_protocol import (
     PingPongProtocol,
 )
@@ -56,7 +58,7 @@ class ProtocolHandler:
 
 async def execute(
     protocol_handler: ProtocolHandler,
-    node_repository: NodeRepository,
+    metrics_queue_repository: MetricsQueueRepository,
 ) -> None:
     try:
         logger.info("Started Protocol Handler")
@@ -65,7 +67,7 @@ async def execute(
         for protocol_name, config in settings.GALADRIEL_PROTOCOL_CONFIG.items():
             if protocol_name == settings.PING_PONG_PROTOCOL_NAME:
                 ping_pong_protocol = PingPongProtocol(
-                    node_repository, protocol_name, config
+                    metrics_queue_repository, protocol_name, config
                 )
                 protocol_handler.register(protocol_name, ping_pong_protocol)
 

@@ -65,6 +65,7 @@ SELECT
     ni.last_updated_at,
     nm.requests_served,
     nm.uptime,
+    nm.rtt,
     nb.tokens_per_second
 FROM node_info ni
 LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
@@ -95,7 +96,8 @@ SELECT
     requests_successful,
     requests_failed,
     time_to_first_token,
-    uptime,
+    rtt,
+    uptime,            
     created_at,
     last_updated_at
 FROM node_metrics
@@ -110,6 +112,7 @@ INSERT INTO node_metrics (
     requests_successful,
     requests_failed,
     time_to_first_token,
+    rtt,
     uptime,
     created_at,
     last_updated_at
@@ -120,6 +123,7 @@ INSERT INTO node_metrics (
     :requests_successful_increment,
     :requests_failed_increment,
     :time_to_first_token,
+    :rtt,
     :uptime_increment,
     :created_at,
     :last_updated_at
@@ -127,8 +131,9 @@ INSERT INTO node_metrics (
 ON CONFLICT (node_info_id) DO UPDATE SET
     requests_served = node_metrics.requests_served + EXCLUDED.requests_served,
     requests_successful = node_metrics.requests_successful + EXCLUDED.requests_successful,
-    requests_failed = node_metrics.requests_failed + EXCLUDED.requests_failed,
+    requests_failed = node_metrics.requests_failed + EXCLUDED.requests_failed,    
     time_to_first_token = COALESCE(EXCLUDED.time_to_first_token, node_metrics.time_to_first_token),
+    rtt = COALESCE(EXCLUDED.rtt, node_metrics.rtt),
     uptime = node_metrics.uptime + EXCLUDED.uptime,
     last_updated_at = EXCLUDED.last_updated_at;
 """
@@ -488,6 +493,7 @@ class NodeRepository:
                     requests_successful=row.requests_successful,
                     requests_failed=row.requests_failed,
                     time_to_first_token=row.time_to_first_token,
+                    rtt=row.rtt,
                     uptime=row.uptime,
                 )
             return result
@@ -500,6 +506,7 @@ class NodeRepository:
             "requests_successful_increment": metrics.requests_successful_incerement,
             "requests_failed_increment": metrics.requests_failed_increment,
             "time_to_first_token": metrics.time_to_first_token,
+            "rtt": metrics.rtt,
             "uptime_increment": metrics.uptime_increment,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),

@@ -83,7 +83,7 @@ async def execute(
         settings.PING_PONG_PROTOCOL_NAME
     )
 
-    if not ping_pong_protocol.add_node(node_info.name, websocket):
+    if not ping_pong_protocol.add_node(node_info.node_id, node_info.name, websocket):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Node could not be added to the active nodes",

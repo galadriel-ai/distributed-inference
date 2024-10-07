@@ -1,10 +1,10 @@
-import orjson
 import time
 import uuid
 from unittest.mock import AsyncMock
 from unittest.mock import Mock
 from uuid import UUID
 
+import orjson
 import pytest
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -306,6 +306,8 @@ async def test_execute_ping_pong_protocol():
     metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
+    ping_pong_protocol.add_node = Mock()
+    ping_pong_protocol.remove_node = Mock()
     protocol_handler = AsyncMock(spec=ProtocolHandler)
     protocol_handler.get = Mock(return_value=ping_pong_protocol)
 
@@ -336,7 +338,9 @@ async def test_execute_ping_pong_protocol():
     )
 
     # Check if add_node was called
-    ping_pong_protocol.add_node.assert_called_once_with(str(NODE_UUID), websocket)
+    ping_pong_protocol.add_node.assert_called_once_with(
+        NODE_UUID, str(NODE_UUID), websocket
+    )
 
     # Check if remove_node was called
     ping_pong_protocol.remove_node.assert_called_once_with(str(NODE_UUID))

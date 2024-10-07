@@ -74,6 +74,9 @@ def _get_aggregated_metrics(
                 metrics_map[metrics.node_id].time_to_first_token = (
                     metrics.time_to_first_token
                 )
+            metrics_map[metrics.node_id].rtt = (
+                metrics.rtt
+            )  # overwrite with the latest RTT
         else:
             metrics_map[metrics.node_id] = metrics
     return [v for _, v in metrics_map.items()]
