@@ -18,31 +18,57 @@ from distributedinference.service.node.protocol.entities import (
 logger = api_logger.get()
 
 
-# NodePingInfo class to store the information of a active node
-# TODO: SOme of the state info needs to be persisted in DB
+class PingPongConfig:
+    name: str
+    version: str
+    ping_interval_in_msec: int
+    ping_timeout_in_msec: int
+    ping_miss_threshold: int
+
+
+# NodePingInfo class to store all the information of a active node
 class NodePingInfo(BaseModel):
     websocket: WebSocket
+    # Counters
     rtt: float = 0  # the last rtt of the node
-    next_ping_time: float = 0  # the scheduled time to send the bext ping to the node
+    sum_rtt: float = 0  # the sum of all the rtt requests, used to get average rtt
     ping_streak: int = 0  # no of consecutive pings that the node has responded to
     miss_streak: int = 0  # no of consecutive pings that the node has missed
+    histogram: dict = {}  # Histogram of rtt values
+    # State
+    next_ping_time: float = 0  # the scheduled time to send the next ping to the node
     waiting_for_pong: bool = False  # flag to check if the node is waiting for pong
     ping_nonce: str = (
         ""  # the nonce of the last ping sent to the node to avoid replay attacks
     )
     ping_sent_time: float = 0  # the time when the last ping was sent to the node
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class PingPongProtocol:
-    def __init__(self, node_repository: NodeRepository):
+    def __init__(
+        self, node_repository: NodeRepository, protocol_name: str, config: dict
+    ):
+        if _validate_config(protocol_name, config) is False:
+            raise ValueError(f"Invalid configuration for {protocol_name}")
+
+        # Initialize the protocol with the configurations
+        self.config = PingPongConfig()
+        self.config.name = protocol_name
+        self.config.version = config.get("version")
+        self.config.ping_interval_in_msec = (
+            config.get("ping_interval_in_seconds") * 1000
+        )
+        self.config.ping_timeout_in_msec = config.get("ping_timeout_in_seconds") * 1000
+        self.config.ping_miss_threshold = config.get("ping_miss_threshold")
+
         self.node_repository = (
             node_repository  # TODO: Will be used to RTT in the NodeInfo table
         )
-
+        # The main data structure that stores the active nodes
+        # and its states related to the ping-pong protocol
         self.active_nodes = {}
-        logger.info(f"{settings.PING_PONG_PROTOCOL_NAME}: Protocol initialized")
+        logger.info(f"{self.config.name}: Protocol initialized")
 
     # Handle the responses from the client
     async def handle(self, data: Any):
@@ -51,64 +77,69 @@ class PingPongProtocol:
         # validate them.
         pong_response = _extract_and_validate(data)
         if pong_response is None:
-            logger.warning(
-                f"{settings.PING_PONG_PROTOCOL_NAME}: Invalid data received: {data}"
-            )
+            logger.warning(f"{self.config.name}: Invalid data received: {data}")
             return
 
         if pong_response.node_id not in self.active_nodes:
             logger.warning(
-                f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong from an unknown node {pong_response.node_id}"
+                f"{self.config.name}: Received pong from an unknown node {pong_response.node_id}"
             )
             return
 
         node_info = self.active_nodes[pong_response.node_id]
-        if _pong_protocol_validations(node_info, pong_response) is False:
+        if (
+            _pong_protocol_validations(
+                node_info, pong_response, self.config.name, self.config.version
+            )
+            is False
+        ):
             return
 
         await self.got_pong_on_time(pong_response.node_id, node_info)
 
     # Regularly check if we have received the pong responses and to send ping messages
-    async def job(self):
+    async def run(self):
         await self.send_pings()
         await self.check_for_pongs()
 
     # Add a node to the active nodes dictionary
     # called when a new node connects to the server through websocket
-    def add_node(self, node_id, websocket: WebSocket) -> bool:
+    def add_node(self, node_id: str, websocket: WebSocket) -> bool:
         if node_id in self.active_nodes:
             logger.warning(
-                f"{settings.PING_PONG_PROTOCOL_NAME}: Node {node_id} already exists in the active nodes"
+                f"{self.config.name}: Node {node_id} already exists in the active nodes"
             )
             return False
         current_time = _current_milli_time()
         self.active_nodes[node_id] = NodePingInfo(
             websocket=websocket,
             rtt=0,
-            next_ping_time=current_time + (settings.PING_INTERVAL_IN_SECONDS * 1000),
+            sum_rtt=0,
             ping_streak=0,
             miss_streak=0,
+            histogram={},
+            next_ping_time=current_time + self.config.ping_interval_in_msec,
             waiting_for_pong=False,
             ping_nonce="",
             ping_sent_time=current_time,
         )
         logger.info(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Node {node_id} has been added to the active nodes"
+            f"{self.config.name}: Node {node_id} has been added to the active nodes"
         )
         return True
 
     # Remove a node from the active nodes dictionary
     # called when a node disconnects the websocket from the server
-    def remove_node(self, node_id) -> bool:
+    def remove_node(self, node_id: str) -> bool:
         if node_id not in self.active_nodes:
             logger.warning(
-                f"{settings.PING_PONG_PROTOCOL_NAME}: Node {node_id} does not exist in the active nodes"
+                f"{self.config.name}: Node {node_id} does not exist in the active nodes"
             )
             return False
 
         del self.active_nodes[node_id]
         logger.info(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Node {node_id} has been deleted from the active nodes"
+            f"{self.config.name}: Node {node_id} has been deleted from the active nodes"
         )
         return True
 
@@ -123,27 +154,24 @@ class PingPongProtocol:
         for node_id, node_info in self.active_nodes.items():
             if node_info.waiting_for_pong:  # waiting for pong
                 if round(_current_milli_time() - node_info.ping_sent_time) > (
-                    (settings.PING_TIMEOUT_IN_SECONDS * 1000)
+                    self.config.ping_timeout_in_msec
                 ):
                     await self.missed_pong(
                         node_id, node_info
                     )  # timed out, mark it as missed pong
 
     # Send a ping message to the client
-    async def send_ping_message(self, node_id):
+    async def send_ping_message(self, node_id: str):
         node_info = self.active_nodes[node_id]
-
-        node_info.next_ping_time = 0  # reset the next ping time
-        node_info.waiting_for_pong = True  # set the node to waiting for pong
-        node_info.ping_sent_time = _current_milli_time()  # update the last ping time
-        node_info.ping_nonce = str(uuid.uuid4())  # g
-
+        nonce = str(uuid.uuid4())
         # Construct the ping request
         ping_request = PingRequest(
-            protocol_version=settings.PING_PONG_PROTOCOL_VERSION,
+            protocol_version=self.config.version,
             message_type=PingPongMessageType.PING,
             node_id=node_id,  # the node id of the client
-            nonce=node_info.ping_nonce,  # the nonce of the ping request
+            nonce=nonce,  # the nonce of the ping request
+            # Strictly not required for Ping-Pong,
+            # But can be used on the client side to do some priority analysis
             rtt=node_info.rtt,  # send the previously observed RTT to client
             ping_streak=node_info.ping_streak,  # send the ping streak to client
             miss_streak=node_info.miss_streak,  # send the miss streak to client
@@ -152,46 +180,77 @@ class PingPongProtocol:
         # Send the ping to the client
         websocket = self.active_nodes[node_id].websocket
         message = {
-            "protocol": settings.PING_PONG_PROTOCOL_NAME,
+            "protocol": self.config.name,
             "data": jsonable_encoder(ping_request),
         }
+        sent_time = _current_milli_time()
         await websocket.send_json(message)
+
+        # Update the state and the counters after sending the ping
+        node_info.next_ping_time = 0  # reset the next ping time
+        node_info.waiting_for_pong = True  # set the node to waiting for pong
+        node_info.ping_nonce = nonce  # the nonce that was sent in the ping
+        node_info.ping_sent_time = sent_time  # update the last ping time
+
         logger.info(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Sent ping to node {node_id}, with nonce {node_info.ping_nonce}"
+            f"{self.config.name}: Sent ping to node {node_id}, sent time = {sent_time}, nonce = {nonce}"
         )
 
-    async def missed_pong(self, node_id, node_info):
-        if node_info.miss_streak == 0:  # first miss
-            node_info.ping_streak = 0  # reset the ping streak
-        node_info.miss_streak += 1
+    async def missed_pong(self, node_id: str, node_info: NodePingInfo):
+        # Update state
         node_info.waiting_for_pong = False  # reset the waiting for pong flag
+        node_info.ping_nonce = ""  # reset the ping nonce
+        node_info.ping_sent_time = 0  # reset the ping sent time
+        node_info.next_ping_time = (
+            _current_milli_time() + self.config.ping_interval_in_msec
+        )  # set the next ping time
+
+        # Update counters if the pog is missed
+        node_info.ping_streak = 0  # reset the ping streak
+        node_info.miss_streak += 1  # increment the miss streak
+
+        # If the ping is not responded more than X times, the node should be assumed to be dead.
         if node_info.miss_streak > 3:
             self.remove_node(
                 node_id
             )  # remove the node from the active nodes if it has missed 3 pongs consecutively
             logger.error(
-                f"{settings.PING_PONG_PROTOCOL_NAME}: Node {node_id} has been removed due to too many missed pongs"
+                f"{self.config.name}: Node {node_id} has been removed due to too many missed pongs"
             )
         else:
             logger.error(
-                f"{settings.PING_PONG_PROTOCOL_NAME}: Missed pong from node {node_id}, with nonce {node_info.ping_nonce}"
+                f"{self.config.name}: Missed pong from node {node_id}, nonce = {node_info.ping_nonce}, miss_streak = {node_info.miss_streak}"
             )
 
-    async def got_pong_on_time(self, node_id, node_info):
+    async def got_pong_on_time(self, node_id: str, node_info: NodePingInfo):
         # Update the state of the client
+        current_rtt = _current_milli_time() - node_info.ping_sent_time
+        node_info.sum_rtt = node_info.sum_rtt + current_rtt
         node_info.next_ping_time = _current_milli_time() + (
-            settings.PING_INTERVAL_IN_SECONDS * 1000
+            self.config.ping_interval_in_msec
         )  # set the next ping time
-        node_info.waiting_for_pong = False  # reset the waiting for pong flag
         node_info.miss_streak = 0  # resset miss streak if any
         node_info.ping_streak += 1  # increment the ping streak
-        node_info.rtt = (
-            _current_milli_time() - node_info.ping_sent_time
-        )  # calculate the rtt
+        node_info.rtt = current_rtt  # calculate the rtt
+
+        hist_bin = int(node_info.rtt / 10)  # 1 bin for every 10 mSec
+        bin_str = f"{hist_bin * 10 + 1}-{hist_bin * 10 + 10}"
+
+        if bin_str in node_info.histogram:
+            node_info.histogram[bin_str] = node_info.histogram[bin_str] + 1
+        else:
+            node_info.histogram[bin_str] = 1
+
+        node_info.waiting_for_pong = False  # reset the waiting for pong flag
         node_info.ping_sent_time = 0  # reset the ping sent time
+
         logger.info(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong from node {node_id}, with nonce {node_info.ping_nonce} with rtt {node_info.rtt} in msec"
+            f"{self.config.name}: Received pong from node {node_id}, nonce = {node_info.ping_nonce}, rtt = {node_info.rtt} mSec, ping streak = {node_info.ping_streak}, miss streak = {node_info.miss_streak}, average rtt = {node_info.sum_rtt / node_info.ping_streak} mSec"
         )
+        logger.debug(f"{self.config.name}: Node {node_id} histogram of RTTs")
+        for bin_str, count in node_info.histogram.items():
+            if count > 0:
+                logger.debug(f"{self.config.name}: Range {bin_str} mSec -> {count}")
 
 
 def _current_milli_time():
@@ -221,25 +280,28 @@ def _extract_and_validate(data: Any) -> PongResponse | None:
 
 
 def _pong_protocol_validations(
-    node_info: NodePingInfo, pong_response: PongResponse
+    node_info: NodePingInfo,
+    pong_response: PongResponse,
+    protocol_name: str,
+    protocol_version: str,
 ) -> bool:
     # check if we received the correct protocol version
-    if pong_response.protocol_version != settings.PING_PONG_PROTOCOL_VERSION:
+    if pong_response.protocol_version != protocol_version:
         logger.warning(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong with invalid protocol version from node {pong_response.node_id}"
+            f"{protocol_name}: Received pong with invalid protocol version from node {pong_response.node_id}"
         )
         return False
 
     # check if we received PONG message
     if PingPongMessageType(pong_response.message_type) != PingPongMessageType.PONG:
         logger.warning(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Received unexpected message type from node {pong_response.node_id}, {pong_response.message_type}"
+            f"{protocol_name}: Received unexpected message type from node {pong_response.node_id}, {pong_response.message_type}"
         )
         return False
 
     if not node_info.waiting_for_pong:
         logger.warning(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Received unexpected pong from node {pong_response.node_id}"
+            f"{protocol_name}: Received unexpected pong from node {pong_response.node_id}"
         )
         return False
 
@@ -247,8 +309,31 @@ def _pong_protocol_validations(
         pong_response.nonce != node_info.ping_nonce
     ):  # check the nonce matches the one sent in Ping
         logger.warning(
-            f"{settings.PING_PONG_PROTOCOL_NAME}: Received pong with invalid nonce from node {pong_response.node_id}, expected {node_info.ping_nonce}, got {pong_response.nonce}"
+            f"{protocol_name}: Received pong with invalid nonce from node {pong_response.node_id}, expected {node_info.ping_nonce}, got {pong_response.nonce}"
         )
         return False
 
+    return True
+
+
+def _validate_config(protocol_name: str, config: dict):
+    if protocol_name != settings.PING_PONG_PROTOCOL_NAME or config is None:
+        return False
+    if config.get("version") is None or config.get("version") == "":
+        return False
+    if (
+        config.get("ping_interval_in_seconds") is None
+        or config.get("ping_interval_in_seconds") <= 1
+    ):
+        return False
+    if (
+        config.get("ping_timeout_in_seconds") is None
+        or config.get("ping_timeout_in_seconds") <= 1
+    ):
+        return False
+
+    if (config.get("ping_miss_threshold") is None) or (
+        config.get("ping_miss_threshold") <= 1
+    ):
+        return False
     return True
