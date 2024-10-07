@@ -248,7 +248,7 @@ async def test_execute_websocket_disconnect():
     # assert set_node_active_status was called once with True and once with False
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
-    node_repository.set_node_active_status.call_count == 2
+    assert node_repository.set_node_active_status.call_count == 2
     metrics_queue_repository.push.assert_called_once()
 
 
@@ -347,4 +347,4 @@ async def test_execute_ping_pong_protocol():
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
-    node_repository.set_node_active_status.call_count == 2
+    assert node_repository.set_node_active_status.call_count == 2
