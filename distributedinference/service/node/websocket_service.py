@@ -183,10 +183,8 @@ async def _websocket_error(
     log_message: str,
 ):
     await node_repository.set_node_active_status(node.uid, False)
-    ping_pong_protocol.remove_node(node_info.name)
+    await ping_pong_protocol.remove_node(node_info.name)
     node_repository.deregister_node(node_uid)
-    uptime_increment = int(time.time() - connect_time)
-    await _increment_uptime(node.uid, uptime_increment, metrics_queue_repository)
     logger.info(log_message)
     analytics.track_event(
         user.uid,
@@ -222,13 +220,3 @@ async def _check_before_connecting(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking performance is too low",
         )
-
-
-async def _increment_uptime(
-    node_id: UUID,
-    uptime_increment: int,
-    metrics_queue_repository: MetricsQueueRepository,
-) -> None:
-    node_metrics_increment = NodeMetricsIncrement(node_id=node_id)
-    node_metrics_increment.uptime_increment = uptime_increment
-    await metrics_queue_repository.push(node_metrics_increment)

@@ -47,8 +47,8 @@ class NodePingInfo(BaseModel):
         ""  # the nonce of the last ping sent to the node to avoid replay attacks
     )
     ping_sent_time: float = 0  # the time when the last ping was sent to the node
-    last_uptime_update_time: float = (
-        0  # the last timestamp that uptime has been updated
+    last_uptime_update_time_in_seconds: float = (
+        0  # the last timestamp in seconds that uptime has been updated
     )
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -137,7 +137,7 @@ class PingPongProtocol:
             waiting_for_pong=False,
             ping_nonce="",
             ping_sent_time=current_time,
-            last_uptime_update_time=current_time / 1000,  # in seconds
+            last_uptime_update_time_in_seconds=time.time(),  # in seconds
         )
         logger.info(
             f"{self.config.name}: Node {node_id} has been added to the active nodes"
@@ -146,12 +146,20 @@ class PingPongProtocol:
 
     # Remove a node from the active nodes dictionary
     # called when a node disconnects the websocket from the server
-    def remove_node(self, node_id: str) -> bool:
+    async def remove_node(self, node_id: str) -> bool:
         if node_id not in self.active_nodes:
             logger.warning(
                 f"{self.config.name}: Node {node_id} does not exist in the active nodes"
             )
             return False
+
+        # Update the uptime before getting removed
+        node_info = self.active_nodes[node_id]
+        current_time = time.time()
+        uptime_increment = int(current_time - node_info.last_uptime_update_time_in_seconds)
+        await _increment_uptime(
+            node_info.node_uuid, uptime_increment, self.metrics_queue_repository
+        )
 
         del self.active_nodes[node_id]
         logger.info(
@@ -263,11 +271,11 @@ class PingPongProtocol:
         node_info.ping_sent_time = 0  # reset the ping sent time
 
         current_time = time.time()
-        uptime_increment = int(current_time - node_info.last_uptime_update_time)
+        uptime_increment = int(current_time - node_info.last_uptime_update_time_in_seconds)
         await _increment_uptime(
             node_info.node_uuid, uptime_increment, self.metrics_queue_repository
         )
-        node_info.last_uptime_update_time = current_time
+        node_info.last_uptime_update_time_in_seconds = current_time
 
         logger.info(
             f"{self.config.name}: Received pong from node {node_id}, nonce = {node_info.ping_nonce}, rtt = {node_info.rtt} mSec, ping streak = {node_info.ping_streak}, miss streak = {node_info.miss_streak}, average rtt = {node_info.sum_rtt / node_info.ping_streak} mSec"

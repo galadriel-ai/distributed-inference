@@ -53,7 +53,8 @@ async def test_execute_success():
         requests_successful=1,
         requests_failed=0,
         time_to_first_token=1.0,
-        uptime=1,
+        total_uptime=10,
+        current_uptime=1,
     )
     response = await service.execute(node_info, mock_repository)
 
