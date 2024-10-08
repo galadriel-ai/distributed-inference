@@ -169,6 +169,7 @@ async def _websocket_error(
 ):
     await node_repository.set_node_active_status(node.uid, False)
     await ping_pong_protocol.remove_node(node_info.name)
+    await node_repository.update_node_connection_timestamp(node.uid, None)
     node_repository.deregister_node(node_uid)
     logger.info(log_message)
     analytics.track_event(
