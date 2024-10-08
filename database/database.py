@@ -26,7 +26,7 @@ Base = declarative_base()
 class UserProfile(Base):
     __tablename__ = "user_profile"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     name = Column(String(), nullable=False)
     username = Column(String(), nullable=True, unique=True)
     email = Column(String(), nullable=False)
@@ -45,7 +45,7 @@ class UserProfile(Base):
 class ApiKey(Base):
     __tablename__ = "api_key"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     user_profile_id = Column(
         UUID(as_uuid=True),
         ForeignKey(UserProfile.id),
@@ -63,7 +63,7 @@ class ApiKey(Base):
 class NodeInfo(Base):
     __tablename__ = "node_info"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     user_profile_id = Column(
         UUID(as_uuid=True),
         ForeignKey(UserProfile.id),
@@ -104,7 +104,7 @@ class NodeInfo(Base):
 class NodeMetrics(Base):
     __tablename__ = "node_metrics"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     node_info_id = Column(
         UUID(as_uuid=True),
         ForeignKey(NodeInfo.id),
@@ -133,7 +133,7 @@ class NodeMetrics(Base):
 class NodeBenchmark(Base):
     __tablename__ = "node_benchmark"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     node_id = Column(
         UUID(as_uuid=True),
         ForeignKey(NodeInfo.id),
@@ -155,7 +155,7 @@ class NodeBenchmark(Base):
 class UsageTokens(Base):
     __tablename__ = "usage_tokens"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     consumer_user_profile_id = Column(
         UUID(as_uuid=True),
         ForeignKey(UserProfile.id),
