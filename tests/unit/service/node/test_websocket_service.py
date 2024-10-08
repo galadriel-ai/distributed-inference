@@ -33,8 +33,10 @@ async def test_execute_node_no_model_header():
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics()
-    node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
+    node_metrics = NodeMetrics(is_active=False)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
     node_repository.register_node = Mock(return_value=False)
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
@@ -57,7 +59,7 @@ async def test_execute_node_no_model_header():
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
-    node_repository.set_node_active_status.assert_not_called()
+    node_repository.set_node_connection_timestamp.assert_not_called()
 
 
 async def test_execute_node_no_benchmark():
@@ -65,8 +67,10 @@ async def test_execute_node_no_benchmark():
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics()
-    node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
+    node_metrics = NodeMetrics(is_active=False)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
     node_repository.register_node = Mock(return_value=False)
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
@@ -89,7 +93,7 @@ async def test_execute_node_no_benchmark():
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
-    node_repository.set_node_active_status.assert_not_called()
+    node_repository.set_node_connection_timestamp.assert_not_called()
 
 
 async def test_execute_node_benchmark_too_low():
@@ -97,8 +101,10 @@ async def test_execute_node_benchmark_too_low():
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics()
-    node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
+    node_metrics = NodeMetrics(is_active=False)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
     node_repository.register_node = Mock(return_value=False)
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
@@ -125,17 +131,21 @@ async def test_execute_node_benchmark_too_low():
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
-    node_repository.set_node_active_status.assert_not_called()
+    node_repository.set_node_connection_timestamp.assert_not_called()
 
 
 async def test_node_already_connected_with_other_worker():
     websocket = AsyncMock(spec=WebSocket)
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
-    node_info = NodeInfo(node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias")
+    node_info = NodeInfo(
+        node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias"
+    )
 
     node_metrics = NodeMetrics(is_active=True)
-    node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
     node_repository.register_node = Mock(return_value=False)
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
@@ -163,7 +173,7 @@ async def test_node_already_connected_with_other_worker():
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
-    node_repository.set_node_active_status.assert_not_called()
+    node_repository.set_node_connection_timestamp.assert_not_called()
 
 
 async def test_execute_node_already_connected():
@@ -171,8 +181,10 @@ async def test_execute_node_already_connected():
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics()
-    node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
+    node_metrics = NodeMetrics(is_active=False)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
     node_repository.register_node = Mock(return_value=False)
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
@@ -216,6 +228,10 @@ async def test_execute_websocket_disconnect():
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_repository.register_node = Mock(return_value=True)
+    node_metrics = NodeMetrics(is_active=False)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
@@ -239,10 +255,10 @@ async def test_execute_websocket_disconnect():
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
-    # assert set_node_active_status was called once with True and once with False
-    node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
-    node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
-    assert node_repository.set_node_active_status.call_count == 2
+    node_repository.set_node_connection_timestamp.assert_called_once()
+    node_repository.update_node_connection_timestamp.assert_called_once_with(
+        NODE_UUID, None
+    )
 
 
 @pytest.mark.asyncio
@@ -253,6 +269,10 @@ async def test_execute_ping_pong_protocol():
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
+    node_metrics = NodeMetrics(is_active=False)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
     ping_pong_protocol.add_node = Mock()
     ping_pong_protocol.remove_node = AsyncMock()
@@ -296,6 +316,7 @@ async def test_execute_ping_pong_protocol():
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
-    node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
-    node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
-    assert node_repository.set_node_active_status.call_count == 2
+    node_repository.set_node_connection_timestamp.assert_called_once()
+    node_repository.update_node_connection_timestamp.assert_called_once_with(
+        NODE_UUID, None
+    )

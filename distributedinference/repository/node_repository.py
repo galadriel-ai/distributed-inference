@@ -356,7 +356,7 @@ class NodeRepository:
                         operating_system=row.operating_system,
                         requests_served=row.requests_served,
                         uptime=row.uptime,
-                        connected=True if row.connected_at else False,
+                        connected=bool(row.connected_at),
                         tokens_per_second=row.tokens_per_second,
                         created_at=row.created_at,
                     )
@@ -486,7 +486,7 @@ class NodeRepository:
                     requests_successful=utils.parse_int(row.requests_successful),
                     requests_failed=utils.parse_int(row.requests_failed),
                     time_to_first_token=utils.parse_float(row.time_to_first_token),
-                    is_active=True if row.connected_at else False,
+                    is_active=bool(row.connected_at),
                     total_uptime=utils.parse_int(row.uptime),
                     current_uptime=(
                         0
@@ -511,7 +511,7 @@ class NodeRepository:
                     requests_failed=row.requests_failed,
                     time_to_first_token=utils.parse_float(row.time_to_first_token),
                     rtt=row.rtt,
-                    is_active=True if row.connected_at else False,
+                    is_active=bool(row.connected_at),
                     total_uptime=row.uptime,
                     current_uptime=(
                         0
