@@ -108,6 +108,14 @@ FROM node_metrics
 WHERE node_info_id = ANY(:node_ids);
 """
 
+SQL_UPDATE_CONNECTED_AT = """
+UPDATE node_metrics
+SET
+    connected_at = :connected_at,
+    last_updated_at = :last_updated_at
+WHERE node_info_id = :id;
+"""
+
 SQL_INCREMENT_NODE_METRICS = """
 INSERT INTO node_metrics (
     id,
@@ -484,7 +492,11 @@ class NodeRepository:
                     requests_failed=utils.parse_int(row.requests_failed),
                     time_to_first_token=utils.parse_float(row.time_to_first_token),
                     total_uptime=utils.parse_int(row.uptime),
-                    current_uptime=int(time.time() - row.connected_at.timestamp()),
+                    current_uptime=(
+                        0
+                        if not row.connected_at
+                        else int(time.time() - row.connected_at.timestamp())
+                    ),
                 )
 
     async def get_node_metrics_by_ids(
@@ -501,10 +513,14 @@ class NodeRepository:
                     requests_served=row.requests_served,
                     requests_successful=row.requests_successful,
                     requests_failed=row.requests_failed,
-                    time_to_first_token=row.time_to_first_token,
+                    time_to_first_token=utils.parse_float(row.time_to_first_token),
                     rtt=row.rtt,
                     total_uptime=row.uptime,
-                    current_uptime=int(time.time() - row.connected_at.timestamp()),
+                    current_uptime=(
+                        0
+                        if not row.connected_at
+                        else int(time.time() - row.connected_at.timestamp())
+                    ),
                 )
             return result
 
@@ -526,6 +542,18 @@ class NodeRepository:
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
+            await session.commit()
+
+    async def update_node_connection_timestamp(
+        self, node_id: UUID, connected_at: Optional[datetime]
+    ):
+        data = {
+            "id": node_id,
+            "connected_at": connected_at,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_CONNECTED_AT), data)
             await session.commit()
 
     async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
