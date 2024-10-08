@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from starlette.websockets import WebSocket
 
+from distributedinference.domain.node.entities import NodeMetricsIncrement
 import settings
 from distributedinference import api_logger
 from distributedinference.repository.metrics_queue_repository import (
@@ -46,6 +47,7 @@ class NodePingInfo(BaseModel):
         ""  # the nonce of the last ping sent to the node to avoid replay attacks
     )
     ping_sent_time: float = 0  # the time when the last ping was sent to the node
+    last_uptime_update_time: float = 0  # the last timestamp that uptime has been updated
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
@@ -133,6 +135,7 @@ class PingPongProtocol:
             waiting_for_pong=False,
             ping_nonce="",
             ping_sent_time=current_time,
+            last_uptime_update_time=current_time / 1000,  # in seconds
         )
         logger.info(
             f"{self.config.name}: Node {node_id} has been added to the active nodes"
@@ -257,6 +260,13 @@ class PingPongProtocol:
         node_info.waiting_for_pong = False  # reset the waiting for pong flag
         node_info.ping_sent_time = 0  # reset the ping sent time
 
+        current_time = time.time()
+        uptime_increment = int(current_time - node_info.last_uptime_update_time)
+        await _increment_uptime(
+            node_info.node_uuid, uptime_increment, self.metrics_queue_repository
+        )
+        node_info.last_uptime_update_time = current_time
+
         logger.info(
             f"{self.config.name}: Received pong from node {node_id}, nonce = {node_info.ping_nonce}, rtt = {node_info.rtt} mSec, ping streak = {node_info.ping_streak}, miss streak = {node_info.miss_streak}, average rtt = {node_info.sum_rtt / node_info.ping_streak} mSec"
         )
@@ -349,3 +359,13 @@ def _validate_config(protocol_name: str, config: dict):
     ):
         return False
     return True
+
+
+async def _increment_uptime(
+    node_id: UUID,
+    uptime_increment: int,
+    metrics_queue_repository: MetricsQueueRepository,
+) -> None:
+    node_metrics_increment = NodeMetricsIncrement(node_id=node_id)
+    node_metrics_increment.uptime_increment = uptime_increment
+    await metrics_queue_repository.push(node_metrics_increment)
