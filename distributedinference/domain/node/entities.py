@@ -30,7 +30,8 @@ class NodeMetrics:
     requests_failed: int = 0
     time_to_first_token: Optional[float] = None
     rtt: int = 0
-    uptime: int = 0
+    total_uptime: int = 0
+    current_uptime: int = 0
 
 
 @dataclass

@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 from typing import Optional
 from uuid import UUID
@@ -18,12 +19,8 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
-from distributedinference.repository.metrics_queue_repository import (
-    MetricsQueueRepository,
-)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.protocol.ping_pong_protocol import (
     PingPongProtocol,
@@ -41,7 +38,6 @@ async def execute(
     model_name: Optional[str],
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
-    metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
     protocol_handler: ProtocolHandler,
 ):
@@ -73,6 +69,9 @@ async def execute(
 
     connect_time = time.time()
     await node_repository.set_node_active_status(node.uid, True)
+    await node_repository.set_node_connection_timestamp(
+        node.uid, datetime.fromtimestamp(connect_time)
+    )
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
         raise WebSocketException(
@@ -108,8 +107,6 @@ async def execute(
     except orjson.JSONDecodeError:
         await _websocket_error(
             analytics,
-            connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -122,8 +119,6 @@ async def execute(
     except WebSocketRequestValidationError as e:
         await _websocket_error(
             analytics,
-            connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -137,8 +132,6 @@ async def execute(
     except WebSocketDisconnect:
         await _websocket_error(
             analytics,
-            connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -151,8 +144,6 @@ async def execute(
     except Exception as e:
         await _websocket_error(
             analytics,
-            connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -167,8 +158,6 @@ async def execute(
 
 async def _websocket_error(
     analytics: Analytics,
-    connect_time: float,
-    metrics_queue_repository: MetricsQueueRepository,
     node: ConnectedNode,
     node_info: NodeInfo,
     node_repository: NodeRepository,
@@ -179,10 +168,8 @@ async def _websocket_error(
     log_message: str,
 ):
     await node_repository.set_node_active_status(node.uid, False)
-    ping_pong_protocol.remove_node(node_info.name)
+    await ping_pong_protocol.remove_node(node_info.name)
     node_repository.deregister_node(node_uid)
-    uptime = int(time.time() - connect_time)
-    await _increment_uptime(node.uid, uptime, metrics_queue_repository)
     logger.info(log_message)
     analytics.track_event(
         user.uid,
@@ -218,13 +205,3 @@ async def _check_before_connecting(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking performance is too low",
         )
-
-
-async def _increment_uptime(
-    node_id: UUID,
-    uptime: int,
-    metrics_queue_repository: MetricsQueueRepository,
-) -> None:
-    node_metrics_increment = NodeMetricsIncrement(node_id=node_id)
-    node_metrics_increment.uptime_increment += uptime
-    await metrics_queue_repository.push(node_metrics_increment)

@@ -1,4 +1,6 @@
 import asyncio
+from datetime import datetime
+import time
 import random
 from dataclasses import asdict
 from dataclasses import dataclass
@@ -65,6 +67,7 @@ SELECT
     ni.last_updated_at,
     nm.requests_served,
     nm.uptime,
+    nm.connected_at,
     nm.rtt,
     nb.tokens_per_second
 FROM node_info ni
@@ -98,6 +101,7 @@ SELECT
     time_to_first_token,
     rtt,
     uptime,            
+    connected_at,
     created_at,
     last_updated_at
 FROM node_metrics
@@ -114,6 +118,7 @@ INSERT INTO node_metrics (
     time_to_first_token,
     rtt,
     uptime,
+    connected_at,
     created_at,
     last_updated_at
 ) VALUES (
@@ -125,6 +130,7 @@ INSERT INTO node_metrics (
     :time_to_first_token,
     :rtt,
     :uptime_increment,
+    :connected_at,
     :created_at,
     :last_updated_at
 )
@@ -135,6 +141,7 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     time_to_first_token = COALESCE(EXCLUDED.time_to_first_token, node_metrics.time_to_first_token),
     rtt = COALESCE(EXCLUDED.rtt, node_metrics.rtt),
     uptime = node_metrics.uptime + EXCLUDED.uptime,
+    connected_at = COALESCE(EXCLUDED.connected_at, node_metrics.connected_at),
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
@@ -254,7 +261,8 @@ SELECT
     nm.requests_successful,
     nm.requests_failed,
     nm.time_to_first_token,
-    nm.uptime
+    nm.uptime,
+    nm.connected_at
 FROM node_info ni
 LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
 WHERE ni.is_active = True AND ni.id = :id;
@@ -455,7 +463,7 @@ class NodeRepository:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_CONNECTED_NODE_COUNT)
             )
-            return int(result.scalar())
+            return int(result.scalar() or 0)
 
     async def get_connected_node_ids(self) -> List[UUID]:
         async with self._session_provider.get() as session:
@@ -475,7 +483,8 @@ class NodeRepository:
                     requests_successful=utils.parse_int(row.requests_successful),
                     requests_failed=utils.parse_int(row.requests_failed),
                     time_to_first_token=utils.parse_float(row.time_to_first_token),
-                    uptime=utils.parse_int(row.uptime),
+                    total_uptime=utils.parse_int(row.uptime),
+                    current_uptime=int(time.time() - row.connected_at.timestamp()),
                 )
 
     async def get_node_metrics_by_ids(
@@ -494,9 +503,30 @@ class NodeRepository:
                     requests_failed=row.requests_failed,
                     time_to_first_token=row.time_to_first_token,
                     rtt=row.rtt,
-                    uptime=row.uptime,
+                    total_uptime=row.uptime,
+                    current_uptime=int(time.time() - row.connected_at),
                 )
             return result
+
+    async def set_node_connection_timestamp(
+        self, node_id: UUID, connected_at: datetime
+    ):
+        data = {
+            "id": str(uuid7()),
+            "node_id": node_id,
+            "requests_served_increment": 0,
+            "requests_successful_increment": 0,
+            "requests_failed_increment": 0,
+            "time_to_first_token": None,
+            "rtt": 0,
+            "uptime_increment": 0,
+            "connected_at": connected_at,
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
+            await session.commit()
 
     async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
         data = {
@@ -508,6 +538,7 @@ class NodeRepository:
             "time_to_first_token": metrics.time_to_first_token,
             "rtt": metrics.rtt,
             "uptime_increment": metrics.uptime_increment,
+            "connected_at": None,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }

@@ -14,9 +14,6 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
-from distributedinference.repository.metrics_queue_repository import (
-    MetricsQueueRepository,
-)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -56,9 +53,6 @@ async def websocket_endpoint(
         dependencies.get_benchmark_repository
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
-    metrics_queue_repository: MetricsQueueRepository = Depends(
-        dependencies.get_metrics_queue_repository
-    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
     protocol_handler: ProtocolHandler = Depends(dependencies.get_protocol_handler),
 ):
@@ -82,7 +76,6 @@ async def websocket_endpoint(
         websocket.headers.get("Model"),
         node_repository,
         benchmark_repository,
-        metrics_queue_repository,
         analytics,
         protocol_handler,
     )
