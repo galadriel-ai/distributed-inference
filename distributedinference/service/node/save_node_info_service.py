@@ -24,7 +24,6 @@ def _request_to_node_info(
         node_id=node_info.node_id,
         name=node_info.name,
         name_alias=node_info.name_alias,
-        is_active=node_info.is_active,
         gpu_model=request.gpu_model,
         vram=request.vram,
         cpu_model=request.cpu_model,

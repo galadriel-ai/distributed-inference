@@ -132,11 +132,9 @@ async def test_node_already_connected_with_other_worker():
     websocket = AsyncMock(spec=WebSocket)
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
-    node_info = NodeInfo(
-        node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias", is_active=True
-    )
+    node_info = NodeInfo(node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias")
 
-    node_metrics = NodeMetrics()
+    node_metrics = NodeMetrics(is_active=True)
     node_repository.get_node_metrics = AsyncMock(return_value=node_metrics)
     node_repository.register_node = Mock(return_value=False)
 

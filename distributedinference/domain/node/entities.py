@@ -30,6 +30,7 @@ class NodeMetrics:
     requests_failed: int = 0
     time_to_first_token: Optional[float] = None
     rtt: int = 0
+    is_active: bool = False
     total_uptime: int = 0
     current_uptime: int = 0
 
@@ -39,7 +40,6 @@ class NodeInfo:
     node_id: UUID
     name: str
     name_alias: str
-    is_active: bool = False
     cpu_model: Optional[str] = None
     cpu_count: Optional[int] = None
     gpu_model: Optional[str] = None
