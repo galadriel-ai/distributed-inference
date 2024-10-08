@@ -508,7 +508,9 @@ class NodeRepository:
                 )
             return result
 
-    async def set_node_connection_timestamp(self, node_id: UUID, connected_at: datetime):
+    async def set_node_connection_timestamp(
+        self, node_id: UUID, connected_at: datetime
+    ):
         data = {
             "id": str(uuid7()),
             "node_id": node_id,

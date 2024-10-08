@@ -47,7 +47,9 @@ class NodePingInfo(BaseModel):
         ""  # the nonce of the last ping sent to the node to avoid replay attacks
     )
     ping_sent_time: float = 0  # the time when the last ping was sent to the node
-    last_uptime_update_time: float = 0  # the last timestamp that uptime has been updated
+    last_uptime_update_time: float = (
+        0  # the last timestamp that uptime has been updated
+    )
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 

@@ -6,7 +6,9 @@ from distributedinference.service.node.entities import GetNodeInfoResponse
 async def execute(
     node_info: NodeInfo, repository: NodeRepository
 ) -> GetNodeInfoResponse:
-    connected_node_metrics = await repository.get_connected_node_metrics(node_info.node_id)
+    connected_node_metrics = await repository.get_connected_node_metrics(
+        node_info.node_id
+    )
     return GetNodeInfoResponse(
         node_id=str(node_info.node_id),
         name_alias=node_info.name_alias,
@@ -22,5 +24,7 @@ async def execute(
         run_duration_seconds=(
             0 if not connected_node_metrics else connected_node_metrics.current_uptime
         ),
-        node_created_at=0 if not node_info.created_at else int(node_info.created_at.timestamp()),
+        node_created_at=(
+            0 if not node_info.created_at else int(node_info.created_at.timestamp())
+        ),
     )

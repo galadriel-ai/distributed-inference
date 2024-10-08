@@ -26,8 +26,12 @@ async def _format(
     result = []
     for node in nodes:
         # return metrics only if node is active
-        connected_node_metrics = await repository.get_connected_node_metrics(node.node_id)
-        current_uptime = 0 if not connected_node_metrics else connected_node_metrics.current_uptime
+        connected_node_metrics = await repository.get_connected_node_metrics(
+            node.node_id
+        )
+        current_uptime = (
+            0 if not connected_node_metrics else connected_node_metrics.current_uptime
+        )
         result.append(
             ListNodeRequestNode(
                 node_id=node.name,
@@ -48,7 +52,9 @@ async def _format(
                     node.node_id
                 ),
                 tokens_per_second=node.tokens_per_second,
-                node_created_at=0 if not node.created_at else int(node.created_at.timestamp()),
+                node_created_at=(
+                    0 if not node.created_at else int(node.created_at.timestamp())
+                ),
             )
         )
     return ListNodeResponse(response="OK", nodes=result)
