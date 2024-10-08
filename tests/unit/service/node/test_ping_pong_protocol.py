@@ -195,4 +195,6 @@ async def test_execute_metrics_update_when_removing_node(ping_pong_protocol):
     node_metrics = NodeMetricsIncrement(node_id=NODE_UUID)
     # It should be roughly 10 as the time is in seconds
     node_metrics.uptime_increment = 10
-    ping_pong_protocol.metrics_queue_repository.push.assert_called_once_with(node_metrics)
+    ping_pong_protocol.metrics_queue_repository.push.assert_called_once_with(
+        node_metrics
+    )

@@ -19,7 +19,6 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
@@ -108,7 +107,6 @@ async def execute(
     except orjson.JSONDecodeError:
         await _websocket_error(
             analytics,
-            connect_time,
             node,
             node_info,
             node_repository,
@@ -121,7 +119,6 @@ async def execute(
     except WebSocketRequestValidationError as e:
         await _websocket_error(
             analytics,
-            connect_time,
             node,
             node_info,
             node_repository,
@@ -135,7 +132,6 @@ async def execute(
     except WebSocketDisconnect:
         await _websocket_error(
             analytics,
-            connect_time,
             node,
             node_info,
             node_repository,
@@ -148,7 +144,6 @@ async def execute(
     except Exception as e:
         await _websocket_error(
             analytics,
-            connect_time,
             node,
             node_info,
             node_repository,
@@ -163,7 +158,6 @@ async def execute(
 
 async def _websocket_error(
     analytics: Analytics,
-    connect_time: float,
     node: ConnectedNode,
     node_info: NodeInfo,
     node_repository: NodeRepository,

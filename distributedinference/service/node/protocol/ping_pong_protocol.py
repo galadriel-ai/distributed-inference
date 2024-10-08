@@ -156,7 +156,9 @@ class PingPongProtocol:
         # Update the uptime before getting removed
         node_info = self.active_nodes[node_id]
         current_time = time.time()
-        uptime_increment = int(current_time - node_info.last_uptime_update_time_in_seconds)
+        uptime_increment = int(
+            current_time - node_info.last_uptime_update_time_in_seconds
+        )
         await _increment_uptime(
             node_info.node_uuid, uptime_increment, self.metrics_queue_repository
         )
@@ -271,7 +273,9 @@ class PingPongProtocol:
         node_info.ping_sent_time = 0  # reset the ping sent time
 
         current_time = time.time()
-        uptime_increment = int(current_time - node_info.last_uptime_update_time_in_seconds)
+        uptime_increment = int(
+            current_time - node_info.last_uptime_update_time_in_seconds
+        )
         await _increment_uptime(
             node_info.node_uuid, uptime_increment, self.metrics_queue_repository
         )
