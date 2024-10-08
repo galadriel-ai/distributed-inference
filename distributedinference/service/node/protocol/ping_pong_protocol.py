@@ -7,8 +7,8 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from starlette.websockets import WebSocket
 
-from distributedinference.domain.node.entities import NodeMetricsIncrement
 import settings
+from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference import api_logger
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
