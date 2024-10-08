@@ -663,7 +663,9 @@ class NodeRepository:
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            await session.execute(sqlalchemy.text(SQL_UPDATE_ALL_NODE_CONNECTION_TIMESTAMP), data)
+            await session.execute(
+                sqlalchemy.text(SQL_UPDATE_ALL_NODE_CONNECTION_TIMESTAMP), data
+            )
             await session.commit()
 
     async def set_all_connected_nodes_inactive(self):
@@ -674,7 +676,9 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             for node_id in self._connected_nodes:
                 data["id"] = node_id
-                await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP), data)
+                await session.execute(
+                    sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP), data
+                )
             await session.commit()
 
     async def get_nodes_count(self) -> int:
