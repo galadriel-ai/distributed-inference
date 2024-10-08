@@ -504,7 +504,7 @@ class NodeRepository:
                     time_to_first_token=row.time_to_first_token,
                     rtt=row.rtt,
                     total_uptime=row.uptime,
-                    current_uptime=int(time.time() - row.connected_at),
+                    current_uptime=int(time.time() - row.connected_at.timestamp()),
                 )
             return result
 

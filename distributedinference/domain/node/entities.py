@@ -73,7 +73,7 @@ class ConnectedNode:
     user_id: UUID
     model: str
     vram: int
-    connected_at: int
+    connected_at: int  # in seconds
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
 
