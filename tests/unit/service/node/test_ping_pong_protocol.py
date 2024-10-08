@@ -5,6 +5,7 @@ from uuid import UUID
 import pytest
 from fastapi import WebSocket
 
+from distributedinference.domain.node.entities import NodeMetricsIncrement
 import settings
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -137,12 +138,14 @@ async def test_remove_node(ping_pong_protocol):
         websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
     )
+    metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
 
     # Execute
-    ping_pong_protocol.remove_node(node_id)
+    await ping_pong_protocol.remove_node(node_id)
 
     # Assert
     assert node_id not in ping_pong_protocol.active_nodes
+    ping_pong_protocol.metrics_queue_repository.push.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -158,6 +161,7 @@ async def test_got_pong_on_time(ping_pong_protocol):
         ping_streak=0,
         miss_streak=1,
     )
+    metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
 
     # Execute
     await ping_pong_protocol.got_pong_on_time(
@@ -169,3 +173,26 @@ async def test_got_pong_on_time(ping_pong_protocol):
     assert ping_pong_protocol.active_nodes[node_id].ping_streak == 1
     assert ping_pong_protocol.active_nodes[node_id].miss_streak == 0
     assert ping_pong_protocol.active_nodes[node_id].rtt > 0
+    ping_pong_protocol.metrics_queue_repository.push.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_execute_metrics_update_when_removing_node(ping_pong_protocol):
+    # Setup
+    node_id = "test_node"
+    ping_pong_protocol.active_nodes[node_id] = NodePingInfo(
+        websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
+        last_uptime_update_time_in_seconds=time.time() - 10,
+    )
+
+    # Execute
+    await ping_pong_protocol.remove_node(node_id)
+
+    # Assert
+    assert node_id not in ping_pong_protocol.active_nodes
+
+    node_metrics = NodeMetricsIncrement(node_id=NODE_UUID)
+    # It should be roughly 10 as the time is in seconds
+    node_metrics.uptime_increment = 10
+    ping_pong_protocol.metrics_queue_repository.push.assert_called_once_with(node_metrics)

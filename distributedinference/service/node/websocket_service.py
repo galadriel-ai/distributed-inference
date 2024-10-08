@@ -22,9 +22,6 @@ from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
-from distributedinference.repository.metrics_queue_repository import (
-    MetricsQueueRepository,
-)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.protocol.ping_pong_protocol import (
     PingPongProtocol,
@@ -42,7 +39,6 @@ async def execute(
     model_name: Optional[str],
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
-    metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
     protocol_handler: ProtocolHandler,
 ):
@@ -113,7 +109,6 @@ async def execute(
         await _websocket_error(
             analytics,
             connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -127,7 +122,6 @@ async def execute(
         await _websocket_error(
             analytics,
             connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -142,7 +136,6 @@ async def execute(
         await _websocket_error(
             analytics,
             connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -156,7 +149,6 @@ async def execute(
         await _websocket_error(
             analytics,
             connect_time,
-            metrics_queue_repository,
             node,
             node_info,
             node_repository,
@@ -172,7 +164,6 @@ async def execute(
 async def _websocket_error(
     analytics: Analytics,
     connect_time: float,
-    metrics_queue_repository: MetricsQueueRepository,
     node: ConnectedNode,
     node_info: NodeInfo,
     node_repository: NodeRepository,

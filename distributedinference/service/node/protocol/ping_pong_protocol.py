@@ -235,7 +235,7 @@ class PingPongProtocol:
 
         # If the ping is not responded more than X times, the node should be assumed to be dead.
         if node_info.miss_streak > 3:
-            self.remove_node(
+            await self.remove_node(
                 node_id
             )  # remove the node from the active nodes if it has missed 3 pongs consecutively
             logger.error(

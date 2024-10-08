@@ -51,7 +51,9 @@ async def _format(
                     node.node_id
                 ),
                 tokens_per_second=node.tokens_per_second,
-                node_created_at=(0 if not node.created_at else int(node.created_at.timestamp())),
+                node_created_at=(
+                    0 if not node.created_at else int(node.created_at.timestamp())
+                ),
             )
         )
     return ListNodeResponse(response="OK", nodes=result)

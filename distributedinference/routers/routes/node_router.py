@@ -82,7 +82,6 @@ async def websocket_endpoint(
         websocket.headers.get("Model"),
         node_repository,
         benchmark_repository,
-        metrics_queue_repository,
         analytics,
         protocol_handler,
     )

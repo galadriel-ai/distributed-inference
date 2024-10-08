@@ -17,9 +17,6 @@ from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
-from distributedinference.repository.metrics_queue_repository import (
-    MetricsQueueRepository,
-)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node import websocket_service
 from distributedinference.service.node.protocol.ping_pong_protocol import (
@@ -53,7 +50,6 @@ async def test_execute_node_no_model_header():
             None,
             node_repository,
             benchmark_repository,
-            AsyncMock(),
             Mock(),
             Mock(),
         )
@@ -86,7 +82,6 @@ async def test_execute_node_no_benchmark():
             "model",
             node_repository,
             benchmark_repository,
-            AsyncMock(),
             Mock(),
             Mock(),
         )
@@ -123,7 +118,6 @@ async def test_execute_node_benchmark_too_low():
             "model",
             node_repository,
             benchmark_repository,
-            AsyncMock(),
             Mock(),
             Mock(),
         )
@@ -164,7 +158,6 @@ async def test_node_already_connected_with_other_worker():
             "model",
             node_repository,
             benchmark_repository,
-            AsyncMock(),
             Mock(),
             Mock(),
         )
@@ -202,7 +195,6 @@ async def test_execute_node_already_connected():
             "model",
             node_repository,
             benchmark_repository,
-            AsyncMock(),
             Mock(),
             Mock(),
         )
@@ -216,9 +208,14 @@ async def test_execute_websocket_disconnect():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
+    ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
+    ping_pong_protocol.add_node = Mock()
+    ping_pong_protocol.remove_node = AsyncMock()
+    protocol_handler = AsyncMock(spec=ProtocolHandler)
+    protocol_handler.get = Mock(return_value=ping_pong_protocol)
+
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
-    metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
 
     node_repository.register_node = Mock(return_value=True)
 
@@ -236,9 +233,8 @@ async def test_execute_websocket_disconnect():
         "model",
         node_repository,
         benchmark_repository,
-        metrics_queue_repository,
-        AsyncMock(),
         Mock(),
+        protocol_handler,
     )
 
     # Assert
@@ -249,51 +245,6 @@ async def test_execute_websocket_disconnect():
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, True)
     node_repository.set_node_active_status.assert_any_call(NODE_UUID, False)
     assert node_repository.set_node_active_status.call_count == 2
-    metrics_queue_repository.push.assert_called_once()
-
-
-async def test_execute_metrics_update_after_disconnect():
-    websocket = AsyncMock(spec=WebSocket)
-    websocket.receive_text = AsyncMock(
-        side_effect=[orjson.dumps({"request_id": "123"}), WebSocketDisconnect()]
-    )
-
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
-    node_repository = AsyncMock(spec=NodeRepository)
-
-    node_repository.register_node = Mock(return_value=True)
-    node_repository.increment_node_metrics = AsyncMock()
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    benchmark_repository.get_node_benchmark = AsyncMock(
-        return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
-        )
-    )
-    metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
-
-    start_time = time.time()
-
-    await websocket_service.execute(
-        websocket,
-        user,
-        NODE_INFO,
-        "model",
-        node_repository,
-        benchmark_repository,
-        metrics_queue_repository,
-        Mock(),
-        Mock(),
-    )
-
-    node_repository.register_node.assert_called_once()
-    node_repository.deregister_node.assert_called_once_with(NODE_UUID)
-    # This is actually just 0 most likely...
-    uptime = int(time.time() - start_time)
-
-    node_metrics = NodeMetricsIncrement(node_id=NODE_UUID)
-    node_metrics.uptime_increment = uptime
-    metrics_queue_repository.push.assert_called_once_with(node_metrics)
 
 
 @pytest.mark.asyncio
@@ -303,11 +254,10 @@ async def test_execute_ping_pong_protocol():
 
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
-    metrics_queue_repository = AsyncMock(spec=MetricsQueueRepository)
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
     ping_pong_protocol.add_node = Mock()
-    ping_pong_protocol.remove_node = Mock()
+    ping_pong_protocol.remove_node = AsyncMock()
     protocol_handler = AsyncMock(spec=ProtocolHandler)
     protocol_handler.get = Mock(return_value=ping_pong_protocol)
 
@@ -332,7 +282,6 @@ async def test_execute_ping_pong_protocol():
         "model",
         node_repository,
         benchmark_repository,
-        metrics_queue_repository,
         Mock(),
         protocol_handler,
     )
