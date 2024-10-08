@@ -140,7 +140,7 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     requests_failed = node_metrics.requests_failed + EXCLUDED.requests_failed,    
     time_to_first_token = COALESCE(EXCLUDED.time_to_first_token, node_metrics.time_to_first_token),
     rtt = COALESCE(EXCLUDED.rtt, node_metrics.rtt),
-    uptime = node_metrics.uptime + EXCLUDED.uptime_increment,
+    uptime = node_metrics.uptime + EXCLUDED.uptime,
     connected_at = COALESCE(EXCLUDED.connected_at, node_metrics.connected_at),
     last_updated_at = EXCLUDED.last_updated_at;
 """
@@ -484,7 +484,7 @@ class NodeRepository:
                     requests_failed=utils.parse_int(row.requests_failed),
                     time_to_first_token=utils.parse_float(row.time_to_first_token),
                     total_uptime=utils.parse_int(row.uptime),
-                    current_uptime=int(time.time() - utils.parse_int(row.created_at)),
+                    current_uptime=int(time.time() - row.connected_at.timestamp()),
                 )
 
     async def get_node_metrics_by_ids(
@@ -516,7 +516,7 @@ class NodeRepository:
             "requests_successful_increment": 0,
             "requests_failed_increment": 0,
             "time_to_first_token": None,
-            "rtt": None,
+            "rtt": 0,
             "uptime_increment": 0,
             "connected_at": connected_at,
             "created_at": utcnow(),
