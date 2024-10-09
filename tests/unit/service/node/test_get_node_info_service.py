@@ -29,6 +29,7 @@ async def test_execute_success():
         network_upload_speed=1000,
         operating_system="Linux",
         created_at=created_at,
+        version="1337",
     )
     expected_response = GetNodeInfoResponse(
         node_id=str(NODE_UUID),
@@ -44,6 +45,7 @@ async def test_execute_success():
         status="online",
         run_duration_seconds=1,
         node_created_at=created_at.timestamp(),
+        version="1337",
     )
 
     mock_repository = AsyncMock(spec=NodeRepository)
