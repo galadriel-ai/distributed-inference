@@ -228,10 +228,7 @@ async def test_execute_websocket_disconnect():
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_repository.register_node = Mock(return_value=True)
-    node_metrics = NodeMetrics(is_active=False)
-    node_repository.get_node_metrics_by_ids = AsyncMock(
-        return_value={NODE_UUID: node_metrics}
-    )
+    node_repository.get_node_metrics_by_ids = AsyncMock(return_value={})
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
@@ -269,10 +266,7 @@ async def test_execute_ping_pong_protocol():
     user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
     node_repository = AsyncMock(spec=NodeRepository)
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
-    node_metrics = NodeMetrics(is_active=False)
-    node_repository.get_node_metrics_by_ids = AsyncMock(
-        return_value={NODE_UUID: node_metrics}
-    )
+    node_repository.get_node_metrics_by_ids = AsyncMock(return_value={})
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
     ping_pong_protocol.add_node = Mock()
     ping_pong_protocol.remove_node = AsyncMock()
