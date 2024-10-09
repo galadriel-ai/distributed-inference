@@ -271,7 +271,6 @@ FROM node_metrics
 WHERE node_info_id = :id AND connected_at IS NOT NULL;
 """
 
-
 SQL_GET_NODES_COUNT = """
 SELECT COUNT(id) AS node_count
 FROM node_info;
@@ -308,10 +307,16 @@ class ModelStats:
 class NodeRepository:
 
     def __init__(
-        self, session_provider: SessionProvider, max_parallel_requests_per_node: int
+        self,
+        session_provider: SessionProvider,
+        max_parallel_requests_per_node: int,
+        max_parallel_requests_per_datacenter_node: int,
     ):
         self._session_provider = session_provider
         self._max_parallel_requests_per_node = max_parallel_requests_per_node
+        self._max_parallel_requests_per_datacenter_node = (
+            max_parallel_requests_per_datacenter_node
+        )
         # node_id: ConnectedNode
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
@@ -438,12 +443,22 @@ class NodeRepository:
         return random.choice(nodes_with_max_capacity_left)
 
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
+        if node.is_datacenter_gpu():
+            return (
+                node.active_requests_count()
+                < self._max_parallel_requests_per_datacenter_node
+            )
         if node.can_handle_parallel_requests():
             return node.active_requests_count() < self._max_parallel_requests_per_node
 
         return node.active_requests_count() == 1
 
     def _capacity_left(self, node: ConnectedNode) -> int:
+        if node.is_datacenter_gpu():
+            return (
+                self._max_parallel_requests_per_datacenter_node
+                - node.active_requests_count()
+            )
         if node.can_handle_parallel_requests():
             return self._max_parallel_requests_per_node - node.active_requests_count()
 

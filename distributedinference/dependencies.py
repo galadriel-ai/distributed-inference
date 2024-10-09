@@ -42,7 +42,9 @@ def init_globals():
     global _protocol_handler
     global _grafana_api_repository
     _node_repository_instance = NodeRepository(
-        get_session_provider(), settings.MAX_PARALLEL_REQUESTS_PER_NODE
+        get_session_provider(),
+        settings.MAX_PARALLEL_REQUESTS_PER_NODE,
+        settings.MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE,
     )
     _node_stats_repository_instance = NodeStatsRepository(get_session_provider())
     _benchmark_repository_instance = BenchmarkRepository(get_session_provider())

@@ -22,6 +22,7 @@ from distributedinference.repository.node_repository import (
 from distributedinference.repository.connection import SessionProvider
 
 MAX_PARALLEL_REQUESTS = 10
+MAX_PARALLEL_DATACENTER_REQUESTS = 20
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
 
 
@@ -33,7 +34,9 @@ def session_provider():
 
 @pytest.fixture
 def node_repository(session_provider):
-    return NodeRepository(session_provider, MAX_PARALLEL_REQUESTS)
+    return NodeRepository(
+        session_provider, MAX_PARALLEL_REQUESTS, MAX_PARALLEL_DATACENTER_REQUESTS
+    )
 
 
 @pytest.fixture
@@ -43,8 +46,10 @@ def mock_websocket():
 
 @pytest.fixture
 def connected_node_factory(mock_websocket):
-    def _create_node(uid, model="model", small_node=False):
+    def _create_node(uid, model="model", small_node=False, datacenter_node=False):
         vram = 8000 if small_node else 16000
+        if datacenter_node:
+            vram = 90000
         return ConnectedNode(
             uid, uuid1(), model, vram, int(time.time()), mock_websocket, {}
         )
@@ -159,6 +164,29 @@ def test_select_node_after_reaching_maximum_parallel_requests(
 
     # Add one more request
     node.request_incoming_queues[MAX_PARALLEL_REQUESTS - 1] = asyncio.Queue()
+
+    # Now, there are no nodes left, should return None
+    assert node_repository.select_node("model") is None
+
+
+def test_select_datacenter_node_after_reaching_maximum_parallel_requests(
+    node_repository, connected_node_factory
+):
+    node = connected_node_factory("1", datacenter_node=True)
+    node_repository.register_node(node)
+
+    assert node_repository._capacity_left(node) == MAX_PARALLEL_DATACENTER_REQUESTS
+    for i in range(MAX_PARALLEL_DATACENTER_REQUESTS - 1):
+        node.request_incoming_queues[f"{i}"] = asyncio.Queue()
+
+    # Initially, it should return the node
+    assert node_repository.select_node("model").uid == "1"
+    assert node_repository._capacity_left(node) == 1
+
+    # Add one more request
+    node.request_incoming_queues[f"{MAX_PARALLEL_DATACENTER_REQUESTS - 1}"] = (
+        asyncio.Queue()
+    )
 
     # Now, there are no nodes left, should return None
     assert node_repository.select_node("model") is None
