@@ -53,7 +53,6 @@ SELECT
     ni.id,
     ni.name,
     ni.name_alias,
-    ni.is_active,
     ni.gpu_model,
     ni.vram,
     ni.cpu_model,
@@ -157,7 +156,6 @@ SQL_GET_NODE_INFO = """
 SELECT
     id,
     user_profile_id,
-    is_active,
     gpu_model,
     vram,
     cpu_model,
@@ -179,7 +177,6 @@ SELECT
     name,
     name_alias,
     user_profile_id,
-    is_active,
     gpu_model,
     vram,
     cpu_model,
@@ -200,7 +197,6 @@ UPDATE node_info
 SET 
     name_alias = :name_alias,
     user_profile_id = :user_profile_id,
-    is_active = :is_active,
     gpu_model = :gpu_model,
     vram = :vram,
     cpu_model = :cpu_model,
@@ -223,18 +219,18 @@ SET
 WHERE id = :id;
 """
 
-SQL_UPDATE_NODE_ACTIVE_FLAG = """
-UPDATE node_info
+SQL_UPDATE_NODE_CONNECTION_TIMESTAMP = """
+UPDATE node_metrics
 SET
-    is_active = :is_active,
+    connected_at = :connected_at,
     last_updated_at = :last_updated_at
-WHERE id = :id;
+WHERE node_info_id = :id;
 """
 
-SQL_UPDATE_ALL_NODE_ACTIVE_FLAG = """
-UPDATE node_info
+SQL_UPDATE_ALL_NODE_CONNECTION_TIMESTAMP = """
+UPDATE node_metrics
 SET
-    is_active = :is_active,
+    connected_at = :connected_at,
     last_updated_at = :last_updated_at;
 """
 
@@ -246,34 +242,33 @@ SELECT
     nb.tokens_per_second
 FROM node_info ni
 LEFT JOIN node_benchmark nb on ni.id = nb.node_id
-WHERE ni.is_active = True;
+LEFT JOIN node_metrics nm on ni.id = nm.node_info_id
+WHERE nm.connected_at IS NOT NULL;
 """
 
 SQL_GET_CONNECTED_NODE_COUNT = """
 SELECT COUNT(id) AS node_count
-FROM node_info
-WHERE is_active = True;
+FROM node_metrics
+WHERE connected_at IS NOT NULL;
 """
 
-# Get all the node id of connected nodes
 SQL_GET_CONNECTED_NODE_IDS = """
-SELECT id
-FROM node_info
-WHERE is_active = True;
+SELECT node_info_id
+FROM node_metrics
+WHERE connected_at IS NOT NULL;
 """
 
 SQL_GET_CONNECTED_NODE_METRIC = """
 SELECT
-    ni.id,
-    nm.requests_served,
-    nm.requests_successful,
-    nm.requests_failed,
-    nm.time_to_first_token,
-    nm.uptime,
-    nm.connected_at
-FROM node_info ni
-LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
-WHERE ni.is_active = True AND ni.id = :id;
+    node_info_id AS id,
+    requests_served,
+    requests_successful,
+    requests_failed,
+    time_to_first_token,
+    uptime,
+    connected_at
+FROM node_metrics
+WHERE node_info_id = :id AND connected_at IS NOT NULL;
 """
 
 
@@ -361,7 +356,7 @@ class NodeRepository:
                         operating_system=row.operating_system,
                         requests_served=row.requests_served,
                         uptime=row.uptime,
-                        connected=row.is_active,
+                        connected=bool(row.connected_at),
                         tokens_per_second=row.tokens_per_second,
                         created_at=row.created_at,
                     )
@@ -476,7 +471,7 @@ class NodeRepository:
     async def get_connected_node_ids(self) -> List[UUID]:
         async with self._session_provider.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_IDS))
-            return [row.id for row in result]
+            return [row.node_info_id for row in result]
 
     async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
         async with self._session_provider.get() as session:
@@ -491,6 +486,7 @@ class NodeRepository:
                     requests_successful=utils.parse_int(row.requests_successful),
                     requests_failed=utils.parse_int(row.requests_failed),
                     time_to_first_token=utils.parse_float(row.time_to_first_token),
+                    is_active=bool(row.connected_at),
                     total_uptime=utils.parse_int(row.uptime),
                     current_uptime=(
                         0
@@ -515,6 +511,7 @@ class NodeRepository:
                     requests_failed=row.requests_failed,
                     time_to_first_token=utils.parse_float(row.time_to_first_token),
                     rtt=row.rtt,
+                    is_active=bool(row.connected_at),
                     total_uptime=row.uptime,
                     current_uptime=(
                         0
@@ -524,6 +521,7 @@ class NodeRepository:
                 )
             return result
 
+    # Insert if it doesn't exist
     async def set_node_connection_timestamp(
         self, node_id: UUID, connected_at: datetime
     ):
@@ -584,7 +582,6 @@ class NodeRepository:
                     node_id=row.id,
                     name=row.name,
                     name_alias=row.name_alias,
-                    is_active=row.is_active,
                     gpu_model=row.gpu_model,
                     vram=row.vram,
                     cpu_model=row.cpu_model,
@@ -612,7 +609,6 @@ class NodeRepository:
                     node_id=row.id,
                     name=row.name,
                     name_alias=row.name_alias,
-                    is_active=row.is_active,
                     gpu_model=row.gpu_model,
                     vram=row.vram,
                     cpu_model=row.cpu_model,
@@ -630,7 +626,6 @@ class NodeRepository:
         data = {
             "id": str(info.node_id),
             "name_alias": info.name_alias,
-            "is_active": info.is_active,
             "user_profile_id": user_profile_id,
             "gpu_model": info.gpu_model,
             "vram": info.vram,
@@ -662,37 +657,27 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_NAME_ALIAS), data)
             await session.commit()
 
-    async def set_node_active_status(self, node_id: UUID, is_active: bool):
-        data = {
-            "id": node_id,
-            "is_active": is_active,
-            "last_updated_at": utcnow(),
-        }
-        async with self._session_provider.get() as session:
-            await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data)
-            await session.commit()
-
     async def set_all_nodes_inactive(self):
         data = {
-            "is_active": False,
+            "connected_at": None,
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
             await session.execute(
-                sqlalchemy.text(SQL_UPDATE_ALL_NODE_ACTIVE_FLAG), data
+                sqlalchemy.text(SQL_UPDATE_ALL_NODE_CONNECTION_TIMESTAMP), data
             )
             await session.commit()
 
     async def set_all_connected_nodes_inactive(self):
         data = {
-            "is_active": False,
+            "connected_at": None,
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
             for node_id in self._connected_nodes:
                 data["id"] = node_id
                 await session.execute(
-                    sqlalchemy.text(SQL_UPDATE_NODE_ACTIVE_FLAG), data
+                    sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP), data
                 )
             await session.commit()
 

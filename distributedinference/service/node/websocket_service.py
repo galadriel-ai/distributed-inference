@@ -46,7 +46,9 @@ async def execute(
     )
     await websocket.accept()
 
-    await _check_before_connecting(model_name, node_info, benchmark_repository, user)
+    await _check_before_connecting(
+        model_name, node_info, node_repository, benchmark_repository, user
+    )
 
     node_uid = node_info.node_id
     node = ConnectedNode(
@@ -68,7 +70,6 @@ async def execute(
     )
 
     connect_time = time.time()
-    await node_repository.set_node_active_status(node.uid, True)
     await node_repository.set_node_connection_timestamp(
         node.uid, datetime.fromtimestamp(connect_time)
     )
@@ -167,7 +168,6 @@ async def _websocket_error(
     analytics_event: EventName,
     log_message: str,
 ):
-    await node_repository.set_node_active_status(node.uid, False)
     await ping_pong_protocol.remove_node(node_info.name)
     await node_repository.update_node_connection_timestamp(node.uid, None)
     node_repository.deregister_node(node_uid)
@@ -181,10 +181,12 @@ async def _websocket_error(
 async def _check_before_connecting(
     model_name: Optional[str],
     node_info: NodeInfo,
+    node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
     user: User,
 ):
-    if node_info.is_active:
+    node_metrics = await node_repository.get_node_metrics_by_ids([node_info.node_id])
+    if node_metrics[node_info.node_id] and node_metrics[node_info.node_id].is_active:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="A existing connection has already been established",
