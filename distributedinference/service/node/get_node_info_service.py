@@ -27,4 +27,5 @@ async def execute(
         node_created_at=(
             0 if not node_info.created_at else int(node_info.created_at.timestamp())
         ),
+        version=node_info.version,
     )
