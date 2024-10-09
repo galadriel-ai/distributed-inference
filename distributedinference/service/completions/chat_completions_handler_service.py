@@ -13,6 +13,9 @@ from distributedinference.service.completions import chat_completions_service
 from distributedinference.service.completions import chat_completions_stream_service
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
+from distributedinference.service.completions.streaming_response import (
+    StreamingResponseWithStatusCode,
+)
 
 
 # pylint: disable=R0913
@@ -29,7 +32,7 @@ async def execute(
             "X-Content-Type-Options": "nosniff",
             "Connection": "keep-alive",
         }
-        return StreamingResponse(
+        return StreamingResponseWithStatusCode(
             chat_completions_stream_service.execute(
                 user,
                 request,

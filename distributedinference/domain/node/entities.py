@@ -80,6 +80,9 @@ class ConnectedNode:
     def active_requests_count(self) -> int:
         return len(self.request_incoming_queues)
 
+    def is_datacenter_gpu(self) -> bool:
+        return self.vram > 80000
+
     def can_handle_parallel_requests(self) -> bool:
         return self.vram > 8000  # 8GB vram is needed to handle parallel requests
 

@@ -9,7 +9,7 @@ async def main():
         base_url="http://localhost:5000/v1", api_key="asdasd-asd123"
     )
     completion = await client.chat.completions.create(
-        model="llama3",
+        model="hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
         temperature=0,
         messages=[
             {"content": "You are a helpful assistant.", "role": "system"},
