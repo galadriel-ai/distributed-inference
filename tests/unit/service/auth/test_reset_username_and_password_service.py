@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from uuid import UUID
 from uuid_extensions import uuid7
 
 from distributedinference.domain.user.entities import User
@@ -33,6 +34,7 @@ async def test_success():
         name="mock_name",
         email="mock_email",
         username="mock_username",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
     analytics = AsyncMock()
     response = await service.execute(

@@ -19,7 +19,12 @@ from distributedinference.service.completions.entities import ChatCompletionRequ
 from distributedinference.service.completions.entities import Message
 
 USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
-USER = User(uid=USER_UUID, name="user", email="user@email.com")
+USER = User(
+    uid=USER_UUID,
+    name="user",
+    email="user@email.com",
+    usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+)
 MOCK_UUID = UUID("a2e3db51-7a7f-473c-8cd5-390e7ed1e1c7")
 
 

@@ -30,7 +30,12 @@ NODE_INFO = NodeInfo(node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_al
 
 async def test_execute_node_no_model_header():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(is_active=False)
@@ -64,7 +69,12 @@ async def test_execute_node_no_model_header():
 
 async def test_execute_node_no_benchmark():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(is_active=False)
@@ -98,7 +108,12 @@ async def test_execute_node_no_benchmark():
 
 async def test_execute_node_benchmark_too_low():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(is_active=False)
@@ -136,7 +151,12 @@ async def test_execute_node_benchmark_too_low():
 
 async def test_node_already_connected_with_other_worker():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
     node_repository = AsyncMock(spec=NodeRepository)
     node_info = NodeInfo(
         node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias"
@@ -178,7 +198,12 @@ async def test_node_already_connected_with_other_worker():
 
 async def test_execute_node_already_connected():
     websocket = AsyncMock(spec=WebSocket)
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(is_active=False)
@@ -224,7 +249,12 @@ async def test_execute_websocket_disconnect():
     protocol_handler = AsyncMock(spec=ProtocolHandler)
     protocol_handler.get = Mock(return_value=ping_pong_protocol)
 
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_repository.register_node = Mock(return_value=True)
@@ -263,7 +293,12 @@ async def test_execute_ping_pong_protocol():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
-    user = User(uid=uuid.uuid4(), name="test_name", email="test_user_email")
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
     node_repository = AsyncMock(spec=NodeRepository)
     node_repository.get_node_benchmark = AsyncMock(return_value=None)
     node_repository.get_node_metrics_by_ids = AsyncMock(return_value={})

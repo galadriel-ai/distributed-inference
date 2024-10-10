@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from uuid import UUID
 from uuid_extensions import uuid7
 
 from distributedinference.domain.node_stats.entities import UserAggregatedStats
@@ -15,7 +16,12 @@ from distributedinference.service.node.entities import GetUserAggregatedStatsRes
 
 
 def _get_user():
-    return User(uid=uuid7(), name="aggregated", email="johndoe@mail.com")
+    return User(
+        uid=uuid7(),
+        name="aggregated",
+        email="johndoe@mail.com",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
 
 
 async def test_not_found():

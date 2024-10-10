@@ -26,7 +26,12 @@ NODE_INFO = NodeInfo(
 
 
 def _get_user():
-    return User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
+    return User(
+        uid=uuid7(),
+        name="John Doe",
+        email="johndoe@mail.com",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
 
 
 async def test_execute_not_found():

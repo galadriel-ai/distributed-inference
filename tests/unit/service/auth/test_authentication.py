@@ -38,6 +38,7 @@ async def test_api_key_success():
         uid=uuid7(),
         name="mock_name",
         email="mock_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
     user = await authentication.validate_api_key("Bearer 123123", repo)
     assert "mock_name" == user.name
