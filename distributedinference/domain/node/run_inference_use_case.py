@@ -22,7 +22,7 @@ from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 
 
-# pylint: disable=R0912, R0913
+# pylint: disable=R0912, R0913, R0914
 async def execute(
     user_uid: UUID,
     request: InferenceRequest,
