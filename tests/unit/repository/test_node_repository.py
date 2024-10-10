@@ -256,7 +256,10 @@ async def test_save_node_metrics(node_repository, session_provider):
     node_id = uuid7()
 
     node_metrics = NodeMetricsIncrement(
-        node_id=node_id, requests_served_incerement=100, time_to_first_token=0.5
+        node_id=node_id,
+        requests_served_incerement=100,
+        time_to_first_token=0.5,
+        inference_tokens_per_second=30.5,
     )
 
     mock_session = AsyncMock()
@@ -278,6 +281,9 @@ async def test_save_node_metrics(node_repository, session_provider):
     )
     assert data["requests_failed_increment"] == node_metrics.requests_failed_increment
     assert data["time_to_first_token"] == node_metrics.time_to_first_token
+    assert (
+        data["inference_tokens_per_second"] == node_metrics.inference_tokens_per_second
+    )
     assert data["uptime_increment"] == node_metrics.uptime_increment
     assert "created_at" in data
     assert "last_updated_at" in data
