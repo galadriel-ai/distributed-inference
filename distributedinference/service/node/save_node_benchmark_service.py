@@ -16,11 +16,11 @@ async def execute(
     node_benchmark = NodeBenchmark(
         node_id=node_info.node_id,
         model_name=request.model_name,
-        tokens_per_second=round(request.tokens_per_second, 2),
+        benchmark_tokens_per_second=round(request.tokens_per_second, 2),
     )
     await repository.save_node_benchmark(user_profile_id, node_benchmark)
 
     return PostNodeBenchmarkResponse(
         model_name=node_benchmark.model_name,
-        tokens_per_second=round(node_benchmark.tokens_per_second, 2),
+        benchmark_tokens_per_second=round(node_benchmark.benchmark_tokens_per_second, 2),
     )

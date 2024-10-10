@@ -23,13 +23,13 @@ async def test_execute_success():
     request = PostNodeBenchmarkRequest(
         node_id=str(NODE_UUID),
         model_name="mock_model",
-        tokens_per_second=1337.37,
+        benchmark_tokens_per_second=1337.37,
     )
 
     expected_node_info = NodeBenchmark(
         node_id=NODE_UUID,
         model_name=request.model_name,
-        tokens_per_second=request.tokens_per_second,
+        benchmark_tokens_per_second=request.benchmark_tokens_per_second,
     )
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)

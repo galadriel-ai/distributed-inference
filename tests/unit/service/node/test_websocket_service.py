@@ -110,7 +110,7 @@ async def test_execute_node_benchmark_too_low():
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=1
+            node_id=NODE_UUID, model_name="model", benchmark_tokens_per_second=1
         )
     )
 
@@ -151,7 +151,7 @@ async def test_node_already_connected_with_other_worker():
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
+            node_id=NODE_UUID, model_name="model", benchmark_tokens_per_second=10000
         )
     )
 
@@ -190,7 +190,7 @@ async def test_execute_node_already_connected():
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
+            node_id=NODE_UUID, model_name="model", benchmark_tokens_per_second=10000
         )
     )
 
@@ -233,7 +233,7 @@ async def test_execute_websocket_disconnect():
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
+            node_id=NODE_UUID, model_name="model", benchmark_tokens_per_second=10000
         )
     )
 
@@ -276,14 +276,14 @@ async def test_execute_ping_pong_protocol():
     node_repository.register_node = Mock(return_value=True)
     node_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
+            node_id=NODE_UUID, model_name="model", benchmark_tokens_per_second=10000
         )
     )
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
-            node_id=NODE_UUID, model_name="model", tokens_per_second=10000
+            node_id=NODE_UUID, model_name="model", benchmark_tokens_per_second=10000
         )
     )
 

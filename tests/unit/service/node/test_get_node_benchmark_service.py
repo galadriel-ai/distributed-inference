@@ -21,12 +21,12 @@ async def test_execute_success():
     node_benchmark = NodeBenchmark(
         node_id=NODE_UUID,
         model_name=model_name,
-        tokens_per_second=123.45,
+        benchmark_tokens_per_second=123.45,
     )
     expected_response = GetNodeBenchmarkResponse(
         node_id=str(NODE_UUID),
         model_name=node_benchmark.model_name,
-        tokens_per_second=node_benchmark.tokens_per_second,
+        tokens_per_second=node_benchmark.benchmark_tokens_per_second,
     )
     user = User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
 

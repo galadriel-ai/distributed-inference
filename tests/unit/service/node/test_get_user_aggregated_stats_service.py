@@ -37,7 +37,7 @@ async def test_success():
     aggregated_stats = UserAggregatedStats(
         total_requests_served=12,
         average_time_to_first_token=1.23,
-        total_tokens_per_second=123.23,
+        benchmark_total_tokens_per_second=123.23,
     )
     mock_repository.get_user_aggregated_stats.return_value = aggregated_stats
 
@@ -49,6 +49,6 @@ async def test_success():
         total_requests_served=aggregated_stats.total_requests_served,
         requests_served_day=13,
         average_time_to_first_token=aggregated_stats.average_time_to_first_token,
-        total_tokens_per_second=aggregated_stats.total_tokens_per_second,
+        benchmark_total_tokens_per_second=aggregated_stats.benchmark_total_tokens_per_second,
     )
     assert response == expected_response

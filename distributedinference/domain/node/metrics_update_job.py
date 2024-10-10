@@ -74,6 +74,10 @@ def _get_aggregated_metrics(
                 metrics_map[metrics.node_id].time_to_first_token = (
                     metrics.time_to_first_token
                 )
+            if metrics.inference_tokens_per_second:
+                metrics_map[metrics.node_id].inference_tokens_per_second = (
+                    metrics.inference_tokens_per_second
+                )
             metrics_map[metrics.node_id].rtt = (
                 metrics.rtt
             )  # overwrite with the latest RTT
