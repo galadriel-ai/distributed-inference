@@ -53,7 +53,6 @@ async def execute(
                 request,
                 node_repository=node_repository,
                 tokens_repository=tokens_repository,
-                rate_limit_repository=rate_limit_repository,
                 metrics_queue_repository=metrics_queue_repository,
                 analytics=analytics,
             ),
@@ -67,7 +66,6 @@ async def execute(
         request,
         node_repository=node_repository,
         tokens_repository=tokens_repository,
-        rate_limit_repository=rate_limit_repository,
         metrics_queue_repository=metrics_queue_repository,
         analytics=analytics,
     )
@@ -76,7 +74,7 @@ async def execute(
 def rate_limit_to_headers(rate_limit: RateLimit) -> Dict[str, str]:
     headers = {
         "x-ratelimit-limit-requests": str(rate_limit.rate_limit_requests),
-        "x-ratelimit-limit-tokens": str(rate_limit.rate_limit_remaining_tokens or 0),
+        "x-ratelimit-limit-tokens": str(rate_limit.rate_limit_tokens or 0),
         "x-ratelimit-remaining-requests": str(
             rate_limit.rate_limit_remaining_requests or 0
         ),
