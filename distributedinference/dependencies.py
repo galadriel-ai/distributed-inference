@@ -16,6 +16,7 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
+from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 _node_repository_instance: NodeRepository
@@ -108,3 +109,7 @@ def get_protocol_handler() -> ProtocolHandler:
 
 def get_grafana_repository() -> GrafanaApiRepository:
     return _grafana_api_repository
+
+
+def get_rate_limit_repository() -> RateLimitRepository:
+    return RateLimitRepository(get_session_provider())

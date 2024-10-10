@@ -13,6 +13,7 @@ from distributedinference.repository.metrics_queue_repository import (
 )
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletionRequest
 

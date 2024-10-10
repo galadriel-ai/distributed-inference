@@ -150,6 +150,20 @@ class ValidationTypeError(APIErrorResponse):
         return self.message
 
 
+class RateLimitError(APIErrorResponse):
+    def __init__(self, headers: dict):
+        self.headers = headers
+
+    def to_status_code(self) -> status:
+        return status.HTTP_429_TOO_MANY_REQUESTS
+
+    def to_code(self) -> str:
+        return "rate_limit_exceeded"
+
+    def to_message(self) -> str:
+        return "Rate limit exceeded"
+
+
 class InternalServerAPIError(APIErrorResponse):
     """Raised when an internal server error occurs"""
 

@@ -18,6 +18,10 @@ def historic_uuid(hours_back: int) -> UUID:
     return uuid7(time.time_ns() - (hours_back * 60 * 60 * 10**9))
 
 
+def historic_uuid_seconds(seconds: int) -> UUID:
+    return uuid7(time.time_ns() - (seconds * 10**9))
+
+
 def parse_int(value: Optional[int]) -> int:
     if value:
         return value
