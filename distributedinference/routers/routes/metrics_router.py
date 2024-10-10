@@ -105,9 +105,9 @@ async def get_metrics(
                 node_model_names[node_uid], node_uid
             ).set(metrics.time_to_first_token)
         if metrics.inference_tokens_per_second:
-            node_inference_tokens_per_second_gauge.labels(node_model_names[node_uid], node_uid).set(
-                metrics.inference_tokens_per_second
-            )
+            node_inference_tokens_per_second_gauge.labels(
+                node_model_names[node_uid], node_uid
+            ).set(metrics.inference_tokens_per_second)
         node_rtt_gauge.labels(node_uid).set(metrics.rtt)
 
     for usage in node_usage_total_tokens:

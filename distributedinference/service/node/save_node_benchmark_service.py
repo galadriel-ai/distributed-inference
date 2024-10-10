@@ -22,5 +22,7 @@ async def execute(
 
     return PostNodeBenchmarkResponse(
         model_name=node_benchmark.model_name,
-        benchmark_tokens_per_second=round(node_benchmark.benchmark_tokens_per_second, 2),
+        benchmark_tokens_per_second=round(
+            node_benchmark.benchmark_tokens_per_second, 2
+        ),
     )

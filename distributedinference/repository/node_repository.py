@@ -738,7 +738,8 @@ class NodeRepository:
             )
             return [
                 ModelStats(
-                    model_name=row.model_name, throughput=row.benchmark_total_tokens_per_second
+                    model_name=row.model_name,
+                    throughput=row.benchmark_total_tokens_per_second,
                 )
                 for row in rows
             ]

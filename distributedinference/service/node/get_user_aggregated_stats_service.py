@@ -21,7 +21,9 @@ async def execute(
 
     return GetUserAggregatedStatsResponse(
         total_requests_served=user_aggregated_stats.total_requests_served,
-        requests_served_day=await tokens_repository.get_latest_count_by_time_and_user(user.uid),
+        requests_served_day=await tokens_repository.get_latest_count_by_time_and_user(
+            user.uid
+        ),
         average_time_to_first_token=user_aggregated_stats.average_time_to_first_token,
         benchmark_total_tokens_per_second=user_aggregated_stats.benchmark_total_tokens_per_second,
     )
