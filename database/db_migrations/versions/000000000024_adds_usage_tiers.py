@@ -1,7 +1,7 @@
 """Adds usage tiers
 
-Revision ID: 000000000023
-Revises: 000000000022
+Revision ID: 000000000024
+Revises: 000000000023
 Create Date: 2024-10-09 13:10:55.643404
 
 """
@@ -14,8 +14,8 @@ import sqlalchemy as sa
 from database import FREE_TIER_UUID
 
 # revision identifiers, used by Alembic.
-revision = "000000000023"
-down_revision = "000000000022"
+revision = "000000000024"
+down_revision = "000000000023"
 branch_labels = None
 depends_on = None
 
