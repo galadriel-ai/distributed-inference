@@ -39,7 +39,7 @@ def upgrade():
     op.execute(
         f"""
         INSERT INTO usage_tier (id, name, description, max_tokens_per_minute, max_tokens_per_day, max_requests_per_minute, max_requests_per_day, created_at, last_updated_at)
-        VALUES ('{FREE_TIER_UUID}', 'Free Tier', 'Default free usage tier', 40000, 1000000, 3, 200, '{datetime.datetime.now(datetime.UTC)}', '{datetime.datetime.now(datetime.UTC)}');
+        VALUES ('{FREE_TIER_UUID}', 'Free Tier', 'Default free usage tier', 40000, 1000000, 60, 28800, '{datetime.datetime.now(datetime.UTC)}', '{datetime.datetime.now(datetime.UTC)}');
         """
     )
     op.add_column(
