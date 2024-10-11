@@ -102,8 +102,8 @@ async def check_rate_limit(
         rate_limit_tokens=usage_tier.max_tokens_per_minute,
         rate_limit_remaining_requests=remaining_requests,
         rate_limit_remaining_tokens=remaining_tokens,
-        rate_limit_reset_requests=RESET_REQUESTS,
-        rate_limit_reset_tokens=RESET_TOKENS,
+        rate_limit_reset_requests=RESET_REQUESTS,  # TODO figure out how to calculate this
+        rate_limit_reset_tokens=RESET_TOKENS,  # TODO figure out how to calculate this
     )
 
 
