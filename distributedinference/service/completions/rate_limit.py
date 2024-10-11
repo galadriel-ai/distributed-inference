@@ -75,7 +75,7 @@ async def check_rate_limit(
             tokens_day_result.rate_limited,
         ]
     )
-    retry_after = min(
+    retry_after = max(
         filter(
             None,
             [
