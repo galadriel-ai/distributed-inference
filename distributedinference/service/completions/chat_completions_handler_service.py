@@ -59,8 +59,7 @@ async def execute(
             headers=headers,
             media_type="text/event-stream",
         )
-    else:
-        response.headers.update(rate_limit_headers)
+    response.headers.update(rate_limit_headers)
     return await chat_completions_service.execute(
         user,
         request,

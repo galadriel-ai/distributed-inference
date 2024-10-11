@@ -1,12 +1,13 @@
 from uuid import UUID
+from datetime import datetime, timezone
+from dataclasses import dataclass
+from typing import Optional
+
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.service.completions.entities import RateLimit
 
-from datetime import datetime, timezone
-from dataclasses import dataclass
-from typing import Optional
 
 RESET_REQUESTS = 60
 RESET_TOKENS = 60
@@ -21,6 +22,10 @@ class RateLimitResult:
     remaining: Optional[int]
 
 
+class UsageTierNotFoundError(Exception):
+    pass
+
+
 async def check_rate_limit(
     user: User,
     tokens_repository: TokensRepository,
@@ -28,7 +33,7 @@ async def check_rate_limit(
 ) -> RateLimit:
     usage_tier = await rate_limit_repository.get_usage_tier(user.usage_tier_id)
     if not usage_tier:
-        raise Exception("Usage tier not found")
+        raise UsageTierNotFoundError("Usage tier not found")
 
     rate_limited = False
     retry_after = None

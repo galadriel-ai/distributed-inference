@@ -1,5 +1,7 @@
+from uuid import UUID
 from uuid_extensions import uuid7
 
+import settings
 from distributedinference import api_logger
 from distributedinference.analytics.analytics import (
     Analytics,
@@ -41,6 +43,7 @@ async def execute(
             name="console signup",
             email=signup_request.email,
             authentication_id=authentication_user_id,
+            usage_tier_id=UUID(settings.DEFAULT_USAGE_TIER_UUID),
         )
         await user_repository.insert_user(user)
         analytics.track_event(user.uid, AnalyticsEvent(EventName.SIGNUP, {}))

@@ -240,7 +240,6 @@ class TokensRepository:
     async def get_requests_usage_by_time_and_consumer(
         self, consumer_user_profile_id: UUID, seconds: int = 60
     ) -> UsageInformation:
-        consumer_user_profile_id.time
         data = {
             "consumer_user_profile_id": consumer_user_profile_id,
             "start_id": historic_uuid_seconds(seconds),
@@ -266,7 +265,6 @@ class TokensRepository:
     async def get_tokens_usage_by_time_and_consumer(
         self, consumer_user_profile_id: UUID, seconds: int = 60
     ) -> UsageInformation:
-        consumer_user_profile_id.time
         data = {
             "consumer_user_profile_id": consumer_user_profile_id,
             "start_id": historic_uuid_seconds(seconds),
