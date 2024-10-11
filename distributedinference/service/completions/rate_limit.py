@@ -115,7 +115,9 @@ async def _check_limit(
 
     usage = await usage_function(user_id, seconds)
     if usage.count >= limit_value:
-        time_to_reset = seconds - _elapsed_seconds(usage.oldest_usage_created_at)
+        time_to_reset = max(
+            seconds - _elapsed_seconds(usage.oldest_usage_created_at), 0
+        )
         return RateLimitResult(
             rate_limited=True, retry_after=int(time_to_reset), remaining=0
         )
