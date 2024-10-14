@@ -22,7 +22,7 @@ from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 
 
-# pylint: disable=R0912, R0913
+# pylint: disable=R0912, R0913, R0914
 async def execute(
     user_uid: UUID,
     request: InferenceRequest,
@@ -62,6 +62,7 @@ async def execute(
     usage: Optional[CompletionUsage] = None
     request_start_time = time.time()
     first_token_time = None
+    time_elapsed_after_first_token = None
     request_successful = False
 
     try:
@@ -80,6 +81,11 @@ async def execute(
                     request_successful = True
                     if is_include_usage:
                         yield response
+                    # calculate the inference time starting from the first token arrival
+                    if first_token_time:
+                        time_elapsed_after_first_token = (
+                            time.time() - request_start_time - first_token_time
+                        )
                     break
                 # if users doesn't need usage, we can remove it from the response
                 if not is_include_usage:
@@ -97,6 +103,11 @@ async def execute(
         # set only if we got at least one token
         if first_token_time is not None:
             metrics_increment.time_to_first_token = first_token_time
+        # use completion tokens / time elapsed to focus on the model generation performance
+        if time_elapsed_after_first_token and usage:
+            metrics_increment.inference_tokens_per_second = (
+                usage.completion_tokens / time_elapsed_after_first_token
+            )
         if request_successful:
             metrics_increment.requests_successful_incerement += 1
         else:

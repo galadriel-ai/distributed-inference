@@ -206,7 +206,10 @@ async def _check_before_connecting(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking is not completed",
         )
-    if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
+    if (
+        benchmark.benchmark_tokens_per_second
+        < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
+    ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking performance is too low",

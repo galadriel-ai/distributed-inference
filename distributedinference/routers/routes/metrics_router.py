@@ -49,6 +49,11 @@ node_time_to_first_token_gauge = Gauge(
     "Time to first token in seconds by model and node uid",
     ["model_name", "node_uid"],
 )
+node_inference_tokens_per_second_gauge = Gauge(
+    "node_inference_tokens_per_second",
+    "Real-time tokens per second for each inference call by model and node uid",
+    ["model_name", "node_uid"],
+)
 node_rtt_gauge = Gauge(
     "node_rtt",
     "Round Trip Time for the node",
@@ -82,6 +87,7 @@ async def get_metrics(
     node_requests_successful_gauge.clear()
     node_requests_failed_gauge.clear()
     node_time_to_first_token_gauge.clear()
+    node_inference_tokens_per_second_gauge.clear()
     node_rtt_gauge.clear()
 
     for node_uid, metrics in node_metrics.items():
@@ -98,6 +104,10 @@ async def get_metrics(
             node_time_to_first_token_gauge.labels(
                 node_model_names[node_uid], node_uid
             ).set(metrics.time_to_first_token)
+        if metrics.inference_tokens_per_second:
+            node_inference_tokens_per_second_gauge.labels(
+                node_model_names[node_uid], node_uid
+            ).set(metrics.inference_tokens_per_second)
         node_rtt_gauge.labels(node_uid).set(metrics.rtt)
 
     for usage in node_usage_total_tokens:

@@ -45,6 +45,7 @@ async def test_success_one():
             requests_successful_incerement=11,
             requests_failed_increment=1,
             time_to_first_token=None,
+            inference_tokens_per_second=None,
             uptime_increment=0,
             rtt=100,
         )
@@ -60,6 +61,7 @@ async def test_success_aggregates():
                 requests_served_incerement=1,
                 requests_successful_incerement=1,
                 requests_failed_increment=0,
+                inference_tokens_per_second=None,
                 rtt=11,
             ),
             NodeMetricsIncrement(
@@ -67,6 +69,7 @@ async def test_success_aggregates():
                 requests_served_incerement=1,
                 requests_successful_incerement=0,
                 requests_failed_increment=1,
+                inference_tokens_per_second=30.5,
                 rtt=10,
             ),
         ]
@@ -83,6 +86,7 @@ async def test_success_aggregates():
             requests_successful_incerement=1,
             requests_failed_increment=1,
             time_to_first_token=None,
+            inference_tokens_per_second=30.5,
             uptime_increment=0,
             rtt=10,  # since 10 is the latest RTT
         )

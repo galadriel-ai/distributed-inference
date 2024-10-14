@@ -26,7 +26,7 @@ SQL_GET_USER_STATS = """
 SELECT
     SUM(nm.requests_served) AS total_requests_served,
     AVG(nm.time_to_first_token) AS average_time_to_first_token,
-    SUM(nb.tokens_per_second) AS total_tokens_per_second
+    SUM(nb.tokens_per_second) AS benchmark_total_tokens_per_second
 FROM node_info ni
 LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
 LEFT JOIN node_benchmark nb on ni.id = nb.node_id
@@ -69,6 +69,6 @@ class NodeStatsRepository:
                 return UserAggregatedStats(
                     total_requests_served=row.total_requests_served,
                     average_time_to_first_token=row.average_time_to_first_token,
-                    total_tokens_per_second=row.total_tokens_per_second,
+                    benchmark_total_tokens_per_second=row.benchmark_total_tokens_per_second,
                 )
         return None

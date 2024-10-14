@@ -29,7 +29,7 @@ async def test_execute_success():
     expected_node_info = NodeBenchmark(
         node_id=NODE_UUID,
         model_name=request.model_name,
-        tokens_per_second=request.tokens_per_second,
+        benchmark_tokens_per_second=request.tokens_per_second,
     )
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)

@@ -25,5 +25,5 @@ async def execute(
             user.uid
         ),
         average_time_to_first_token=user_aggregated_stats.average_time_to_first_token,
-        total_tokens_per_second=user_aggregated_stats.total_tokens_per_second,
+        benchmark_total_tokens_per_second=user_aggregated_stats.benchmark_total_tokens_per_second,
     )

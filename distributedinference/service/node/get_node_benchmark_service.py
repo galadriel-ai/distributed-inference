@@ -22,5 +22,5 @@ async def execute(
     return GetNodeBenchmarkResponse(
         node_id=str(node_benchmark.node_id),
         model_name=node_benchmark.model_name,
-        tokens_per_second=round(node_benchmark.tokens_per_second, 2),
+        tokens_per_second=round(node_benchmark.benchmark_tokens_per_second, 2),
     )
