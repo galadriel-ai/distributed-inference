@@ -9,6 +9,7 @@ from uuid_extensions import uuid7
 
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import historic_uuid
+from distributedinference.repository.utils import historic_uuid_seconds
 from distributedinference.repository.utils import utcnow
 
 SQL_INSERT_USAGE_TOKENS = """
@@ -90,6 +91,30 @@ WHERE
     AND ut.id > :start_id;
 """
 
+SQL_GET_COUNT_AND_OLDEST_USAGE_BY_TIME_AND_CONSUMER_USER_PROFILE_ID = """
+SELECT
+    count(*) AS requests_count,
+    MIN(id::text) AS id,
+    MIN(created_at) AS created_at
+FROM
+    usage_tokens ut
+WHERE
+    ut.consumer_user_profile_id = :consumer_user_profile_id
+    AND ut.id > :start_id;
+"""
+
+SQL_GET_TOKENS_COUNT_AND_OLDEST_USAGE_BY_TIME_AND_CONSUMER_USER_PROFILE_ID = """
+SELECT
+    SUM(total_tokens) AS tokens_count,
+    MIN(id::text) AS id,
+    MIN(created_at) AS created_at
+FROM
+    usage_tokens ut
+WHERE
+    ut.consumer_user_profile_id = :consumer_user_profile_id
+    AND ut.id > :start_id;
+"""
+
 
 @dataclass
 class UsageTokens:
@@ -107,6 +132,13 @@ class UsageNodeModelTotalTokens:
     model_name: str
     node_uid: UUID
     total_tokens: int
+
+
+@dataclass
+class UsageInformation:
+    count: int
+    oldest_usage_id: UUID
+    oldest_usage_created_at: datetime
 
 
 class TokensRepository:
@@ -204,3 +236,53 @@ class TokensRepository:
             for row in rows:
                 return row.usage_count
         return 0
+
+    async def get_requests_usage_by_time_and_consumer(
+        self, consumer_user_profile_id: UUID, seconds: int = 60
+    ) -> UsageInformation:
+        data = {
+            "consumer_user_profile_id": consumer_user_profile_id,
+            "start_id": historic_uuid_seconds(seconds),
+        }
+        async with self._session_provider.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(
+                    SQL_GET_COUNT_AND_OLDEST_USAGE_BY_TIME_AND_CONSUMER_USER_PROFILE_ID
+                ),
+                data,
+            )
+            row = result.first()
+            if row:
+                return UsageInformation(
+                    count=row.requests_count,
+                    oldest_usage_id=row.id,
+                    oldest_usage_created_at=row.created_at,
+                )
+        return UsageInformation(
+            count=0, oldest_usage_id=uuid7(), oldest_usage_created_at=utcnow()
+        )
+
+    async def get_tokens_usage_by_time_and_consumer(
+        self, consumer_user_profile_id: UUID, seconds: int = 60
+    ) -> UsageInformation:
+        data = {
+            "consumer_user_profile_id": consumer_user_profile_id,
+            "start_id": historic_uuid_seconds(seconds),
+        }
+        async with self._session_provider.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(
+                    SQL_GET_TOKENS_COUNT_AND_OLDEST_USAGE_BY_TIME_AND_CONSUMER_USER_PROFILE_ID
+                ),
+                data,
+            )
+            row = result.first()
+            if row:
+                return UsageInformation(
+                    count=row.tokens_count or 0,
+                    oldest_usage_id=row.id or uuid7(),
+                    oldest_usage_created_at=row.created_at or utcnow(),
+                )
+        return UsageInformation(
+            count=0, oldest_usage_id=uuid7(), oldest_usage_created_at=utcnow()
+        )

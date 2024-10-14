@@ -11,6 +11,9 @@ from distributedinference.utils import http_headers
 async def custom_exception_handler(request: Request, error: Exception):
     if not isinstance(error, APIErrorResponse):
         error = InternalServerAPIError()
+    headers = {}
+    if hasattr(error, "headers"):
+        headers = error.headers
     return await http_headers.add_response_headers(
         JSONResponse(
             status_code=error.to_status_code(),
@@ -24,5 +27,6 @@ async def custom_exception_handler(request: Request, error: Exception):
                     },
                 }
             ),
+            headers=headers,
         ),
     )

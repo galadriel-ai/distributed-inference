@@ -28,7 +28,12 @@ async def test_execute_success():
         model_name=node_benchmark.model_name,
         tokens_per_second=node_benchmark.tokens_per_second,
     )
-    user = User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
+    user = User(
+        uid=uuid7(),
+        name="John Doe",
+        email="johndoe@mail.com",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
 
     mock_repository = AsyncMock(spec=BenchmarkRepository)
     mock_repository.get_node_benchmark.return_value = node_benchmark
@@ -41,7 +46,12 @@ async def test_execute_success():
 
 
 async def test_execute_not_found():
-    user = User(uid=uuid7(), name="John Doe", email="johndoe@mail.com")
+    user = User(
+        uid=uuid7(),
+        name="John Doe",
+        email="johndoe@mail.com",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
 
     mock_repository = AsyncMock(spec=BenchmarkRepository)
     mock_repository.get_node_benchmark.return_value = None

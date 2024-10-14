@@ -73,6 +73,7 @@ SELECT
     up.email,
     up.authentication_id,
     up.profile_data,
+    up.usage_tier_id,
     up.created_at,
     up.last_updated_at
 FROM user_profile up
@@ -89,6 +90,7 @@ SELECT
     username,
     email,
     profile_data,
+    usage_tier_id,
     authentication_id,
     created_at,
     last_updated_at
@@ -103,6 +105,7 @@ SELECT
     up.email,
     up.authentication_id,
     up.profile_data,
+    up.usage_tier_id,
     up.created_at,
     up.last_updated_at
 FROM user_profile up
@@ -116,6 +119,7 @@ SELECT
     up.email,
     up.authentication_id,
     up.profile_data,
+    up.usage_tier_id,
     up.created_at,
     up.last_updated_at
 FROM user_profile up
@@ -215,6 +219,7 @@ class UserRepository:
                     uid=row.id,
                     name=row.name,
                     email=row.email,
+                    usage_tier_id=row.usage_tier_id,
                     profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
                 )
@@ -231,6 +236,7 @@ class UserRepository:
                     name=row.name,
                     username=row.username,
                     email=row.email,
+                    usage_tier_id=row.usage_tier_id,
                     profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
                 )
@@ -250,6 +256,7 @@ class UserRepository:
                     uid=row.id,
                     name=row.name,
                     email=row.email,
+                    usage_tier_id=row.usage_tier_id,
                     profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
                 )
@@ -265,6 +272,7 @@ class UserRepository:
                     uid=row.id,
                     name=row.name,
                     email=row.email,
+                    usage_tier_id=row.usage_tier_id,
                     profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
                 )

@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import Response
 
 import settings
 from distributedinference import api_logger
@@ -17,6 +18,7 @@ from distributedinference.repository.metrics_queue_repository import (
 )
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.api_key import create_api_key_service
@@ -185,9 +187,13 @@ async def list_nodes(
 # pylint: disable=too-many-arguments, R0801
 async def completions(
     request: ChatCompletionRequest,
+    response: Response,
     user: User = Depends(authentication.validate_session_token),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
+    rate_limit_repository: RateLimitRepository = Depends(
+        dependencies.get_rate_limit_repository
+    ),
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),
@@ -200,9 +206,11 @@ async def completions(
     request.stream = True
     return await chat_completions_handler_service.execute(
         request,
+        response,
         user,
         node_repository,
         tokens_repository,
+        rate_limit_repository,
         metrics_queue_repository,
         analytics,
     )

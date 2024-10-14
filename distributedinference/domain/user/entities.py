@@ -8,6 +8,7 @@ class User:
     uid: UUID
     name: str
     email: str
+    usage_tier_id: UUID
     username: str = None
     profile_data: dict = None
     authentication_id: str = None

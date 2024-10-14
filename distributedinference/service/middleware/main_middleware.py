@@ -1,6 +1,4 @@
 import time
-from typing import Any
-from typing import Optional
 
 from prometheus_client import Counter
 
@@ -141,12 +139,3 @@ class MainMiddleware(BaseHTTPMiddleware):
                     exc_info=True,
                 )
             raise error from None
-
-
-# pylint: disable=C2801
-def _set_state(request: Request, state_key: RequestStateKey, value: Any):
-    request.state.__setattr__(state_key.value, value)
-
-
-def _get_state(request: Request, state_key: RequestStateKey) -> Optional[Any]:
-    return getattr(request.state, state_key.value, None)

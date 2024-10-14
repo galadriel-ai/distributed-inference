@@ -26,6 +26,7 @@ async def test_success():
             name="mock_name",
             email="e@e.e",
             authentication_id="mock_auth",
+            usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
         ),
         repository,
     )

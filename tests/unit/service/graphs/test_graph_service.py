@@ -1,6 +1,8 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from uuid import UUID
+
 from uuid_extensions import uuid7
 
 from distributedinference.domain.user.entities import User
@@ -17,6 +19,7 @@ def _get_user():
         uid=uuid7(),
         name="mock_name",
         email="mock_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
 
 
