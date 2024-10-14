@@ -67,7 +67,7 @@ class NodeBenchmark:
     tokens_per_second: float
 
 
-@dataclass(frozen=True)
+@dataclass()
 class ConnectedNode:
     uid: UUID
     user_id: UUID
@@ -76,6 +76,7 @@ class ConnectedNode:
     connected_at: int  # in seconds
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
+    is_healthy: bool = True
 
     def active_requests_count(self) -> int:
         return len(self.request_incoming_queues)
@@ -134,3 +135,10 @@ class InferenceResponse:
             "error": self.error.to_dict() if self.error else None,
             "chunk": self.chunk.to_dict() if self.chunk else None,
         }
+
+
+@dataclass
+class CheckHealthResponse:
+    node_id: UUID
+    is_healthy: bool
+    error: Optional[InferenceError] = None

@@ -46,12 +46,14 @@ def mock_websocket():
 
 @pytest.fixture
 def connected_node_factory(mock_websocket):
-    def _create_node(uid, model="model", small_node=False, datacenter_node=False):
+    def _create_node(
+        uid, model="model", small_node=False, datacenter_node=False, is_healthy=True
+    ):
         vram = 8000 if small_node else 16000
         if datacenter_node:
             vram = 90000
         return ConnectedNode(
-            uid, uuid1(), model, vram, int(time.time()), mock_websocket, {}
+            uid, uuid1(), model, vram, int(time.time()), mock_websocket, {}, is_healthy
         )
 
     return _create_node
@@ -206,6 +208,17 @@ def test_8gb_node_handles_only_1_connection(node_repository, connected_node_fact
     node.request_incoming_queues["test-id-2"] = asyncio.Queue()
 
     # Now, there are no nodes left, should return None
+    assert node_repository.select_node("model") is None
+
+
+def test_select_node_skips_unhealthy_nodes(node_repository, connected_node_factory):
+    node = connected_node_factory("1")
+    node_repository.register_node(node)
+
+    # Mark the node as unhealthy
+    node.is_healthy = False
+
+    # It should return None
     assert node_repository.select_node("model") is None
 
 

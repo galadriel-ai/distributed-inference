@@ -68,7 +68,15 @@ async def execute(
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
             if not response:
-                # Nothing to check, we can break
+                # Nothing to check, we can mark node as unhealthy and break
+                await node_repository.update_node_health_status(node.uid, False)
+                analytics.track_event(
+                    node.user_id,
+                    AnalyticsEvent(
+                        EventName.NODE_HEALTH,
+                        {"node_id": node.uid, "is_healthy": False},
+                    ),
+                )
                 break
             if not first_token_time:
                 first_token_time = time.time() - request_start_time
@@ -86,6 +94,15 @@ async def execute(
                     response.chunk.usage = None
                 yield response
             elif response.error:
+                # if we got an error, we can mark node as unhealthy and break
+                await node_repository.update_node_health_status(node.uid, False)
+                analytics.track_event(
+                    node.user_id,
+                    AnalyticsEvent(
+                        EventName.NODE_HEALTH,
+                        {"node_id": node.uid, "is_healthy": False},
+                    ),
+                )
                 yield response
                 break
     finally:

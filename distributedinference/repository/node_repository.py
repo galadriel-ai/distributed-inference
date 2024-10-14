@@ -115,6 +115,14 @@ SET
 WHERE node_info_id = :id;
 """
 
+SQL_UPDATE_IS_HEALTHY = """
+UPDATE node_metrics
+SET
+    is_healthy = :is_healthy,
+    last_updated_at = :last_updated_at
+WHERE node_info_id = :id;
+"""
+
 SQL_INCREMENT_NODE_METRICS = """
 INSERT INTO node_metrics (
     id,
@@ -443,6 +451,8 @@ class NodeRepository:
         return random.choice(nodes_with_max_capacity_left)
 
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
+        if not node.is_healthy:
+            return False
         if node.is_datacenter_gpu():
             return (
                 node.active_requests_count()
@@ -536,6 +546,10 @@ class NodeRepository:
                 )
             return result
 
+    def get_unhealthy_nodes(self) -> List[ConnectedNode]:
+        # returns only in-memory unhealthy nodes
+        return [node for node in self._connected_nodes.values() if not node.is_healthy]
+
     # Insert if it doesn't exist
     async def set_node_connection_timestamp(
         self, node_id: UUID, connected_at: datetime
@@ -567,6 +581,16 @@ class NodeRepository:
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_CONNECTED_AT), data)
+            await session.commit()
+
+    async def update_node_health_status(self, node_id: UUID, is_healthy: bool):
+        data = {
+            "id": node_id,
+            "is_healthy": is_healthy,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_IS_HEALTHY), data)
             await session.commit()
 
     async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
