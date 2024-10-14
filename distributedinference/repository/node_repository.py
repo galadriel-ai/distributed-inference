@@ -92,20 +92,22 @@ WHERE ni.user_profile_id = :user_profile_id AND name = :name_alias;
 
 SQL_GET_NODE_METRICS_BY_IDS = """
 SELECT
-    id,
-    node_info_id,
-    requests_served,
-    requests_successful,
-    requests_failed,
-    time_to_first_token,
-    inference_tokens_per_second,
-    rtt,
-    uptime,            
-    connected_at,
-    created_at,
-    last_updated_at
+    node_metrics.id,
+    node_metrics.node_info_id,
+    node_metrics.requests_served,
+    node_metrics.requests_successful,
+    node_metrics.requests_failed,
+    node_metrics.time_to_first_token,
+    node_metrics.inference_tokens_per_second,
+    node_metrics.rtt,
+    node_metrics.uptime,
+    node_info.gpu_model,
+    node_metrics.connected_at,
+    node_metrics.created_at,
+    node_metrics.last_updated_at
 FROM node_metrics
-WHERE node_info_id = ANY(:node_ids);
+LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
+WHERE node_metrics.node_info_id = ANY(:node_ids);
 """
 
 SQL_UPDATE_CONNECTED_AT = """
@@ -242,6 +244,7 @@ SQL_GET_CONNECTED_NODES = """
 SELECT
     ni.id,
     ni.name,
+    ni.gpu_model,
     nb.model_name,
     nb.tokens_per_second AS benchmark_tokens_per_second
 FROM node_info ni
@@ -452,14 +455,26 @@ class NodeRepository:
     async def get_connected_node_benchmarks(self) -> List[NodeBenchmark]:
         async with self._session_provider.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
-            return [
+            benchmarks = [
                 NodeBenchmark(
                     node_id=row.id,
                     model_name=row.model_name,
                     benchmark_tokens_per_second=row.benchmark_tokens_per_second,
+                    gpu_model=row.gpu_model,
                 )
                 for row in rows
             ]
+
+            # The SQL query returns all the benchmarks and doesn't take into account
+            # with which model the node joined the network
+            result = []
+            for benchmark in benchmarks:
+                if (
+                    benchmark.model_name
+                    == self._connected_nodes[benchmark.node_id].model
+                ):
+                    result.append(benchmark)
+            return result
 
     async def get_connected_nodes_count(self) -> int:
         async with self._session_provider.get() as session:
@@ -520,6 +535,7 @@ class NodeRepository:
                         if not row.connected_at
                         else int(time.time() - row.connected_at.timestamp())
                     ),
+                    gpu_model=row.gpu_model,
                 )
             return result
 

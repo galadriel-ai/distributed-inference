@@ -17,6 +17,7 @@ async def execute(
         node_id=node_info.node_id,
         model_name=request.model_name,
         benchmark_tokens_per_second=round(request.tokens_per_second, 2),
+        gpu_model=node_info.gpu_model,
     )
     await repository.save_node_benchmark(user_profile_id, node_benchmark)
 
