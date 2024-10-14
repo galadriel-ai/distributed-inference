@@ -1,8 +1,8 @@
 """Add inference tokens per second in node metrics
 
-Revision ID: 000000000024
-Revises: 000000000023
-Create Date: 2024-10-10 13:42:14.044260
+Revision ID: 000000000025
+Revises: 000000000024
+Create Date: 2024-10-14 11:02:41.808322
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "000000000024"
-down_revision = "000000000023"
+revision = "000000000025"
+down_revision = "000000000024"
 branch_labels = None
 depends_on = None
 
