@@ -3,7 +3,7 @@ from uuid import UUID
 from distributedinference.domain.metrics import calculate_node_costs
 from distributedinference.domain.node.entities import NodeBenchmark
 
-NODE_ID = UUID('93a38d42-e947-46e5-8bc9-f79724fe59c1')
+NODE_ID = UUID("93a38d42-e947-46e5-8bc9-f79724fe59c1")
 
 
 def test_empty():
