@@ -14,8 +14,8 @@ PRICES = {
     # Enterprise
     "NVIDIA H100 PCIe": 1.6,
     "NVIDIA H100 80GB HBM3": 1.6,
-    "NVIDIA RTX A4000": 0.0,
-    "NVIDIA A10G": 0.0,
+    "NVIDIA RTX A4000": 0.2,
+    "NVIDIA A10G": 0.1,
 }
 
 FUZZY_PRICES = {
