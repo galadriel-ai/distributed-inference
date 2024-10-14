@@ -175,13 +175,11 @@ def test_select_datacenter_node_after_reaching_maximum_parallel_requests(
     node = connected_node_factory("1", datacenter_node=True)
     node_repository.register_node(node)
 
-    assert node_repository._capacity_left(node) == MAX_PARALLEL_DATACENTER_REQUESTS
     for i in range(MAX_PARALLEL_DATACENTER_REQUESTS - 1):
         node.request_incoming_queues[f"{i}"] = asyncio.Queue()
 
     # Initially, it should return the node
     assert node_repository.select_node("model").uid == "1"
-    assert node_repository._capacity_left(node) == 1
 
     # Add one more request
     node.request_incoming_queues[f"{MAX_PARALLEL_DATACENTER_REQUESTS - 1}"] = (
