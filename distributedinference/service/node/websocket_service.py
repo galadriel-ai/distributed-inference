@@ -42,7 +42,7 @@ async def execute(
     protocol_handler: ProtocolHandler,
 ):
     logger.info(
-        f"Node with user id {user.uid} and node id {node_info.node_id}, trying to connect"
+        f"Node with user_id={user.uid}, node_id={node_info.node_id} and model_name={model_name} is trying to connect"
     )
     await websocket.accept()
 
@@ -71,7 +71,7 @@ async def execute(
 
     connect_time = time.time()
     await node_repository.set_node_connection_timestamp(
-        node.uid, datetime.fromtimestamp(connect_time)
+        node.uid, model_name, datetime.fromtimestamp(connect_time)
     )
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed

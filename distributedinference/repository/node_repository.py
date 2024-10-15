@@ -130,6 +130,7 @@ INSERT INTO node_metrics (
     rtt,
     uptime,
     connected_at,
+    model_name,
     created_at,
     last_updated_at
 ) VALUES (
@@ -143,6 +144,7 @@ INSERT INTO node_metrics (
     :rtt,
     :uptime_increment,
     :connected_at,
+    :model_name,
     :created_at,
     :last_updated_at
 )
@@ -155,6 +157,7 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     rtt = COALESCE(EXCLUDED.rtt, node_metrics.rtt),
     uptime = node_metrics.uptime + EXCLUDED.uptime,
     connected_at = COALESCE(EXCLUDED.connected_at, node_metrics.connected_at),
+    model_name = COALESCE(EXCLUDED.model_name, node_metrics.model_name),
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
@@ -248,8 +251,8 @@ SELECT
     nb.model_name,
     nb.tokens_per_second AS benchmark_tokens_per_second
 FROM node_info ni
-LEFT JOIN node_benchmark nb on ni.id = nb.node_id
 LEFT JOIN node_metrics nm on ni.id = nm.node_info_id
+LEFT JOIN node_benchmark nb on ni.id = nb.node_id AND nm.model_name = nb.model_name
 WHERE nm.connected_at IS NOT NULL;
 """
 
@@ -455,7 +458,7 @@ class NodeRepository:
     async def get_connected_node_benchmarks(self) -> List[NodeBenchmark]:
         async with self._session_provider.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
-            benchmarks = [
+            return [
                 NodeBenchmark(
                     node_id=row.id,
                     model_name=row.model_name,
@@ -464,17 +467,6 @@ class NodeRepository:
                 )
                 for row in rows
             ]
-
-            # The SQL query returns all the benchmarks and doesn't take into account
-            # with which model the node joined the network
-            result = []
-            for benchmark in benchmarks:
-                if (
-                    benchmark.model_name
-                    == self._connected_nodes[benchmark.node_id].model
-                ):
-                    result.append(benchmark)
-            return result
 
     async def get_connected_nodes_count(self) -> int:
         async with self._session_provider.get() as session:
@@ -541,7 +533,7 @@ class NodeRepository:
 
     # Insert if it doesn't exist
     async def set_node_connection_timestamp(
-        self, node_id: UUID, connected_at: datetime
+        self, node_id: UUID, model_name: str, connected_at: datetime
     ):
         data = {
             "id": str(uuid7()),
@@ -554,6 +546,7 @@ class NodeRepository:
             "rtt": 0,
             "uptime_increment": 0,
             "connected_at": connected_at,
+            "model_name": model_name,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
