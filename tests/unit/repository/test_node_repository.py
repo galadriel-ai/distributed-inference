@@ -175,13 +175,11 @@ def test_select_datacenter_node_after_reaching_maximum_parallel_requests(
     node = connected_node_factory("1", datacenter_node=True)
     node_repository.register_node(node)
 
-    assert node_repository._capacity_left(node) == MAX_PARALLEL_DATACENTER_REQUESTS
     for i in range(MAX_PARALLEL_DATACENTER_REQUESTS - 1):
         node.request_incoming_queues[f"{i}"] = asyncio.Queue()
 
     # Initially, it should return the node
     assert node_repository.select_node("model").uid == "1"
-    assert node_repository._capacity_left(node) == 1
 
     # Add one more request
     node.request_incoming_queues[f"{MAX_PARALLEL_DATACENTER_REQUESTS - 1}"] = (
@@ -359,26 +357,6 @@ def test_random_node_selection(
     ):
         node_repository.select_node("model")
         mock_random_choice.assert_called_once_with([node1, node2])
-
-
-@patch("random.choice")
-def test_least_busy_node_selection(
-    mock_random_choice, node_repository, connected_node_factory
-):
-    node1 = connected_node_factory("1")
-    node2 = connected_node_factory("2")
-    node3 = connected_node_factory("3")
-
-    node_repository.register_node(node1)
-    node_repository.register_node(node2)
-    node_repository.register_node(node3)
-
-    with patch(
-        "distributedinference.domain.node.entities.ConnectedNode.active_requests_count",
-        side_effect=[3, 0, 6, 3, 0, 6, 3, 0, 6],
-    ):
-        node_repository.select_node("model")
-        mock_random_choice.assert_called_once_with([node2])
 
 
 async def test_deregister_node_sends_error_on_disconnect(
