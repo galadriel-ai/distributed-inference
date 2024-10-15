@@ -11,6 +11,7 @@ from fastapi import WebSocketDisconnect
 from fastapi import status
 from fastapi.exceptions import WebSocketException
 
+import settings
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
@@ -146,6 +147,57 @@ async def test_execute_node_benchmark_too_low():
     websocket.accept.assert_called_once()
     node_repository.register_node.assert_not_called()
     node_repository.set_node_connection_timestamp.assert_not_called()
+
+
+async def test_execute_node_benchmark_405B_enough():
+    websocket = AsyncMock(spec=WebSocket)
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
+    node_repository = AsyncMock(spec=NodeRepository)
+
+    node_metrics = NodeMetrics(is_active=False)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
+    node_repository.register_node = Mock(return_value=False)
+
+    model_name = next(iter(settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND_PER_MODEL))
+    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
+    benchmark_repository.get_node_benchmark = AsyncMock(
+        return_value=NodeBenchmark(
+            node_id=NODE_UUID,
+            model_name="model_name",
+            benchmark_tokens_per_second=settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND_PER_MODEL[
+                model_name
+            ]
+            + 1,
+        )
+    )
+
+    with pytest.raises(
+        # Passes benchmark check, gets next error
+        WebSocketException,
+        match="Node with same node id already connected",
+    ) as exc_info:
+        await websocket_service.execute(
+            websocket,
+            user,
+            NODE_INFO,
+            model_name,
+            node_repository,
+            benchmark_repository,
+            Mock(),
+            Mock(),
+        )
+
+    assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
+    websocket.accept.assert_called_once()
+    node_repository.register_node.assert_called_once()
+    node_repository.set_node_connection_timestamp.assert_called_once()
 
 
 async def test_node_already_connected_with_other_worker():
