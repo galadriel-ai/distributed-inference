@@ -1,5 +1,7 @@
 # Distributed inference
 
+[![unit tests](https://github.com/galadriel-ai/distributed-inference/actions/workflows/unit_test.yml/badge.svg)](https://github.com/galadriel-ai/distributed-inference/actions/workflows/unit_test.yml)
+
 This repository contains the code for the centralised server (a.ka. distributed inference)
 that interfaces to the consumer side to get the inference request and schedule it to the
 `galadriel-node`s in the Galadriel network.
