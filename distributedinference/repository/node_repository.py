@@ -92,20 +92,22 @@ WHERE ni.user_profile_id = :user_profile_id AND name = :name_alias;
 
 SQL_GET_NODE_METRICS_BY_IDS = """
 SELECT
-    id,
-    node_info_id,
-    requests_served,
-    requests_successful,
-    requests_failed,
-    time_to_first_token,
-    inference_tokens_per_second,
-    rtt,
-    uptime,            
-    connected_at,
-    created_at,
-    last_updated_at
+    node_metrics.id,
+    node_metrics.node_info_id,
+    node_metrics.requests_served,
+    node_metrics.requests_successful,
+    node_metrics.requests_failed,
+    node_metrics.time_to_first_token,
+    node_metrics.inference_tokens_per_second,
+    node_metrics.rtt,
+    node_metrics.uptime,
+    node_info.gpu_model,
+    node_metrics.connected_at,
+    node_metrics.created_at,
+    node_metrics.last_updated_at
 FROM node_metrics
-WHERE node_info_id = ANY(:node_ids);
+LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
+WHERE node_metrics.node_info_id = ANY(:node_ids);
 """
 
 SQL_UPDATE_CONNECTED_AT = """
@@ -128,6 +130,7 @@ INSERT INTO node_metrics (
     rtt,
     uptime,
     connected_at,
+    model_name,
     created_at,
     last_updated_at
 ) VALUES (
@@ -141,6 +144,7 @@ INSERT INTO node_metrics (
     :rtt,
     :uptime_increment,
     :connected_at,
+    :model_name,
     :created_at,
     :last_updated_at
 )
@@ -153,6 +157,7 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     rtt = COALESCE(EXCLUDED.rtt, node_metrics.rtt),
     uptime = node_metrics.uptime + EXCLUDED.uptime,
     connected_at = COALESCE(EXCLUDED.connected_at, node_metrics.connected_at),
+    model_name = COALESCE(EXCLUDED.model_name, node_metrics.model_name),
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
@@ -242,11 +247,12 @@ SQL_GET_CONNECTED_NODES = """
 SELECT
     ni.id,
     ni.name,
+    ni.gpu_model,
     nb.model_name,
     nb.tokens_per_second AS benchmark_tokens_per_second
 FROM node_info ni
-LEFT JOIN node_benchmark nb on ni.id = nb.node_id
 LEFT JOIN node_metrics nm on ni.id = nm.node_info_id
+LEFT JOIN node_benchmark nb on ni.id = nb.node_id AND nm.model_name = nb.model_name
 WHERE nm.connected_at IS NOT NULL;
 """
 
@@ -457,6 +463,7 @@ class NodeRepository:
                     node_id=row.id,
                     model_name=row.model_name,
                     benchmark_tokens_per_second=row.benchmark_tokens_per_second,
+                    gpu_model=row.gpu_model,
                 )
                 for row in rows
             ]
@@ -520,12 +527,13 @@ class NodeRepository:
                         if not row.connected_at
                         else int(time.time() - row.connected_at.timestamp())
                     ),
+                    gpu_model=row.gpu_model,
                 )
             return result
 
     # Insert if it doesn't exist
     async def set_node_connection_timestamp(
-        self, node_id: UUID, connected_at: datetime
+        self, node_id: UUID, model_name: str, connected_at: datetime
     ):
         data = {
             "id": str(uuid7()),
@@ -538,6 +546,7 @@ class NodeRepository:
             "rtt": 0,
             "uptime_increment": 0,
             "connected_at": connected_at,
+            "model_name": model_name,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }

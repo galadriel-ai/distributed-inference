@@ -22,6 +22,7 @@ async def test_execute_success():
         node_id=NODE_UUID,
         model_name=model_name,
         benchmark_tokens_per_second=123.45,
+        gpu_model="NVIDIA GeForce RTX 4090",
     )
     expected_response = GetNodeBenchmarkResponse(
         node_id=str(NODE_UUID),

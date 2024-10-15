@@ -35,6 +35,7 @@ class NodeMetrics:
     is_active: bool = False
     total_uptime: int = 0
     current_uptime: int = 0
+    gpu_model: str = None
 
 
 @dataclass
@@ -67,6 +68,7 @@ class NodeBenchmark:
     node_id: UUID
     model_name: str
     benchmark_tokens_per_second: float
+    gpu_model: str
 
 
 @dataclass(frozen=True)
