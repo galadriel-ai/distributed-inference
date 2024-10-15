@@ -178,6 +178,7 @@ async def test_execute_node_benchmark_405B_enough():
                 model_name
             ]
             + 1,
+            gpu_model="NVIDIA GeForce RTX 4090",
         )
     )
 
