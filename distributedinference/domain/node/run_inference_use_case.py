@@ -3,6 +3,8 @@ from typing import AsyncGenerator
 from typing import Optional
 from uuid import UUID
 
+from prometheus_client import Histogram
+
 from openai.types import CompletionUsage
 
 from distributedinference.analytics.analytics import (
@@ -20,6 +22,13 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
+
+node_time_to_first_token_histogram = Histogram(
+    "node_time_to_first_token_histogram",
+    "Time to first token histogram in seconds by model and node uid",
+    ["model_name", "node_uid"],
+    buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
+)
 
 
 # pylint: disable=R0912, R0913, R0914
@@ -103,6 +112,10 @@ async def execute(
         # set only if we got at least one token
         if first_token_time is not None:
             metrics_increment.time_to_first_token = first_token_time
+            # add TTFT in histogram
+            node_time_to_first_token_histogram.labels(request.model, node.uid).observe(
+                first_token_time
+            )
         # use completion tokens / time elapsed to focus on the model generation performance
         if time_elapsed_after_first_token and usage:
             metrics_increment.inference_tokens_per_second = (
