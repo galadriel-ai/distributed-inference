@@ -15,6 +15,7 @@ from openai.types.chat import CompletionCreateParams
 @dataclass
 class NodeMetricsIncrement:
     node_id: UUID
+    model: str
     requests_served_incerement: int = 0
     requests_successful_incerement: int = 0
     requests_failed_increment: int = 0

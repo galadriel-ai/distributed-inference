@@ -255,6 +255,7 @@ async def test_save_node_metrics(node_repository, session_provider):
 
     node_metrics = NodeMetricsIncrement(
         node_id=node_id,
+        model="model",
         requests_served_incerement=100,
         time_to_first_token=0.5,
         inference_tokens_per_second=30.5,
@@ -272,6 +273,7 @@ async def test_save_node_metrics(node_repository, session_provider):
 
     data = args[1]
     assert data["node_id"] == node_id
+    assert data["model_name"] == "model"
     assert data["requests_served_increment"] == node_metrics.requests_served_incerement
     assert (
         data["requests_successful_increment"]

@@ -34,6 +34,7 @@ class PingPongConfig:
 class NodePingInfo(BaseModel):
     websocket: WebSocket
     node_uuid: UUID  # the UUID of the node, need this to update the metrics
+    model: str
     # Counters
     rtt: float = 0  # the last rtt of the node
     sum_rtt: float = 0  # the sum of all the rtt requests, used to get average rtt
@@ -118,7 +119,9 @@ class PingPongProtocol:
 
     # Add a node to the active nodes dictionary
     # called when a new node connects to the server through websocket
-    def add_node(self, node_uuid: UUID, node_id: str, websocket: WebSocket) -> bool:
+    def add_node(
+        self, node_uuid: UUID, node_id: str, model: str, websocket: WebSocket
+    ) -> bool:
         if node_id in self.active_nodes:
             logger.warning(
                 f"{self.config.name}: Node {node_id} already exists in the active nodes"
@@ -128,6 +131,7 @@ class PingPongProtocol:
         self.active_nodes[node_id] = NodePingInfo(
             websocket=websocket,
             node_uuid=node_uuid,
+            model=model,
             rtt=0,
             sum_rtt=0,
             ping_streak=0,
@@ -160,7 +164,10 @@ class PingPongProtocol:
             current_time - node_info.last_uptime_update_time_in_seconds
         )
         await _increment_uptime(
-            node_info.node_uuid, uptime_increment, self.metrics_queue_repository
+            node_info.node_uuid,
+            node_info.model,
+            uptime_increment,
+            self.metrics_queue_repository,
         )
 
         del self.active_nodes[node_id]
@@ -277,7 +284,10 @@ class PingPongProtocol:
             current_time - node_info.last_uptime_update_time_in_seconds
         )
         await _increment_uptime(
-            node_info.node_uuid, uptime_increment, self.metrics_queue_repository
+            node_info.node_uuid,
+            node_info.model,
+            uptime_increment,
+            self.metrics_queue_repository,
         )
         node_info.last_uptime_update_time_in_seconds = current_time
 
@@ -377,9 +387,10 @@ def _validate_config(protocol_name: str, config: dict):
 
 async def _increment_uptime(
     node_id: UUID,
+    model: str,
     uptime_increment: int,
     metrics_queue_repository: MetricsQueueRepository,
 ) -> None:
-    node_metrics_increment = NodeMetricsIncrement(node_id=node_id)
+    node_metrics_increment = NodeMetricsIncrement(node_id=node_id, model=model)
     node_metrics_increment.uptime_increment = uptime_increment
     await metrics_queue_repository.push(node_metrics_increment)
