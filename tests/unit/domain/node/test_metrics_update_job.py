@@ -26,6 +26,7 @@ async def test_success_one():
         [
             NodeMetricsIncrement(
                 node_id=node_id,
+                model="model",
                 requests_served_incerement=12,
                 requests_successful_incerement=11,
                 requests_failed_increment=1,
@@ -41,6 +42,7 @@ async def test_success_one():
     node_repository.increment_node_metrics.assert_called_once_with(
         NodeMetricsIncrement(
             node_id=node_id,
+            model="model",
             requests_served_incerement=12,
             requests_successful_incerement=11,
             requests_failed_increment=1,
@@ -58,6 +60,7 @@ async def test_success_aggregates():
         [
             NodeMetricsIncrement(
                 node_id=node_id,
+                model="model",
                 requests_served_incerement=1,
                 requests_successful_incerement=1,
                 requests_failed_increment=0,
@@ -66,6 +69,7 @@ async def test_success_aggregates():
             ),
             NodeMetricsIncrement(
                 node_id=node_id,
+                model="model",
                 requests_served_incerement=1,
                 requests_successful_incerement=0,
                 requests_failed_increment=1,
@@ -82,6 +86,7 @@ async def test_success_aggregates():
     node_repository.increment_node_metrics.assert_called_once_with(
         NodeMetricsIncrement(
             node_id=node_id,
+            model="model",
             requests_served_incerement=2,
             requests_successful_incerement=1,
             requests_failed_increment=1,

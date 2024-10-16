@@ -578,6 +578,7 @@ class NodeRepository:
             "rtt": metrics.rtt,
             "uptime_increment": metrics.uptime_increment,
             "connected_at": None,
+            "model_name": metrics.model,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }

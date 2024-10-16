@@ -60,7 +60,7 @@ async def execute(
 
     await node_repository.send_inference_request(node.uid, request)
 
-    metrics_increment = NodeMetricsIncrement(node_id=node.uid)
+    metrics_increment = NodeMetricsIncrement(node_id=node.uid, model=node.model)
 
     metrics_increment.requests_served_incerement += 1
     is_stream = bool(request.chat_request.get("stream"))
