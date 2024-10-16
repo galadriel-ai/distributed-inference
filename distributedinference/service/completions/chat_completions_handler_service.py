@@ -99,18 +99,10 @@ def rate_limit_to_headers(rate_limit: RateLimit) -> Dict[str, str]:
 
 
 def _match_model_name(user_input: str) -> str:
-    components = user_input.split(":")
+    model_name = settings.MODEL_NAME_MAPPING.get(user_input.lower())
 
-    model_name = components[0].lower()
-    model_name_base = settings.MODEL_NAME_BASES.get(model_name)
+    if model_name:
+        return model_name
 
-    if model_name_base:
-        # use 8b as default model if user doesn't specify model suffix
-        suffix = components[1].lower() if len(components) > 1 else "8b"
-        exact_model_name = (
-            f"{model_name_base}-{settings.MODEL_NAME_SUFFIXES.get(suffix)}"
-        )
-        return exact_model_name
-
-    # user may provide the full model name or wrong/unsupported model names
+    # forward user_input as user may provide the full model name
     return user_input
