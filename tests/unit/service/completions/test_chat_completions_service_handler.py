@@ -130,3 +130,45 @@ async def test_execute_rate_limited():
         assert exc_info.value.headers["x-ratelimit-remaining-tokens"] == "0"
         assert exc_info.value.headers["x-ratelimit-reset-requests"] == "60s"
         assert exc_info.value.headers["x-ratelimit-reset-tokens"] == "60s"
+
+
+def test_model_name_translation_no_suffix():
+    user_input = "llama3.1"
+    expected_exact_name = "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
+    actual_exact_name = service._match_model_name(user_input)
+    assert actual_exact_name == expected_exact_name
+
+
+def test_model_name_translation_llama3_1_8b():
+    user_input = "llama3.1:8b"
+    expected_exact_name = "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
+    actual_exact_name = service._match_model_name(user_input)
+    assert actual_exact_name == expected_exact_name
+
+
+def test_model_name_translation_llama3_1_70b():
+    user_input = "llama3.1:70b"
+    expected_exact_name = "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16"
+    actual_exact_name = service._match_model_name(user_input)
+    assert actual_exact_name == expected_exact_name
+
+
+def test_model_name_translation_llama3_1_405b():
+    user_input = "llama3.1:405b"
+    expected_exact_name = "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16"
+    actual_exact_name = service._match_model_name(user_input)
+    assert actual_exact_name == expected_exact_name
+
+
+def test_model_name_translation_case_insensitive():
+    user_input = "lLaMA3.1:8B"
+    expected_exact_name = "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
+    actual_exact_name = service._match_model_name(user_input)
+    assert actual_exact_name == expected_exact_name
+
+
+def test_model_name_translation_exact_model():
+    user_input = "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16"
+    expected_exact_name = "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16"
+    actual_exact_name = service._match_model_name(user_input)
+    assert actual_exact_name == expected_exact_name
