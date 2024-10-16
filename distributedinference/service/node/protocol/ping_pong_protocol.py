@@ -1,6 +1,7 @@
 import time
 import uuid
 from typing import Any
+from typing import Dict
 from typing import Optional
 from uuid import UUID
 
@@ -79,7 +80,7 @@ class PingPongProtocol:
         self.metrics_queue_repository = metrics_queue_repository
         # The main data structure that stores the active nodes
         # and its states related to the ping-pong protocol
-        self.active_nodes = {}
+        self.active_nodes: Dict[str, NodePingInfo] = {}
         logger.info(f"{self.config.name}: Protocol initialized")
 
     # Handle the responses from the client
