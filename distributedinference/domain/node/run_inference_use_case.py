@@ -3,6 +3,8 @@ from typing import AsyncGenerator
 from typing import Optional
 from uuid import UUID
 
+from prometheus_client import Histogram
+
 from openai.types import CompletionUsage
 
 from distributedinference.analytics.analytics import (
@@ -21,8 +23,15 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
 
+node_time_to_first_token_histogram = Histogram(
+    "node_time_to_first_token_histogram",
+    "Time to first token histogram in seconds by model and node uid",
+    ["model_name", "node_uid"],
+    buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
+)
 
-# pylint: disable=R0912, R0913
+
+# pylint: disable=R0912, R0913, R0914
 async def execute(
     user_uid: UUID,
     request: InferenceRequest,
@@ -51,7 +60,7 @@ async def execute(
 
     await node_repository.send_inference_request(node.uid, request)
 
-    metrics_increment = NodeMetricsIncrement(node_id=node.uid)
+    metrics_increment = NodeMetricsIncrement(node_id=node.uid, model=node.model)
 
     metrics_increment.requests_served_incerement += 1
     is_stream = bool(request.chat_request.get("stream"))
@@ -62,6 +71,7 @@ async def execute(
     usage: Optional[CompletionUsage] = None
     request_start_time = time.time()
     first_token_time = None
+    time_elapsed_after_first_token = None
     request_successful = False
 
     try:
@@ -88,6 +98,11 @@ async def execute(
                     request_successful = True
                     if is_include_usage:
                         yield response
+                    # calculate the inference time starting from the first token arrival
+                    if first_token_time:
+                        time_elapsed_after_first_token = (
+                            time.time() - request_start_time - first_token_time
+                        )
                     break
                 # if users doesn't need usage, we can remove it from the response
                 if not is_include_usage:
@@ -114,6 +129,15 @@ async def execute(
         # set only if we got at least one token
         if first_token_time is not None:
             metrics_increment.time_to_first_token = first_token_time
+            # add TTFT in histogram
+            node_time_to_first_token_histogram.labels(request.model, node.uid).observe(
+                first_token_time
+            )
+        # use completion tokens / time elapsed to focus on the model generation performance
+        if time_elapsed_after_first_token and usage:
+            metrics_increment.inference_tokens_per_second = (
+                usage.completion_tokens / time_elapsed_after_first_token
+            )
         if request_successful:
             metrics_increment.requests_successful_incerement += 1
         else:

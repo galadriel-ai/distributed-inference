@@ -42,7 +42,7 @@ async def execute(
     protocol_handler: ProtocolHandler,
 ):
     logger.info(
-        f"Node with user id {user.uid} and node id {node_info.node_id}, trying to connect"
+        f"Node with user_id={user.uid}, node_id={node_info.node_id} and model_name={model_name} is trying to connect"
     )
     await websocket.accept()
 
@@ -71,7 +71,7 @@ async def execute(
 
     connect_time = time.time()
     await node_repository.set_node_connection_timestamp(
-        node.uid, datetime.fromtimestamp(connect_time)
+        node.uid, model_name, datetime.fromtimestamp(connect_time)
     )
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
@@ -83,7 +83,9 @@ async def execute(
         settings.PING_PONG_PROTOCOL_NAME
     )
 
-    if not ping_pong_protocol.add_node(node_info.node_id, node_info.name, websocket):
+    if not ping_pong_protocol.add_node(
+        node_info.node_id, node_info.name, model_name, websocket
+    ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Node could not be added to the active nodes",
@@ -206,7 +208,10 @@ async def _check_before_connecting(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking is not completed",
         )
-    if benchmark.tokens_per_second < settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
+    min_tokens_sec = settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND_PER_MODEL.get(
+        model_name, settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
+    )
+    if benchmark.benchmark_tokens_per_second < min_tokens_sec:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Benchmarking performance is too low",

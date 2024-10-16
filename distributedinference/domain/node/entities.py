@@ -15,10 +15,12 @@ from openai.types.chat import CompletionCreateParams
 @dataclass
 class NodeMetricsIncrement:
     node_id: UUID
+    model: str
     requests_served_incerement: int = 0
     requests_successful_incerement: int = 0
     requests_failed_increment: int = 0
     time_to_first_token: Optional[float] = None
+    inference_tokens_per_second: Optional[float] = None
     rtt: int = 0
     uptime_increment: int = 0
 
@@ -29,10 +31,12 @@ class NodeMetrics:
     requests_successful: int = 0
     requests_failed: int = 0
     time_to_first_token: Optional[float] = None
+    inference_tokens_per_second: Optional[float] = None
     rtt: int = 0
     is_active: bool = False
     total_uptime: int = 0
     current_uptime: int = 0
+    gpu_model: str = None
 
 
 @dataclass
@@ -57,14 +61,15 @@ class UserNodeInfo(NodeInfo):
     connected: bool = False
     requests_served: Optional[int] = None
     uptime: Optional[int] = None
-    tokens_per_second: Optional[float] = None
+    benchmark_tokens_per_second: Optional[float] = None
 
 
 @dataclass
 class NodeBenchmark:
     node_id: UUID
     model_name: str
-    tokens_per_second: float
+    benchmark_tokens_per_second: float
+    gpu_model: str
 
 
 @dataclass()

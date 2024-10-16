@@ -15,6 +15,7 @@ NODE_INFO = NodeInfo(
     node_id=NODE_UUID,
     name="name",
     name_alias="name_alias",
+    gpu_model="NVIDIA GeForce RTX 4090",
 )
 
 
@@ -29,7 +30,8 @@ async def test_execute_success():
     expected_node_info = NodeBenchmark(
         node_id=NODE_UUID,
         model_name=request.model_name,
-        tokens_per_second=request.tokens_per_second,
+        benchmark_tokens_per_second=request.tokens_per_second,
+        gpu_model="NVIDIA GeForce RTX 4090",
     )
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)

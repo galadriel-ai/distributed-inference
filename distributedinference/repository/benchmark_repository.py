@@ -30,7 +30,7 @@ SELECT
     :id, 
     ne.id, 
     :model_name, 
-    :tokens_per_second, 
+    :benchmark_tokens_per_second, 
     :created_at, 
     :last_updated_at
 FROM node_exists ne
@@ -44,7 +44,8 @@ SELECT
     nb.id,
     nb.node_id,
     nb.model_name,
-    nb.tokens_per_second,
+    nb.tokens_per_second AS benchmark_tokens_per_second,
+    ni.gpu_model,
     nb.created_at,
     nb.last_updated_at
 FROM node_benchmark nb
@@ -69,7 +70,7 @@ class BenchmarkRepository:
             "node_id": benchmark.node_id,
             "user_profile_id": user_profile_id,
             "model_name": benchmark.model_name,
-            "tokens_per_second": benchmark.tokens_per_second,
+            "benchmark_tokens_per_second": benchmark.benchmark_tokens_per_second,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -92,6 +93,7 @@ class BenchmarkRepository:
                 return NodeBenchmark(
                     node_id=node_id,
                     model_name=row.model_name,
-                    tokens_per_second=row.tokens_per_second,
+                    benchmark_tokens_per_second=row.benchmark_tokens_per_second,
+                    gpu_model=row.gpu_model,
                 )
         return None

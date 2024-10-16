@@ -30,6 +30,11 @@ DB_PORT_READ = os.getenv("DB_PORT", "5432")
 MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = int(
     os.getenv("MINIMUM_COMPLETIONS_TOKENS_PER_SECOND", "264")
 )
+MINIMUM_COMPLETIONS_TOKENS_PER_SECOND_PER_MODEL = {
+    # If model not found uses MINIMUM_COMPLETIONS_TOKENS_PER_SECOND as a fallback
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16": 200,
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16": 120,
+}
 
 MAX_PARALLEL_REQUESTS_PER_NODE = int(os.getenv("MAX_PARALLEL_REQUESTS_PER_NODE", "10"))
 MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE = int(

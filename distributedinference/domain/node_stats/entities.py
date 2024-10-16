@@ -17,4 +17,4 @@ class NodeStats:
 class UserAggregatedStats:
     total_requests_served: Optional[int]
     average_time_to_first_token: Optional[float]
-    total_tokens_per_second: Optional[float]
+    benchmark_total_tokens_per_second: Optional[float]

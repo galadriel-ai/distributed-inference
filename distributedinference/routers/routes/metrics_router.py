@@ -1,3 +1,6 @@
+from typing import List
+from uuid import UUID
+
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi.responses import Response
@@ -11,6 +14,8 @@ from prometheus_client.multiprocess import MultiProcessCollector
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
+from distributedinference.domain.metrics import calculate_node_costs
+from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 
@@ -49,10 +54,18 @@ node_time_to_first_token_gauge = Gauge(
     "Time to first token in seconds by model and node uid",
     ["model_name", "node_uid"],
 )
+node_inference_tokens_per_second_gauge = Gauge(
+    "node_inference_tokens_per_second",
+    "Real-time tokens per second for each inference call by model and node uid",
+    ["model_name", "node_uid"],
+)
 node_rtt_gauge = Gauge(
     "node_rtt",
     "Round Trip Time for the node",
     ["node_uid"],
+)
+node_costs_gauge = Gauge(
+    "node_costs", "Node GPU 1h rent costs per model", ["model_name"]
 )
 
 
@@ -61,28 +74,15 @@ async def get_metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
 ):
-    if settings.PROMETHEUS_MULTIPROC_DIR:
-        registry = CollectorRegistry()
-        MultiProcessCollector(registry)
-    else:
-        registry = REGISTRY
+    registry = _get_registry()
+    _clear()
 
-    network_nodes_gauge.clear()
     nodes = await node_repository.get_connected_node_benchmarks()
     node_model_names = {node.node_id: node.model_name for node in nodes}
     for node in nodes:
         network_nodes_gauge.labels(node.model_name).inc()
     connected_node_ids = [node.node_id for node in nodes]
     node_metrics = await node_repository.get_node_metrics_by_ids(connected_node_ids)
-    node_usage_total_tokens = await tokens_repository.get_total_tokens_by_node_ids(
-        connected_node_ids
-    )
-    node_tokens_gauge.clear()
-    node_requests_gauge.clear()
-    node_requests_successful_gauge.clear()
-    node_requests_failed_gauge.clear()
-    node_time_to_first_token_gauge.clear()
-    node_rtt_gauge.clear()
 
     for node_uid, metrics in node_metrics.items():
         node_requests_gauge.labels(node_model_names[node_uid], node_uid).set(
@@ -98,11 +98,54 @@ async def get_metrics(
             node_time_to_first_token_gauge.labels(
                 node_model_names[node_uid], node_uid
             ).set(metrics.time_to_first_token)
+        if metrics.inference_tokens_per_second:
+            node_inference_tokens_per_second_gauge.labels(
+                node_model_names[node_uid], node_uid
+            ).set(metrics.inference_tokens_per_second)
         node_rtt_gauge.labels(node_uid).set(metrics.rtt)
+
+    await _set_node_tokens(tokens_repository, connected_node_ids)
+    await _set_node_costs(nodes)
+    metrics_data = generate_latest(registry)
+    return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)
+
+
+def _get_registry() -> CollectorRegistry:
+    if settings.PROMETHEUS_MULTIPROC_DIR:
+        registry = CollectorRegistry()
+        MultiProcessCollector(registry)
+    else:
+        registry = REGISTRY
+    return registry
+
+
+def _clear():
+    network_nodes_gauge.clear()
+    node_tokens_gauge.clear()
+    node_requests_gauge.clear()
+    node_requests_successful_gauge.clear()
+    node_requests_failed_gauge.clear()
+    node_time_to_first_token_gauge.clear()
+    node_inference_tokens_per_second_gauge.clear()
+    node_rtt_gauge.clear()
+    node_costs_gauge.clear()
+
+
+async def _set_node_tokens(
+    tokens_repository: TokensRepository,
+    connected_node_ids: List[UUID],
+):
+    node_usage_total_tokens = await tokens_repository.get_total_tokens_by_node_ids(
+        connected_node_ids
+    )
 
     for usage in node_usage_total_tokens:
         node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(
             usage.total_tokens
         )
-    metrics_data = generate_latest(registry)
-    return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)
+
+
+async def _set_node_costs(nodes: List[NodeBenchmark]):
+    costs = calculate_node_costs.execute(nodes)
+    for model_name, cost in costs.items():
+        node_costs_gauge.labels(model_name).set(cost)

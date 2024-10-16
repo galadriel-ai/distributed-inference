@@ -50,7 +50,7 @@ async def _format(
                 requests_served_day=await tokens_repository.get_latest_count_by_time_and_node(
                     node.node_id
                 ),
-                tokens_per_second=node.tokens_per_second,
+                benchmark_tokens_per_second=node.benchmark_tokens_per_second,
                 node_created_at=(
                     0 if not node.created_at else int(node.created_at.timestamp())
                 ),

@@ -62,7 +62,7 @@ class ListNodeRequestNode(NodeInfoRequest):
         description="Total inference requests served by the node past 24 hours",
         default=0,
     )
-    tokens_per_second: Optional[float] = Field(
+    benchmark_tokens_per_second: Optional[float] = Field(
         description="Theoretical max tokens per second for the node"
     )
     node_created_at: int = Field(
@@ -130,7 +130,7 @@ class GetUserAggregatedStatsResponse(BaseModel):
     average_time_to_first_token: Optional[float] = Field(
         description="User average time to first token across all their nodes"
     )
-    total_tokens_per_second: Optional[float] = Field(
+    benchmark_total_tokens_per_second: Optional[float] = Field(
         description="User max theoretical tokens per second across all their nodes"
     )
 

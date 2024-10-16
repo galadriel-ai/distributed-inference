@@ -68,7 +68,7 @@ SELECT
     nm.uptime,
     nm.connected_at,
     nm.rtt,
-    nb.tokens_per_second
+    nb.tokens_per_second AS benchmark_tokens_per_second
 FROM node_info ni
 LEFT JOIN node_metrics nm on nm.node_info_id = ni.id
 LEFT JOIN node_benchmark nb on nb.node_id = ni.id
@@ -92,19 +92,22 @@ WHERE ni.user_profile_id = :user_profile_id AND name = :name_alias;
 
 SQL_GET_NODE_METRICS_BY_IDS = """
 SELECT
-    id,
-    node_info_id,
-    requests_served,
-    requests_successful,
-    requests_failed,
-    time_to_first_token,
-    rtt,
-    uptime,            
-    connected_at,
-    created_at,
-    last_updated_at
+    node_metrics.id,
+    node_metrics.node_info_id,
+    node_metrics.requests_served,
+    node_metrics.requests_successful,
+    node_metrics.requests_failed,
+    node_metrics.time_to_first_token,
+    node_metrics.inference_tokens_per_second,
+    node_metrics.rtt,
+    node_metrics.uptime,
+    node_info.gpu_model,
+    node_metrics.connected_at,
+    node_metrics.created_at,
+    node_metrics.last_updated_at
 FROM node_metrics
-WHERE node_info_id = ANY(:node_ids);
+LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
+WHERE node_metrics.node_info_id = ANY(:node_ids);
 """
 
 SQL_UPDATE_CONNECTED_AT = """
@@ -131,9 +134,11 @@ INSERT INTO node_metrics (
     requests_successful,
     requests_failed,
     time_to_first_token,
+    inference_tokens_per_second,
     rtt,
     uptime,
     connected_at,
+    model_name,
     created_at,
     last_updated_at
 ) VALUES (
@@ -143,9 +148,11 @@ INSERT INTO node_metrics (
     :requests_successful_increment,
     :requests_failed_increment,
     :time_to_first_token,
+    :inference_tokens_per_second,
     :rtt,
     :uptime_increment,
     :connected_at,
+    :model_name,
     :created_at,
     :last_updated_at
 )
@@ -154,9 +161,11 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     requests_successful = node_metrics.requests_successful + EXCLUDED.requests_successful,
     requests_failed = node_metrics.requests_failed + EXCLUDED.requests_failed,    
     time_to_first_token = COALESCE(EXCLUDED.time_to_first_token, node_metrics.time_to_first_token),
+    inference_tokens_per_second = COALESCE(EXCLUDED.inference_tokens_per_second, node_metrics.inference_tokens_per_second),
     rtt = COALESCE(EXCLUDED.rtt, node_metrics.rtt),
     uptime = node_metrics.uptime + EXCLUDED.uptime,
     connected_at = COALESCE(EXCLUDED.connected_at, node_metrics.connected_at),
+    model_name = COALESCE(EXCLUDED.model_name, node_metrics.model_name),
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
@@ -246,11 +255,12 @@ SQL_GET_CONNECTED_NODES = """
 SELECT
     ni.id,
     ni.name,
+    ni.gpu_model,
     nb.model_name,
-    nb.tokens_per_second
+    nb.tokens_per_second AS benchmark_tokens_per_second
 FROM node_info ni
-LEFT JOIN node_benchmark nb on ni.id = nb.node_id
 LEFT JOIN node_metrics nm on ni.id = nm.node_info_id
+LEFT JOIN node_benchmark nb on ni.id = nb.node_id AND nm.model_name = nb.model_name
 WHERE nm.connected_at IS NOT NULL;
 """
 
@@ -273,6 +283,7 @@ SELECT
     requests_successful,
     requests_failed,
     time_to_first_token,
+    inference_tokens_per_second,
     uptime,
     connected_at
 FROM node_metrics
@@ -295,12 +306,12 @@ WHERE ni.id = ANY(:node_ids);
 SQL_GET_BENCHMARK_TOKENS_BY_MODEL = """
 SELECT 
     nb.model_name,
-    SUM(nb.tokens_per_second) AS total_tokens_per_second
+    SUM(nb.tokens_per_second) AS benchmark_total_tokens_per_second
 FROM node_benchmark nb
 LEFT JOIN node_info ni ON nb.node_id = ni.id
 WHERE ni.id = ANY(:node_ids)
 GROUP BY nb.model_name
-ORDER BY total_tokens_per_second DESC;
+ORDER BY benchmark_total_tokens_per_second DESC;
 """
 
 
@@ -370,7 +381,7 @@ class NodeRepository:
                         requests_served=row.requests_served,
                         uptime=row.uptime,
                         connected=bool(row.connected_at),
-                        tokens_per_second=row.tokens_per_second,
+                        benchmark_tokens_per_second=row.benchmark_tokens_per_second,
                         created_at=row.created_at,
                     )
                 )
@@ -439,16 +450,7 @@ class NodeRepository:
         if not eligible_nodes:
             return None
 
-        max_capacity_left = max(self._capacity_left(node) for node in eligible_nodes)
-        # Select all nodes with the maximum capacity
-        nodes_with_max_capacity_left = [
-            node
-            for node in eligible_nodes
-            if self._capacity_left(node) == max_capacity_left
-        ]
-
-        # Randomly choose one node from those with maximum capacity
-        return random.choice(nodes_with_max_capacity_left)
+        return random.choice(eligible_nodes)
 
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
         if not node.is_healthy:
@@ -463,17 +465,6 @@ class NodeRepository:
 
         return node.active_requests_count() == 1
 
-    def _capacity_left(self, node: ConnectedNode) -> int:
-        if node.is_datacenter_gpu():
-            return (
-                self._max_parallel_requests_per_datacenter_node
-                - node.active_requests_count()
-            )
-        if node.can_handle_parallel_requests():
-            return self._max_parallel_requests_per_node - node.active_requests_count()
-
-        return 1 - node.active_requests_count()
-
     async def get_connected_node_benchmarks(self) -> List[NodeBenchmark]:
         async with self._session_provider.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
@@ -481,7 +472,8 @@ class NodeRepository:
                 NodeBenchmark(
                     node_id=row.id,
                     model_name=row.model_name,
-                    tokens_per_second=row.tokens_per_second,
+                    benchmark_tokens_per_second=row.benchmark_tokens_per_second,
+                    gpu_model=row.gpu_model,
                 )
                 for row in rows
             ]
@@ -510,7 +502,8 @@ class NodeRepository:
                     requests_served=utils.parse_int(row.requests_served),
                     requests_successful=utils.parse_int(row.requests_successful),
                     requests_failed=utils.parse_int(row.requests_failed),
-                    time_to_first_token=utils.parse_float(row.time_to_first_token),
+                    time_to_first_token=row.time_to_first_token,
+                    inference_tokens_per_second=row.inference_tokens_per_second,
                     is_active=bool(row.connected_at),
                     total_uptime=utils.parse_int(row.uptime),
                     current_uptime=(
@@ -534,7 +527,8 @@ class NodeRepository:
                     requests_served=row.requests_served,
                     requests_successful=row.requests_successful,
                     requests_failed=row.requests_failed,
-                    time_to_first_token=utils.parse_float(row.time_to_first_token),
+                    time_to_first_token=row.time_to_first_token,
+                    inference_tokens_per_second=row.inference_tokens_per_second,
                     rtt=row.rtt,
                     is_active=bool(row.connected_at),
                     total_uptime=row.uptime,
@@ -543,6 +537,7 @@ class NodeRepository:
                         if not row.connected_at
                         else int(time.time() - row.connected_at.timestamp())
                     ),
+                    gpu_model=row.gpu_model,
                 )
             return result
 
@@ -552,7 +547,7 @@ class NodeRepository:
 
     # Insert if it doesn't exist
     async def set_node_connection_timestamp(
-        self, node_id: UUID, connected_at: datetime
+        self, node_id: UUID, model_name: str, connected_at: datetime
     ):
         data = {
             "id": str(uuid7()),
@@ -561,9 +556,11 @@ class NodeRepository:
             "requests_successful_increment": 0,
             "requests_failed_increment": 0,
             "time_to_first_token": None,
+            "inference_tokens_per_second": None,
             "rtt": 0,
             "uptime_increment": 0,
             "connected_at": connected_at,
+            "model_name": model_name,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -601,9 +598,11 @@ class NodeRepository:
             "requests_successful_increment": metrics.requests_successful_incerement,
             "requests_failed_increment": metrics.requests_failed_increment,
             "time_to_first_token": metrics.time_to_first_token,
+            "inference_tokens_per_second": metrics.inference_tokens_per_second,
             "rtt": metrics.rtt,
             "uptime_increment": metrics.uptime_increment,
             "connected_at": None,
+            "model_name": metrics.model,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -753,7 +752,8 @@ class NodeRepository:
             )
             return [
                 ModelStats(
-                    model_name=row.model_name, throughput=row.total_tokens_per_second
+                    model_name=row.model_name,
+                    throughput=row.benchmark_total_tokens_per_second,
                 )
                 for row in rows
             ]
