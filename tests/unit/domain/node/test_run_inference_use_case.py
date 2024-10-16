@@ -94,7 +94,7 @@ async def test_success(connected_node_factory):
         mock_node_repository,
         mock_tokens_repository,
         AsyncMock(),
-        AsyncMock(),
+        MagicMock(),
     ):
         responses.append(response)
 

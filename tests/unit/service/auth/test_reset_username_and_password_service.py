@@ -1,4 +1,5 @@
 from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 
 import pytest
 from uuid import UUID
@@ -36,7 +37,7 @@ async def test_success():
         username="mock_username",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    analytics = AsyncMock()
+    analytics = MagicMock()
     response = await service.execute(
         ResetUserPasswordRequest(token="token", password="password"),
         auth_repo,
@@ -55,7 +56,7 @@ async def test_auth_error():
         session_token="mock_session_token_2",
     )
 
-    analytics = AsyncMock()
+    analytics = MagicMock()
 
     with pytest.raises(error_responses.InvalidCredentialsAPIError) as e:
         await service.execute(
