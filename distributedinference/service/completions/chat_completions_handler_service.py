@@ -4,6 +4,7 @@ from typing import Union
 from fastapi import Response
 from starlette.responses import StreamingResponse
 
+import settings
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
@@ -41,6 +42,7 @@ async def execute(
     rate_limit_headers = rate_limit_to_headers(rate_limit_info)
     if rate_limit_info.rate_limited:
         raise RateLimitError(rate_limit_headers)
+    request.model = _match_model_name(request.model)
     if request.stream:
         headers = {
             "X-Content-Type-Options": "nosniff",
@@ -94,3 +96,13 @@ def rate_limit_to_headers(rate_limit: RateLimit) -> Dict[str, str]:
     if rate_limit.retry_after:
         headers["retry-after"] = str(rate_limit.retry_after)
     return headers
+
+
+def _match_model_name(user_input: str) -> str:
+    model_name = settings.MODEL_NAME_MAPPING.get(user_input.lower())
+
+    if model_name:
+        return model_name
+
+    # forward user_input as user may provide the full model name
+    return user_input
