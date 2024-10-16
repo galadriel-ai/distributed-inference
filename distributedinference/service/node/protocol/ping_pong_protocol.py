@@ -163,10 +163,11 @@ class PingPongProtocol:
         uptime_increment = int(
             current_time - node_info.last_uptime_update_time_in_seconds
         )
-        await _increment_uptime(
+        await _increment_uptime_and_update_rtt(
             node_info.node_uuid,
             node_info.model,
             uptime_increment,
+            node_info.rtt,
             self.metrics_queue_repository,
         )
 
@@ -283,10 +284,11 @@ class PingPongProtocol:
         uptime_increment = int(
             current_time - node_info.last_uptime_update_time_in_seconds
         )
-        await _increment_uptime(
+        await _increment_uptime_and_update_rtt(
             node_info.node_uuid,
             node_info.model,
             uptime_increment,
+            current_rtt,
             self.metrics_queue_repository,
         )
         node_info.last_uptime_update_time_in_seconds = current_time
@@ -385,12 +387,14 @@ def _validate_config(protocol_name: str, config: dict):
     return True
 
 
-async def _increment_uptime(
+async def _increment_uptime_and_update_rtt(
     node_id: UUID,
     model: str,
     uptime_increment: int,
+    rtt: float,
     metrics_queue_repository: MetricsQueueRepository,
 ) -> None:
     node_metrics_increment = NodeMetricsIncrement(node_id=node_id, model=model)
     node_metrics_increment.uptime_increment = uptime_increment
+    node_metrics_increment.rtt = round(rtt)
     await metrics_queue_repository.push(node_metrics_increment)
