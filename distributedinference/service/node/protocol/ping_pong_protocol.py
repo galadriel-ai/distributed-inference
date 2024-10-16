@@ -207,6 +207,7 @@ class PingPongProtocol:
             nonce=nonce,  # the nonce of the ping request
             # Strictly not required for Ping-Pong,
             # But can be used on the client side to do some priority analysis
+            # TODO remove `or 0` after the node is updated to expect None value for `rtt`
             rtt=node_info.rtt or 0,  # send the previously observed RTT to client
             ping_streak=node_info.ping_streak,  # send the ping streak to client
             miss_streak=node_info.miss_streak,  # send the miss streak to client
