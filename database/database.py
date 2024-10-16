@@ -136,7 +136,7 @@ class NodeMetrics(Base):
         Integer(), nullable=False, default=0, server_default="0"
     )
     requests_failed = Column(Integer(), nullable=False, default=0, server_default="0")
-    rtt = Column(Integer(), nullable=False, default=0, server_default="0")  # In ms
+    rtt = Column(Integer(), nullable=True)  # In ms
     time_to_first_token = Column(Float(), nullable=True)  # In seconds
     inference_tokens_per_second = Column(Float(), nullable=True)
     uptime = Column(

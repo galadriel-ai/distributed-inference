@@ -543,7 +543,7 @@ class NodeRepository:
             "requests_failed_increment": 0,
             "time_to_first_token": None,
             "inference_tokens_per_second": None,
-            "rtt": 0,
+            "rtt": None,
             "uptime_increment": 0,
             "connected_at": connected_at,
             "model_name": model_name,
