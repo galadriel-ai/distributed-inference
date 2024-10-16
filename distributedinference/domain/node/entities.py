@@ -72,7 +72,7 @@ class NodeBenchmark:
     gpu_model: str
 
 
-@dataclass()
+@dataclass
 class ConnectedNode:
     uid: UUID
     user_id: UUID
