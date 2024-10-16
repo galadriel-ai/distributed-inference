@@ -106,7 +106,9 @@ async def test_check_node_health_exception(
 
 
 async def test_send_health_check_inference_healthy(mock_node, mock_node_repository):
-    healthy_response = AsyncMock(chunk=True, error=None)
+    healthy_response = AsyncMock(
+        chunk=MagicMock(usage=MagicMock(total=10), choices=None), error=None
+    )
     mock_node_repository.receive_for_request.return_value = healthy_response
 
     response = await health_check_job._send_health_check_inference(

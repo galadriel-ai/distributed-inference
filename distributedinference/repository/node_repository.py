@@ -586,6 +586,8 @@ class NodeRepository:
             "is_healthy": is_healthy,
             "last_updated_at": utcnow(),
         }
+        if node_id in self._connected_nodes:
+            self._connected_nodes[node_id].is_healthy = is_healthy
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_IS_HEALTHY), data)
             await session.commit()

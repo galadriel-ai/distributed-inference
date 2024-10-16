@@ -40,23 +40,7 @@ async def execute(
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
 ) -> AsyncGenerator[InferenceResponse, None]:
-    node = node_repository.select_node(request.model)
-    if not node:
-        raise NoAvailableNodesError()
-
-    analytics.track_event(
-        user_uid,
-        AnalyticsEvent(
-            EventName.USER_EXECUTED_INFERENCE_REQUEST, {"node_id": node.uid}
-        ),
-    )
-
-    analytics.track_event(
-        node.user_id,
-        AnalyticsEvent(
-            EventName.USER_NODE_SELECTED_FOR_INFERENCE, {"node_id": node.uid}
-        ),
-    )
+    node = _select_and_track_node(user_uid, request, node_repository, analytics)
 
     await node_repository.send_inference_request(node.uid, request)
 
@@ -143,6 +127,31 @@ async def execute(
         else:
             metrics_increment.requests_failed_increment += 1
         await metrics_queue_repository.push(metrics_increment)
+
+
+def _select_and_track_node(
+    user_uid: UUID,
+    request: InferenceRequest,
+    node_repository: NodeRepository,
+    analytics: Analytics,
+):
+    node = node_repository.select_node(request.model)
+    if not node:
+        raise NoAvailableNodesError()
+
+    analytics.track_event(
+        user_uid,
+        AnalyticsEvent(
+            EventName.USER_EXECUTED_INFERENCE_REQUEST, {"node_id": node.uid}
+        ),
+    )
+    analytics.track_event(
+        node.user_id,
+        AnalyticsEvent(
+            EventName.USER_NODE_SELECTED_FOR_INFERENCE, {"node_id": node.uid}
+        ),
+    )
+    return node
 
 
 async def _save_result(

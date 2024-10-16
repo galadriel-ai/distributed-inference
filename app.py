@@ -8,6 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 import settings
 from distributedinference import dependencies
+from distributedinference.domain.node import health_check_job
 from distributedinference.domain.node import metrics_update_job
 from distributedinference.repository import connection
 from distributedinference.routers import main_router
@@ -45,13 +46,22 @@ async def lifespan(_: FastAPI):
             dependencies.get_metrics_queue_repository(),
         )
     )
+    health_task = asyncio.create_task(
+        health_check_job.execute(
+            dependencies.get_node_repository(),
+            dependencies.get_analytics(),
+        )
+    )
     try:
         yield
     finally:
         await dependencies.get_node_repository().set_all_connected_nodes_inactive()
         metrics_task.cancel()
         protocol_task.cancel()
-        await asyncio.gather(metrics_task, protocol_task, return_exceptions=True)
+        health_task.cancel()
+        await asyncio.gather(
+            metrics_task, protocol_task, health_task, return_exceptions=True
+        )
 
 
 app = FastAPI(lifespan=lifespan)

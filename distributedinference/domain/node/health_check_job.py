@@ -12,9 +12,6 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
-from distributedinference.analytics.analytics import (
-    Analytics,
-)
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
@@ -37,7 +34,7 @@ async def execute(
         logger.debug("Running health check job!")
         try:
             nodes = node_repository.get_unhealthy_nodes()
-        except:
+        except Exception:
             logger.error(
                 f"Failed to get unhealthy nodes, restarting in {timeout} seconds",
                 exc_info=True,
@@ -97,13 +94,13 @@ async def _send_health_check_inference(
                         message="Node did not respond to health check request",
                     ),
                 )
-            if response.chunk:
+            if response.chunk and response.chunk.usage and not response.chunk.choices:
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=True,
                     error=None,
                 )
-            elif response.error:
+            if response.error:
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=False,
@@ -117,7 +114,9 @@ async def _get_health_check_request(node: ConnectedNode) -> CompletionCreatePara
     try:
         return await async_maybe_transform(
             {
-                "messages": [Message(role="user", content="Respond with only HELLO")],
+                "messages": [
+                    Message(role="user", content="Respond with only letter A")
+                ],
                 "model": node.model,
             },
             CompletionCreateParams,
