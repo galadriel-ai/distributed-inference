@@ -21,7 +21,7 @@ class NodeMetricsIncrement:
     requests_failed_increment: int = 0
     time_to_first_token: Optional[float] = None
     inference_tokens_per_second: Optional[float] = None
-    rtt: int = 0
+    rtt: Optional[int] = None
     uptime_increment: int = 0
 
 

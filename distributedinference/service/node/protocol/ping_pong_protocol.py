@@ -1,6 +1,7 @@
 import time
 import uuid
 from typing import Any
+from typing import Optional
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
@@ -36,7 +37,7 @@ class NodePingInfo(BaseModel):
     node_uuid: UUID  # the UUID of the node, need this to update the metrics
     model: str
     # Counters
-    rtt: float = 0  # the last rtt of the node
+    rtt: Optional[float] = None  # the last rtt of the node
     sum_rtt: float = 0  # the sum of all the rtt requests, used to get average rtt
     ping_streak: int = 0  # no of consecutive pings that the node has responded to
     miss_streak: int = 0  # no of consecutive pings that the node has missed
@@ -132,7 +133,7 @@ class PingPongProtocol:
             websocket=websocket,
             node_uuid=node_uuid,
             model=model,
-            rtt=0,
+            rtt=None,
             sum_rtt=0,
             ping_streak=0,
             miss_streak=0,
@@ -206,7 +207,7 @@ class PingPongProtocol:
             nonce=nonce,  # the nonce of the ping request
             # Strictly not required for Ping-Pong,
             # But can be used on the client side to do some priority analysis
-            rtt=node_info.rtt,  # send the previously observed RTT to client
+            rtt=node_info.rtt or 0,  # send the previously observed RTT to client
             ping_streak=node_info.ping_streak,  # send the ping streak to client
             miss_streak=node_info.miss_streak,  # send the miss streak to client
         )
@@ -391,10 +392,10 @@ async def _increment_uptime_and_update_rtt(
     node_id: UUID,
     model: str,
     uptime_increment: int,
-    rtt: float,
+    rtt: Optional[float],
     metrics_queue_repository: MetricsQueueRepository,
 ) -> None:
     node_metrics_increment = NodeMetricsIncrement(node_id=node_id, model=model)
     node_metrics_increment.uptime_increment = uptime_increment
-    node_metrics_increment.rtt = round(rtt)
+    node_metrics_increment.rtt = round(rtt) if rtt else None
     await metrics_queue_repository.push(node_metrics_increment)
