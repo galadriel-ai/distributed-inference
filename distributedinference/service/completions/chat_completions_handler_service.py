@@ -111,6 +111,6 @@ def _match_model_name(user_input: str) -> str:
             f"{model_name_base}-{settings.MODEL_NAME_SUFFIXES.get(suffix)}"
         )
         return exact_model_name
-    else:
-        # user may provide the full model name or wrong/unsupported model names
-        return user_input
+
+    # user may provide the full model name or wrong/unsupported model names
+    return user_input
