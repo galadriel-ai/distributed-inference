@@ -32,7 +32,7 @@ class NodeMetrics:
     requests_failed: int = 0
     time_to_first_token: Optional[float] = None
     inference_tokens_per_second: Optional[float] = None
-    rtt: int = 0
+    rtt: Optional[int] = 0
     is_active: bool = False
     total_uptime: int = 0
     current_uptime: int = 0
