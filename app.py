@@ -28,6 +28,7 @@ from distributedinference.service.node.protocol import protocol_handler
 
 logger = api_logger.get()
 
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     connection.init_defaults()
