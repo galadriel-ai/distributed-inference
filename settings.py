@@ -26,6 +26,16 @@ DB_DATABASE_READ = os.getenv("DB_DATABASE", "inference")
 DB_HOST_READ = os.getenv("DB_HOST", "localhost")
 DB_PORT_READ = os.getenv("DB_PORT", "5432")
 
+MODEL_NAME_MAPPING = {
+    "llama3.1": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+    "llama3.1:8b": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+    "llama3.1-8b": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+    "llama3.1:70b": "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "llama3.1-70b": "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "llama3.1:405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+    "llama3.1-405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+}
+
 # Rough estimate for 70% of lowest 3090 GPU node benchmark test
 MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = int(
     os.getenv("MINIMUM_COMPLETIONS_TOKENS_PER_SECOND", "264")

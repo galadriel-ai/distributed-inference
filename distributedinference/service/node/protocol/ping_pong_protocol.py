@@ -1,6 +1,8 @@
 import time
 import uuid
 from typing import Any
+from typing import Dict
+from typing import Optional
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
@@ -36,7 +38,7 @@ class NodePingInfo(BaseModel):
     node_uuid: UUID  # the UUID of the node, need this to update the metrics
     model: str
     # Counters
-    rtt: float = 0  # the last rtt of the node
+    rtt: Optional[float] = None  # the last rtt of the node
     sum_rtt: float = 0  # the sum of all the rtt requests, used to get average rtt
     ping_streak: int = 0  # no of consecutive pings that the node has responded to
     miss_streak: int = 0  # no of consecutive pings that the node has missed
@@ -78,7 +80,7 @@ class PingPongProtocol:
         self.metrics_queue_repository = metrics_queue_repository
         # The main data structure that stores the active nodes
         # and its states related to the ping-pong protocol
-        self.active_nodes = {}
+        self.active_nodes: Dict[str, NodePingInfo] = {}
         logger.info(f"{self.config.name}: Protocol initialized")
 
     # Handle the responses from the client
@@ -132,7 +134,7 @@ class PingPongProtocol:
             websocket=websocket,
             node_uuid=node_uuid,
             model=model,
-            rtt=0,
+            rtt=None,
             sum_rtt=0,
             ping_streak=0,
             miss_streak=0,
@@ -163,10 +165,11 @@ class PingPongProtocol:
         uptime_increment = int(
             current_time - node_info.last_uptime_update_time_in_seconds
         )
-        await _increment_uptime(
+        await _increment_uptime_and_update_rtt(
             node_info.node_uuid,
             node_info.model,
             uptime_increment,
+            node_info.rtt,
             self.metrics_queue_repository,
         )
 
@@ -205,7 +208,8 @@ class PingPongProtocol:
             nonce=nonce,  # the nonce of the ping request
             # Strictly not required for Ping-Pong,
             # But can be used on the client side to do some priority analysis
-            rtt=node_info.rtt,  # send the previously observed RTT to client
+            # TODO remove `or 0` after the node is updated to expect None value for `rtt`
+            rtt=node_info.rtt or 0,  # send the previously observed RTT to client
             ping_streak=node_info.ping_streak,  # send the ping streak to client
             miss_streak=node_info.miss_streak,  # send the miss streak to client
         )
@@ -283,10 +287,11 @@ class PingPongProtocol:
         uptime_increment = int(
             current_time - node_info.last_uptime_update_time_in_seconds
         )
-        await _increment_uptime(
+        await _increment_uptime_and_update_rtt(
             node_info.node_uuid,
             node_info.model,
             uptime_increment,
+            current_rtt,
             self.metrics_queue_repository,
         )
         node_info.last_uptime_update_time_in_seconds = current_time
@@ -385,12 +390,14 @@ def _validate_config(protocol_name: str, config: dict):
     return True
 
 
-async def _increment_uptime(
+async def _increment_uptime_and_update_rtt(
     node_id: UUID,
     model: str,
     uptime_increment: int,
+    rtt: Optional[float],
     metrics_queue_repository: MetricsQueueRepository,
 ) -> None:
     node_metrics_increment = NodeMetricsIncrement(node_id=node_id, model=model)
     node_metrics_increment.uptime_increment = uptime_increment
+    node_metrics_increment.rtt = round(rtt) if rtt else None
     await metrics_queue_repository.push(node_metrics_increment)
