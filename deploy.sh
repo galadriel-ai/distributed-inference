@@ -7,9 +7,6 @@ mkdir -p shared/nginx
 rm -rf prometheus
 mkdir prometheus
 
-# make sure to send SIGTERM to the running processes 
-docker compose down 
-
 docker compose up --build --remove-orphans -d
 
 docker image prune -f
