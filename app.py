@@ -60,7 +60,9 @@ async def lifespan(_: FastAPI):
     metrics_task.cancel()
     protocol_task.cancel()
     health_task.cancel()
-    await asyncio.gather(metrics_task, protocol_task, health_task, return_exceptions=True)
+    await asyncio.gather(
+        metrics_task, protocol_task, health_task, return_exceptions=True
+    )
     logger.info("Cleanup complete.")
 
 
