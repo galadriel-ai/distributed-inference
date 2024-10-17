@@ -7,10 +7,12 @@ from uuid import UUID
 import sqlalchemy
 from uuid_extensions import uuid7
 
+from distributedinference import api_logger
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import historic_uuid
 from distributedinference.repository.utils import historic_uuid_seconds
 from distributedinference.repository.utils import utcnow
+from distributedinference.utils.timer import async_timer
 
 SQL_INSERT_USAGE_TOKENS = """
 INSERT INTO usage_tokens (
@@ -115,6 +117,8 @@ WHERE
     AND ut.id > :start_id;
 """
 
+logger = api_logger.get()
+
 
 @dataclass
 class UsageTokens:
@@ -146,6 +150,7 @@ class TokensRepository:
     def __init__(self, session_provider: SessionProvider):
         self._session_provider = session_provider
 
+    @async_timer("tokens_repository.insert_usage_tokens", logger=logger)
     async def insert_usage_tokens(self, ut: UsageTokens):
         data = {
             "id": uuid7(),
@@ -163,6 +168,7 @@ class TokensRepository:
             await session.commit()
 
     # pylint: disable=W0613
+    @async_timer("tokens_repository.get_user_latest_usage_tokens", logger=logger)
     async def get_user_latest_usage_tokens(
         self, user_id: UUID, node_id: UUID, count: int
     ) -> List[UsageTokens]:
@@ -186,6 +192,7 @@ class TokensRepository:
                 )
         return tokens
 
+    @async_timer("tokens_repository.get_total_tokens_by_node_ids", logger=logger)
     async def get_total_tokens_by_node_ids(
         self, node_ids: List[UUID]
     ) -> List[UsageNodeModelTotalTokens]:
@@ -205,6 +212,7 @@ class TokensRepository:
                 )
         return tokens
 
+    @async_timer("tokens_repository.get_latest_count_by_time", logger=logger)
     async def get_latest_count_by_time(self, hours: int = 24) -> int:
         data = {"start_id": historic_uuid(hours)}
         async with self._session_provider.get() as session:
@@ -213,6 +221,7 @@ class TokensRepository:
                 return row.usage_count
         return 0
 
+    @async_timer("tokens_repository.get_latest_count_by_time_and_node", logger=logger)
     async def get_latest_count_by_time_and_node(
         self, node_id: UUID, hours: int = 24
     ) -> int:
@@ -225,6 +234,7 @@ class TokensRepository:
                 return row.usage_count
         return 0
 
+    @async_timer("tokens_repository.get_latest_count_by_time_and_user", logger=logger)
     async def get_latest_count_by_time_and_user(
         self, user_id: UUID, hours: int = 24
     ) -> int:
@@ -237,6 +247,9 @@ class TokensRepository:
                 return row.usage_count
         return 0
 
+    @async_timer(
+        "tokens_repository.get_requests_usage_by_time_and_consumer", logger=logger
+    )
     async def get_requests_usage_by_time_and_consumer(
         self, consumer_user_profile_id: UUID, seconds: int = 60
     ) -> UsageInformation:
@@ -262,6 +275,9 @@ class TokensRepository:
             count=0, oldest_usage_id=uuid7(), oldest_usage_created_at=utcnow()
         )
 
+    @async_timer(
+        "tokens_repository.get_tokens_usage_by_time_and_consumer", logger=logger
+    )
     async def get_tokens_usage_by_time_and_consumer(
         self, consumer_user_profile_id: UUID, seconds: int = 60
     ) -> UsageInformation:

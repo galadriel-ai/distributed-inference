@@ -5,6 +5,7 @@ from fastapi import Response
 from starlette.responses import StreamingResponse
 
 import settings
+from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
@@ -23,9 +24,13 @@ from distributedinference.service.completions.entities import ChatCompletionRequ
 from distributedinference.service.completions.streaming_response import (
     StreamingResponseWithStatusCode,
 )
+from distributedinference.utils.timer import async_timer
+
+logger = api_logger.get()
 
 
 # pylint: disable=R0913
+@async_timer("chat_completions_handler_service.execute", logger=logger)
 async def execute(
     request: ChatCompletionRequest,
     response: Response,
