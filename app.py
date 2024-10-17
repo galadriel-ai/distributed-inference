@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 import settings
+from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.node import health_check_job
 from distributedinference.domain.node import metrics_update_job
@@ -25,14 +26,12 @@ from distributedinference.service.middleware.request_enrichment_middleware impor
 from distributedinference.service.node.protocol import protocol_handler
 
 
+logger = api_logger.get()
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     connection.init_defaults()
     dependencies.init_globals()
-
-    # FIXME: This is a temporary fix to set all nodes to inactive on startup
-    # Make sure to remove this once we have multiple backend workers
-    await dependencies.get_node_repository().set_all_nodes_inactive()
 
     metrics_task = asyncio.create_task(
         metrics_update_job.execute(
@@ -52,16 +51,16 @@ async def lifespan(_: FastAPI):
             dependencies.get_analytics(),
         )
     )
-    try:
-        yield
-    finally:
-        await dependencies.get_node_repository().set_all_connected_nodes_inactive()
-        metrics_task.cancel()
-        protocol_task.cancel()
-        health_task.cancel()
-        await asyncio.gather(
-            metrics_task, protocol_task, health_task, return_exceptions=True
-        )
+    yield
+
+    # Clean up resources and database before shutting down
+    logger.info("Shutdown Signal received. Cleaning up...")
+    await dependencies.get_node_repository().set_all_connected_nodes_inactive()
+    metrics_task.cancel()
+    protocol_task.cancel()
+    health_task.cancel()
+    logger.info("Cleanup complete.")
+    await asyncio.gather(metrics_task, protocol_task, return_exceptions=True)
 
 
 app = FastAPI(lifespan=lifespan)
