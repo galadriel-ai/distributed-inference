@@ -6,6 +6,7 @@ Usage:
 PYTHONPATH=. python scripts/analyse_timer_logs.py
 ```
 """
+
 import json
 from typing import List
 from typing import Optional
@@ -72,5 +73,5 @@ def _print_result(name: str, durations: List[float]) -> None:
     print("  avg:", sum(durations) / len(durations))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
