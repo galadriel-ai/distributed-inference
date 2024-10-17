@@ -20,7 +20,7 @@ async def execute(
     user_repository: UserRepository,
     analytics: Analytics,
 ) -> LoginResponse:
-    user = await user_repository.get_user_by_username(login_request.username)
+    user = await user_repository.get_user_by_email(login_request.email)
     if not user:
         raise error_responses.InvalidCredentialsAPIError()
     try:

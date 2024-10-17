@@ -1,13 +1,13 @@
 from uuid import UUID
+
 from uuid_extensions import uuid7
 
 import settings
-from distributedinference import api_logger
-from distributedinference.analytics.analytics import (
-    Analytics,
-    EventName,
-    AnalyticsEvent,
-)
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
+from distributedinference.domain.auth import signup_user_use_case
+from distributedinference.domain.auth.entities import UserSignup
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
@@ -17,8 +17,6 @@ from distributedinference.service import error_responses
 from distributedinference.service.auth.entities import SignupRequest
 from distributedinference.service.auth.entities import SignupResponse
 
-logger = api_logger.get()
-
 
 async def execute(
     signup_request: SignupRequest,
@@ -26,26 +24,29 @@ async def execute(
     user_repository: UserRepository,
     analytics: Analytics,
 ) -> SignupResponse:
-    if signup_request.is_existing_user:
-        if not await user_repository.get_user_by_email(signup_request.email):
-            raise error_responses.NotFoundAPIError("Email not found")
-    try:
-        authentication_user_id = await auth_repo.signup_user(signup_request.email)
-    except:
-        logger.error("Error signing up", exc_info=True)
-        raise error_responses.InvalidCredentialsAPIError()
-    existing_user = await user_repository.get_user_by_authentication_id(
-        authentication_user_id
-    )
-    if not existing_user:
-        user = User(
-            uid=uuid7(),
-            name="console signup",
+    if await user_repository.get_user_by_email(signup_request.email):
+        raise error_responses.UsernameAlreadyExistsAPIError()
+    authentication = await signup_user_use_case.execute(
+        UserSignup(
+            password=signup_request.password,
             email=signup_request.email,
-            authentication_id=authentication_user_id,
-            usage_tier_id=UUID(settings.DEFAULT_USAGE_TIER_UUID),
-        )
-        await user_repository.insert_user(user)
-        analytics.track_event(user.uid, AnalyticsEvent(EventName.SIGNUP, {}))
-        analytics.identify_user(user)
-    return SignupResponse()
+        ),
+        auth_repo,
+    )
+
+    user = User(
+        uid=uuid7(),
+        name="console signup",
+        email=signup_request.email,
+        authentication_id=authentication.provider_user_id,
+        usage_tier_id=UUID(settings.DEFAULT_USAGE_TIER_UUID),
+    )
+    await user_repository.insert_user(user, is_password_set=True)
+    analytics.track_event(user.uid, AnalyticsEvent(EventName.SIGNUP, {}))
+    analytics.identify_user(user)
+
+    return SignupResponse(
+        email=signup_request.email,
+        user_uid=str(user.uid),
+        session_token=authentication.session_token,
+    )

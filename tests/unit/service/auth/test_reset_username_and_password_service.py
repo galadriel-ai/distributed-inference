@@ -50,12 +50,7 @@ async def test_success():
 
 async def test_auth_error():
     auth_repo = AsyncMock(spec=AuthenticationApiRepository)
-    auth_repo.authenticate_magic_link = AsyncMock(side_effect=Exception)
-    auth_repo.set_user_password.return_value = UserAuthenticationResponse(
-        provider_user_id="mock_provider_user_id",
-        session_token="mock_session_token_2",
-    )
-
+    auth_repo.set_user_password = AsyncMock(side_effect=Exception)
     analytics = MagicMock()
 
     with pytest.raises(error_responses.InvalidCredentialsAPIError) as e:

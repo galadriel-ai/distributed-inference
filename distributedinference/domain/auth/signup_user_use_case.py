@@ -1,3 +1,4 @@
+from distributedinference.domain.auth.entities import UserSignup
 from distributedinference.domain.user.entities import UserAuthenticationResponse
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
@@ -6,15 +7,13 @@ from distributedinference.service import error_responses
 
 
 async def execute(
-    token: str,
-    password: str,
+    signup: UserSignup,
     auth_repo: AuthenticationApiRepository,
 ) -> UserAuthenticationResponse:
     try:
-        authentication = await auth_repo.authenticate_magic_link(token)
-        updated_authentication = await auth_repo.set_user_password(
-            password, authentication.session_token
+        updated_authentication = await auth_repo.signup_with_password(
+            signup.email, signup.password
         )
-    except:
+    except Exception:
         raise error_responses.InvalidCredentialsAPIError()
     return updated_authentication
