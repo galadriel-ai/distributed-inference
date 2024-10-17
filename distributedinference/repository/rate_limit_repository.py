@@ -6,8 +6,9 @@ from uuid import UUID
 
 import sqlalchemy
 
+from distributedinference import api_logger
 from distributedinference.repository.connection import SessionProvider
-
+from distributedinference.utils.timer import async_timer
 
 SQL_GET_USAGE_TIERS = """
 SELECT
@@ -38,6 +39,8 @@ FROM usage_tier
 WHERE id = :id;
 """
 
+logger = api_logger.get()
+
 
 @dataclass
 class UsageTier:
@@ -57,6 +60,7 @@ class RateLimitRepository:
     def __init__(self, session_provider: SessionProvider):
         self._session_provider = session_provider
 
+    @async_timer("rate_limit_repository.get_usage_tiers", logger=logger)
     async def get_usage_tiers(self) -> List[UsageTier]:
         async with self._session_provider.get() as session:
             tiers = []
@@ -77,6 +81,7 @@ class RateLimitRepository:
                 )
             return tiers
 
+    @async_timer("rate_limit_repository.get_usage_tier", logger=logger)
     async def get_usage_tier(self, tier_id: UUID) -> Optional[UsageTier]:
         data = {"id": tier_id}
         async with self._session_provider.get() as session:

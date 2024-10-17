@@ -3,10 +3,12 @@ from uuid import UUID
 
 import sqlalchemy
 
+from distributedinference import api_logger
 from distributedinference.domain.node_stats.entities import UserAggregatedStats
 from distributedinference.domain.node_stats.entities import NodeStats
 from distributedinference.repository import utils
 from distributedinference.repository.connection import SessionProvider
+from distributedinference.utils.timer import async_timer
 
 SQL_GET_NODE_STATS = """
 SELECT
@@ -33,12 +35,15 @@ LEFT JOIN node_benchmark nb on ni.id = nb.node_id
 WHERE ni.user_profile_id = :user_profile_id;
 """
 
+logger = api_logger.get()
+
 
 class NodeStatsRepository:
 
     def __init__(self, session_provider: SessionProvider):
         self._session_provider = session_provider
 
+    @async_timer("node_stats_repository.get_node_stats", logger=logger)
     async def get_node_stats(self, user_id: UUID, node_id: UUID) -> Optional[NodeStats]:
         data = {"id": node_id, "user_profile_id": user_id}
         async with self._session_provider.get() as session:
@@ -58,6 +63,7 @@ class NodeStatsRepository:
                 )
         return None
 
+    @async_timer("node_stats_repository.get_user_aggregated_stats", logger=logger)
     async def get_user_aggregated_stats(
         self, user_id: UUID
     ) -> Optional[UserAggregatedStats]:

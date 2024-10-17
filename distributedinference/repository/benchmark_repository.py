@@ -8,6 +8,7 @@ from distributedinference import api_logger
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
+from distributedinference.utils.timer import async_timer
 
 logger = api_logger.get()
 
@@ -62,6 +63,7 @@ class BenchmarkRepository:
     def __init__(self, session_provider: SessionProvider):
         self._session_provider = session_provider
 
+    @async_timer("benchmark_repository.save_node_benchmark", logger=logger)
     async def save_node_benchmark(
         self, user_profile_id: UUID, benchmark: NodeBenchmark
     ):
@@ -80,6 +82,7 @@ class BenchmarkRepository:
             )
             await session.commit()
 
+    @async_timer("benchmark_repository.get_node_benchmark", logger=logger)
     async def get_node_benchmark(
         self, user_id: UUID, node_id: UUID, model_name: str
     ) -> Optional[NodeBenchmark]:
