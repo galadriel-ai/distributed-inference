@@ -102,7 +102,8 @@ async def get_metrics(
             node_inference_tokens_per_second_gauge.labels(
                 node_model_names[node_uid], node_uid
             ).set(metrics.inference_tokens_per_second)
-        node_rtt_gauge.labels(node_uid).set(metrics.rtt)
+        if metrics.rtt:
+            node_rtt_gauge.labels(node_uid).set(metrics.rtt)
 
     await _set_node_tokens(tokens_repository, connected_node_ids)
     await _set_node_costs(nodes)
