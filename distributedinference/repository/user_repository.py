@@ -6,10 +6,12 @@ from uuid import UUID
 import sqlalchemy
 from uuid_extensions import uuid7
 
+from distributedinference import api_logger
 from distributedinference.domain.user.entities import ApiKey
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
+from distributedinference.utils.timer import async_timer
 
 SQL_INSERT = """
 INSERT INTO user_profile (
@@ -142,11 +144,15 @@ WHERE user_profile_id = :user_profile_id AND id = :api_key_id;
 """
 
 
+logger = api_logger.get()
+
+
 class UserRepository:
 
     def __init__(self, session_provider: SessionProvider):
         self._session_provider = session_provider
 
+    @async_timer("user_repository.insert_user", logger=logger)
     async def insert_user(
         self,
         user: User,
@@ -163,6 +169,10 @@ class UserRepository:
             await session.execute(sqlalchemy.text(SQL_INSERT), data)
             await session.commit()
 
+    @async_timer(
+        "user_repository.update_user_username_and_password_by_authentication_id",
+        logger=logger,
+    )
     async def update_user_username_and_password_by_authentication_id(
         self,
         authentication_id: str,
@@ -181,6 +191,7 @@ class UserRepository:
             )
             await session.commit()
 
+    @async_timer("user_repository.update_user_profile_data", logger=logger)
     async def update_user_profile_data(
         self,
         user_profile_id: UUID,
@@ -195,6 +206,7 @@ class UserRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_USER_PROFILE_DATA), data)
             await session.commit()
 
+    @async_timer("user_repository.insert_api_key", logger=logger)
     async def insert_api_key(self, user_id: UUID, api_key: str) -> UUID:
         api_key_id = uuid7()
         data = {
@@ -209,6 +221,7 @@ class UserRepository:
             await session.commit()
         return api_key_id
 
+    @async_timer("user_repository.get_user_by_api_key", logger=logger)
     async def get_user_by_api_key(self, api_key: str) -> Optional[User]:
         data = {"api_key": api_key}
         async with self._session_provider.get() as session:
@@ -225,6 +238,7 @@ class UserRepository:
                 )
         return None
 
+    @async_timer("user_repository.get_user_by_username", logger=logger)
     async def get_user_by_username(self, username: str) -> Optional[User]:
         data = {"username": username}
         async with self._session_provider.get() as session:
@@ -242,6 +256,7 @@ class UserRepository:
                 )
         return None
 
+    @async_timer("user_repository.get_user_by_authentication_id", logger=logger)
     async def get_user_by_authentication_id(
         self, authentication_id: str
     ) -> Optional[User]:
@@ -262,6 +277,7 @@ class UserRepository:
                 )
         return None
 
+    @async_timer("user_repository.get_user_by_email", logger=logger)
     async def get_user_by_email(self, email: str) -> Optional[User]:
         data = {"email": email.strip()}
         async with self._session_provider.get() as session:
@@ -278,6 +294,7 @@ class UserRepository:
                 )
         return None
 
+    @async_timer("user_repository.get_user_api_keys", logger=logger)
     async def get_user_api_keys(self, user_profile_id: UUID) -> List[ApiKey]:
         data = {"user_profile_id": user_profile_id}
         api_keys = []
@@ -293,6 +310,7 @@ class UserRepository:
                 )
         return api_keys
 
+    @async_timer("user_repository.delete_api_key", logger=logger)
     async def delete_api_key(self, user_profile_id: UUID, api_key_id: UUID) -> None:
         data = {"user_profile_id": user_profile_id, "api_key_id": api_key_id}
         async with self._session_provider.get() as session:

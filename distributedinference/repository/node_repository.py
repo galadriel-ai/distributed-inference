@@ -27,6 +27,7 @@ from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository import utils
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
+from distributedinference.utils.timer import async_timer
 
 logger = api_logger.get()
 
@@ -339,6 +340,7 @@ class NodeRepository:
         # node_id: ConnectedNode
         self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
+    @async_timer("node_repository.create_node", logger=logger)
     async def create_node(
         self,
         user_profile_id: UUID,
@@ -359,6 +361,7 @@ class NodeRepository:
             await session.commit()
             return NodeInfo(node_id=node_id, name=name, name_alias=name_alias)
 
+    @async_timer("node_repository.get_user_nodes", logger=logger)
     async def get_user_nodes(self, user_profile_id: UUID) -> List[UserNodeInfo]:
         data = {"user_profile_id": user_profile_id}
         async with self._session_provider.get() as session:
@@ -387,6 +390,7 @@ class NodeRepository:
                 )
             return result
 
+    @async_timer("node_repository.get_user_node_ids", logger=logger)
     async def get_user_node_ids(self, user_profile_id: UUID) -> List[UUID]:
         data = {"user_profile_id": user_profile_id}
         async with self._session_provider.get() as session:
@@ -396,6 +400,7 @@ class NodeRepository:
                 results.append(row.id)
             return results
 
+    @async_timer("node_repository.get_user_node_id_by_name", logger=logger)
     async def get_user_node_id_by_name(
         self, user_profile_id: UUID, node_name: str
     ) -> Optional[UUID]:
@@ -465,6 +470,7 @@ class NodeRepository:
 
         return node.active_requests_count() == 1
 
+    @async_timer("node_repository.get_connected_node_benchmarks", logger=logger)
     async def get_connected_node_benchmarks(self) -> List[NodeBenchmark]:
         async with self._session_provider.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
@@ -478,6 +484,7 @@ class NodeRepository:
                 for row in rows
             ]
 
+    @async_timer("node_repository.get_connected_nodes_count", logger=logger)
     async def get_connected_nodes_count(self) -> int:
         async with self._session_provider.get() as session:
             result = await session.execute(
@@ -485,11 +492,13 @@ class NodeRepository:
             )
             return int(result.scalar() or 0)
 
+    @async_timer("node_repository.get_connected_node_ids", logger=logger)
     async def get_connected_node_ids(self) -> List[UUID]:
         async with self._session_provider.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_IDS))
             return [row.node_info_id for row in result]
 
+    @async_timer("node_repository.get_connected_node_metrics", logger=logger)
     async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
         async with self._session_provider.get() as session:
             data = {"id": node_id}
@@ -513,6 +522,7 @@ class NodeRepository:
                     ),
                 )
 
+    @async_timer("node_repository.get_node_metrics_by_ids", logger=logger)
     async def get_node_metrics_by_ids(
         self, node_ids: List[UUID]
     ) -> Dict[UUID, NodeMetrics]:
@@ -546,6 +556,7 @@ class NodeRepository:
         return [node for node in self._connected_nodes.values() if not node.is_healthy]
 
     # Insert if it doesn't exist
+    @async_timer("node_repository.set_node_connection_timestamp", logger=logger)
     async def set_node_connection_timestamp(
         self, node_id: UUID, model_name: str, connected_at: datetime
     ):
@@ -568,6 +579,7 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
             await session.commit()
 
+    @async_timer("node_repository.update_node_connection_timestamp", logger=logger)
     async def update_node_connection_timestamp(
         self, node_id: UUID, connected_at: Optional[datetime]
     ):
@@ -580,6 +592,7 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_CONNECTED_AT), data)
             await session.commit()
 
+    @async_timer("node_repository.update_node_health_status", logger=logger)
     async def update_node_health_status(self, node_id: UUID, is_healthy: bool):
         data = {
             "id": node_id,
@@ -592,6 +605,7 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_IS_HEALTHY), data)
             await session.commit()
 
+    @async_timer("node_repository.increment_node_metrics", logger=logger)
     async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
         data = {
             "id": str(uuid7()),
@@ -612,6 +626,7 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
             await session.commit()
 
+    @async_timer("node_repository.get_node_info", logger=logger)
     async def get_node_info(self, user_id: UUID, node_id: UUID) -> Optional[NodeInfo]:
         data = {"id": node_id, "user_profile_id": user_id}
         async with self._session_provider.get() as session:
@@ -635,6 +650,7 @@ class NodeRepository:
                 )
         return None
 
+    @async_timer("node_repository.get_node_info_by_name", logger=logger)
     async def get_node_info_by_name(
         self, user_id: UUID, node_name: str
     ) -> Optional[NodeInfo]:
@@ -662,6 +678,7 @@ class NodeRepository:
                 )
         return None
 
+    @async_timer("node_repository.save_node_info", logger=logger)
     async def save_node_info(self, user_profile_id: UUID, info: NodeInfo):
         data = {
             "id": str(info.node_id),
@@ -683,6 +700,7 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_INFO), data)
             await session.commit()
 
+    @async_timer("node_repository.update_node_name_alias", logger=logger)
     async def update_node_name_alias(
         self,
         node_id: UUID,
@@ -697,6 +715,7 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_NAME_ALIAS), data)
             await session.commit()
 
+    @async_timer("node_repository.set_all_nodes_inactive", logger=logger)
     async def set_all_nodes_inactive(self):
         data = {
             "connected_at": None,
@@ -708,6 +727,7 @@ class NodeRepository:
             )
             await session.commit()
 
+    @async_timer("node_repository.set_all_connected_nodes_inactive", logger=logger)
     async def set_all_connected_nodes_inactive(self):
         data = {
             "connected_at": None,
@@ -721,6 +741,7 @@ class NodeRepository:
                 )
             await session.commit()
 
+    @async_timer("node_repository.get_nodes_count", logger=logger)
     async def get_nodes_count(self) -> int:
         async with self._session_provider.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_NODES_COUNT))
@@ -729,6 +750,7 @@ class NodeRepository:
                 return row.node_count
         return 0
 
+    @async_timer("node_repository.get_network_throughput", logger=logger)
     async def get_network_throughput(self) -> float:
         connected_node_ids = await self.get_connected_node_ids()
         if not connected_node_ids:
@@ -743,6 +765,7 @@ class NodeRepository:
                 return row.benchmark_sum
         return 0
 
+    @async_timer("node_repository.get_network_model_stats", logger=logger)
     async def get_network_model_stats(self) -> List[ModelStats]:
         connected_node_ids = await self.get_connected_node_ids()
         if not connected_node_ids:

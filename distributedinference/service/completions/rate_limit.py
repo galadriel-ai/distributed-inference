@@ -3,16 +3,19 @@ from datetime import datetime, timezone
 from dataclasses import dataclass
 from typing import Optional
 
+from distributedinference import api_logger
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.service.completions.entities import RateLimit
-
+from distributedinference.utils.timer import async_timer
 
 RESET_REQUESTS = 60
 RESET_TOKENS = 60
 SECONDS_IN_A_MINUTE = 60
 SECONDS_IN_A_DAY = 86400
+
+logger = api_logger.get()
 
 
 @dataclass
@@ -26,6 +29,7 @@ class UsageTierNotFoundError(Exception):
     pass
 
 
+@async_timer("rate_limit.check_rate_limit", logger=logger)
 async def check_rate_limit(
     user: User,
     tokens_repository: TokensRepository,
@@ -102,7 +106,8 @@ async def check_rate_limit(
         rate_limit_tokens=usage_tier.max_tokens_per_minute,
         rate_limit_remaining_requests=remaining_requests,
         rate_limit_remaining_tokens=remaining_tokens,
-        rate_limit_reset_requests=RESET_REQUESTS,  # TODO figure out how to calculate this
+        rate_limit_reset_requests=RESET_REQUESTS,
+        # TODO figure out how to calculate this
         rate_limit_reset_tokens=RESET_TOKENS,  # TODO figure out how to calculate this
     )
 
