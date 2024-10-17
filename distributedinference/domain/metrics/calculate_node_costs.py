@@ -56,7 +56,9 @@ def execute(nodes: List[NodeBenchmark]) -> Dict:
                 node.gpu_model
             )
         else:
-            result[node.model_name] = _get_gpu_price(node.gpu_model)
+            result[node.model_name] = _get_gpu_price(node.gpu_model) * (
+                node.gpu_count or 1
+            )
     return result
 
 

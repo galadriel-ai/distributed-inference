@@ -260,6 +260,7 @@ SELECT
     ni.id,
     ni.name,
     ni.gpu_model,
+    ni.gpu_count,
     nb.model_name,
     nb.tokens_per_second AS benchmark_tokens_per_second
 FROM node_info ni
@@ -479,6 +480,7 @@ class NodeRepository:
                     model_name=row.model_name,
                     benchmark_tokens_per_second=row.benchmark_tokens_per_second,
                     gpu_model=row.gpu_model,
+                    gpu_count=row.gpu_count,
                 )
                 for row in rows
             ]

@@ -71,6 +71,7 @@ class NodeBenchmark:
     model_name: str
     benchmark_tokens_per_second: float
     gpu_model: str
+    gpu_count: Optional[int] = None
 
 
 @dataclass

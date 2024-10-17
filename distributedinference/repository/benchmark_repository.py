@@ -46,6 +46,7 @@ SELECT
     nb.model_name,
     nb.tokens_per_second AS benchmark_tokens_per_second,
     ni.gpu_model,
+    ni.gpu_count,
     nb.created_at,
     nb.last_updated_at
 FROM node_benchmark nb
@@ -95,5 +96,6 @@ class BenchmarkRepository:
                     model_name=row.model_name,
                     benchmark_tokens_per_second=row.benchmark_tokens_per_second,
                     gpu_model=row.gpu_model,
+                    gpu_count=row.gpu_count,
                 )
         return None
