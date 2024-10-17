@@ -453,7 +453,7 @@ class NodeRepository:
         return random.choice(eligible_nodes)
 
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
-        if not node.is_healthy:
+        if not node.is_self_hosted and not node.is_healthy:
             return False
         if node.is_datacenter_gpu():
             return (

@@ -81,6 +81,7 @@ class ConnectedNode:
     connected_at: int  # in seconds
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
+    is_self_hosted: bool = False
     is_healthy: bool = True
 
     def active_requests_count(self) -> int:

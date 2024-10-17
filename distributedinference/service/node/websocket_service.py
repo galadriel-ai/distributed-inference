@@ -59,6 +59,7 @@ async def execute(
         connected_at=int(time.time()),
         websocket=websocket,
         request_incoming_queues={},
+        is_self_hosted=user.is_self_hosted_nodes_provider(),
     )
     logger.info(f"Node {node_uid} connected")
     analytics.track_event(
