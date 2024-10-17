@@ -5,27 +5,27 @@ import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.analytics.analytics import Analytics
+from distributedinference.domain.user.entities import User
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
 from distributedinference.repository.user_repository import UserRepository
-from distributedinference.domain.user.entities import User
+from distributedinference.service.auth import authentication
 from distributedinference.service.auth import login_service
 from distributedinference.service.auth import reset_username_and_password_service
-from distributedinference.service.auth import set_username_and_password_service
-from distributedinference.service.auth import signup_service
-from distributedinference.service.auth import authentication
 from distributedinference.service.auth import set_user_profile_data_service
+from distributedinference.service.auth import signup_service
+from distributedinference.service.auth import validate_email_service
 from distributedinference.service.auth.entities import LoginRequest
 from distributedinference.service.auth.entities import LoginResponse
 from distributedinference.service.auth.entities import ResetUserPasswordRequest
 from distributedinference.service.auth.entities import ResetUserPasswordResponse
-from distributedinference.service.auth.entities import SetUserPasswordRequest
-from distributedinference.service.auth.entities import SetUserPasswordResponse
-from distributedinference.service.auth.entities import SignupRequest
-from distributedinference.service.auth.entities import SignupResponse
 from distributedinference.service.auth.entities import SetUserProfileDataRequest
 from distributedinference.service.auth.entities import SetUserProfileDataResponse
+from distributedinference.service.auth.entities import SignupRequest
+from distributedinference.service.auth.entities import SignupResponse
+from distributedinference.service.auth.entities import ValidateEmailRequest
+from distributedinference.service.auth.entities import ValidateEmailResponse
 
 TAG = "Authentication"
 router = APIRouter(prefix="/auth")
@@ -36,9 +36,9 @@ logger = api_logger.get()
 
 @router.post(
     "/signup",
-    summary="Sign up user.",
-    description="Sign up a new user.",
-    response_description="Returns an email_id, that is required to validate the OTP received by email.",
+    summary="Sign up new user",
+    description="Sign up new user with email, username and password",
+    response_description="Returns a session token, or a helpful error.",
     response_model=SignupResponse,
     include_in_schema=not settings.is_production(),
 )
@@ -56,23 +56,22 @@ async def signup(
 
 
 @router.post(
-    "/set_user_password",
-    summary="Validate magic link and set user password",
-    description="Validate magic link, after using the /signup endpoint and save user password.",
-    response_description="Returns a session token, or a helpful error.",
-    response_model=SetUserPasswordResponse,
+    "/validate-email",
+    summary="Validate user email.",
+    description="Validate user email.",
+    response_description="Returns status.",
+    response_model=ValidateEmailResponse,
     include_in_schema=not settings.is_production(),
 )
-async def set_user_password(
-    request: SetUserPasswordRequest,
+async def validate_email(
+    request: ValidateEmailRequest,
     auth_repository: AuthenticationApiRepository = Depends(
         dependencies.get_authentication_api_repository
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
-    analytics: Analytics = Depends(dependencies.get_analytics),
 ):
-    return await set_username_and_password_service.execute(
-        request, auth_repository, user_repository, analytics
+    return await validate_email_service.execute(
+        request, auth_repository, user_repository
     )
 
 

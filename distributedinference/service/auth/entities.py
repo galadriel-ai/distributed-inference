@@ -6,25 +6,21 @@ from distributedinference.service.entities import ApiResponse
 
 class SignupRequest(BaseModel):
     email: str = Field(description="User email")
-    is_existing_user: bool = Field(
-        description="Indicates if it is a user signup or a reset request"
-    )
-
-
-class SignupResponse(ApiResponse):
-    pass
-
-
-class SetUserPasswordRequest(BaseModel):
-    token: str = Field(
-        description="Token gotten from magic link in email from /signup request"
-    )
-    username: str = Field(description="User name")
     password: str = Field(description="User password")
 
 
-class SetUserPasswordResponse(ApiResponse):
+class SignupResponse(ApiResponse):
+    email: str = Field(description="User email")
+    user_uid: str = Field("User unique identifier")
     session_token: str = Field(description="Session token")
+
+
+class ValidateEmailRequest(BaseModel):
+    email: str = Field(description="User email")
+
+
+class ValidateEmailResponse(ApiResponse):
+    pass
 
 
 class ResetUserPasswordRequest(BaseModel):
@@ -34,12 +30,12 @@ class ResetUserPasswordRequest(BaseModel):
     password: str = Field(description="User password")
 
 
-class ResetUserPasswordResponse(SetUserPasswordResponse):
+class ResetUserPasswordResponse(SignupResponse):
     pass
 
 
 class LoginRequest(BaseModel):
-    username: str = Field(description="Username")
+    email: str = Field(description="Email")
     password: str = Field(description="User password")
 
 

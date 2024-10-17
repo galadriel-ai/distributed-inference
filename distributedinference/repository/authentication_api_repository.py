@@ -12,7 +12,19 @@ class AuthenticationApiRepository:
             secret=settings.STYTCH_SECRET,
         )
 
-    async def signup_user(self, email: str) -> str:
+    async def signup_with_password(
+        self, email: str, password: str
+    ) -> UserAuthenticationResponse:
+        resp = await self._client.passwords.create_async(
+            email=email,
+            password=password,
+            session_duration_minutes=settings.SESSION_DURATION_MINUTES,
+        )
+        return UserAuthenticationResponse(
+            provider_user_id=resp.user_id, session_token=resp.session_token
+        )
+
+    async def reset_user(self, email: str) -> str:
         resp = await self._client.magic_links.email.login_or_create_async(
             email=email,
         )
@@ -33,11 +45,14 @@ class AuthenticationApiRepository:
         )
 
     async def set_user_password(
-        self, password: str, session_token: str
+        # Token from email redirect URL
+        self,
+        password: str,
+        token: str,
     ) -> UserAuthenticationResponse:
-        resp = await self._client.passwords.sessions.reset_async(
+        resp = await self._client.passwords.email.reset_async(
             password=password,
-            session_token=session_token,
+            token=token,
             session_duration_minutes=settings.SESSION_DURATION_MINUTES,
         )
         return UserAuthenticationResponse(

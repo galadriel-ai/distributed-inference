@@ -17,16 +17,20 @@ SQL_INSERT = """
 INSERT INTO user_profile (
     id,
     name,
+    username,
     email,
     authentication_id,
+    is_password_set,
     created_at,
     last_updated_at
 )
 VALUES (
     :id,
     :name,
+    :username,
     :email,
     :authentication_id,
+    :is_password_set,
     :created_at,
     :last_updated_at
 );
@@ -156,12 +160,15 @@ class UserRepository:
     async def insert_user(
         self,
         user: User,
+        is_password_set: bool = False,
     ):
         data = {
             "id": user.uid,
             "name": user.name,
+            "username": user.username,
             "email": user.email,
             "authentication_id": user.authentication_id,
+            "is_password_set": is_password_set,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
