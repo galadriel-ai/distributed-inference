@@ -1,7 +1,7 @@
 """Adds healthy flag to node_metrics
 
-Revision ID: 000000000027
-Revises: 000000000026
+Revision ID: 000000000028
+Revises: 000000000027
 Create Date: 2024-10-14 10:19:54.684429
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "000000000027"
-down_revision = "000000000026"
+revision = "000000000028"
+down_revision = "000000000027"
 branch_labels = None
 depends_on = None
 
