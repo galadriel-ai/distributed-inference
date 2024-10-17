@@ -31,6 +31,8 @@ class EventName(Enum):
     WS_NODE_DISCONNECTED = "ws_node_disconnected"
     WS_NODE_DISCONNECTED_WITH_ERROR = "ws_node_disconnected_with_error"
 
+    NODE_HEALTH = "node_health"
+
     # Dashboard
     SIGNUP = "signup"
     LOGIN = "login"

@@ -12,6 +12,7 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
+from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import NodeMetricsIncrement
@@ -40,23 +41,7 @@ async def execute(
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
 ) -> AsyncGenerator[InferenceResponse, None]:
-    node = node_repository.select_node(request.model)
-    if not node:
-        raise NoAvailableNodesError()
-
-    analytics.track_event(
-        user_uid,
-        AnalyticsEvent(
-            EventName.USER_EXECUTED_INFERENCE_REQUEST, {"node_id": node.uid}
-        ),
-    )
-
-    analytics.track_event(
-        node.user_id,
-        AnalyticsEvent(
-            EventName.USER_NODE_SELECTED_FOR_INFERENCE, {"node_id": node.uid}
-        ),
-    )
+    node = _select_and_track_node(user_uid, request, node_repository, analytics)
 
     await node_repository.send_inference_request(node.uid, request)
 
@@ -78,7 +63,8 @@ async def execute(
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
             if not response:
-                # Nothing to check, we can break
+                # Nothing to check, we can mark node as unhealthy and break
+                await _mark_node_as_unhealthy(node, node_repository, analytics)
                 break
             if not first_token_time:
                 first_token_time = time.time() - request_start_time
@@ -101,6 +87,8 @@ async def execute(
                     response.chunk.usage = None
                 yield response
             elif response.error:
+                # if we got an error, we can mark node as unhealthy and break
+                await _mark_node_as_unhealthy(node, node_repository, analytics)
                 yield response
                 break
     finally:
@@ -126,6 +114,44 @@ async def execute(
         else:
             metrics_increment.requests_failed_increment += 1
         await metrics_queue_repository.push(metrics_increment)
+
+
+def _select_and_track_node(
+    user_uid: UUID,
+    request: InferenceRequest,
+    node_repository: NodeRepository,
+    analytics: Analytics,
+) -> ConnectedNode:
+    node = node_repository.select_node(request.model)
+    if not node:
+        raise NoAvailableNodesError()
+
+    analytics.track_event(
+        user_uid,
+        AnalyticsEvent(
+            EventName.USER_EXECUTED_INFERENCE_REQUEST, {"node_id": node.uid}
+        ),
+    )
+    analytics.track_event(
+        node.user_id,
+        AnalyticsEvent(
+            EventName.USER_NODE_SELECTED_FOR_INFERENCE, {"node_id": node.uid}
+        ),
+    )
+    return node
+
+
+async def _mark_node_as_unhealthy(
+    node: ConnectedNode, node_repository: NodeRepository, analytics: Analytics
+) -> None:
+    await node_repository.update_node_health_status(node.uid, False)
+    analytics.track_event(
+        node.user_id,
+        AnalyticsEvent(
+            EventName.NODE_HEALTH,
+            {"node_id": node.uid, "is_healthy": False},
+        ),
+    )
 
 
 async def _save_result(

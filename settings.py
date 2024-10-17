@@ -88,6 +88,11 @@ TESTING_API_KEY = os.getenv("TESTING_API_KEY", "")
 # Rate limit
 DEFAULT_USAGE_TIER_UUID = "06706644-2409-7efd-8000-3371c5d632d3"  # Free
 
+# Health check job
+HEALTH_CHECK_JOB_TIMEOUT_BETWEEN_RUNS_SECONDS = int(
+    os.getenv("HEALTH_CHECK_JOB_TIMEOUT_BETWEEN_RUNS_SECONDS", "15")
+)
+
 
 def is_production():
     return ENVIRONMENT == "production"

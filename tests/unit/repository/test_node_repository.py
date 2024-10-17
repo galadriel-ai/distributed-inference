@@ -46,12 +46,27 @@ def mock_websocket():
 
 @pytest.fixture
 def connected_node_factory(mock_websocket):
-    def _create_node(uid, model="model", small_node=False, datacenter_node=False):
+    def _create_node(
+        uid,
+        model="model",
+        small_node=False,
+        datacenter_node=False,
+        is_self_hosted=False,
+        is_healthy=True,
+    ):
         vram = 8000 if small_node else 16000
         if datacenter_node:
             vram = 90000
         return ConnectedNode(
-            uid, uuid1(), model, vram, int(time.time()), mock_websocket, {}
+            uid,
+            uuid1(),
+            model,
+            vram,
+            int(time.time()),
+            mock_websocket,
+            {},
+            is_self_hosted,
+            is_healthy,
         )
 
     return _create_node
@@ -205,6 +220,32 @@ def test_8gb_node_handles_only_1_connection(node_repository, connected_node_fact
 
     # Now, there are no nodes left, should return None
     assert node_repository.select_node("model") is None
+
+
+def test_select_node_skips_unhealthy_not_self_hosted_nodes(
+    node_repository, connected_node_factory
+):
+    node = connected_node_factory("1")
+    node_repository.register_node(node)
+
+    # Mark the node as unhealthy
+    node.is_healthy = False
+
+    # It should return None
+    assert node_repository.select_node("model") is None
+
+
+def test_select_node_does_not_skip_unhealthy_self_hosted_nodes(
+    node_repository, connected_node_factory
+):
+    node = connected_node_factory("1", is_self_hosted=True)
+    node_repository.register_node(node)
+
+    # Mark the node as unhealthy
+    node.is_healthy = False
+
+    # It should return the node
+    assert node_repository.select_node("model") == node
 
 
 async def test_save_node_info(node_repository, session_provider):

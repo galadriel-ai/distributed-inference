@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+GALADRIEL_DOMAIN = "@galadriel.com"
+
 
 @dataclass(frozen=True)
 class User:
@@ -12,6 +14,9 @@ class User:
     username: str = None
     profile_data: dict = None
     authentication_id: str = None
+
+    def is_self_hosted_nodes_provider(self) -> bool:
+        return self.email.endswith(GALADRIEL_DOMAIN)
 
 
 @dataclass(frozen=True)
