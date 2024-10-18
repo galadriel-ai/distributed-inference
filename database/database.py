@@ -101,7 +101,7 @@ class NodeInfo(Base):
     name_alias = Column(String(), nullable=False)
 
     gpu_model = Column(String(), nullable=True)
-    gpu_count = Column(Integer(), nullable=True)
+    gpu_count = Column(Integer(), nullable=False, default=0, server_default="0")
     vram = Column(Integer(), nullable=True)  # VRAM in MB
     cpu_model = Column(String(), nullable=True)
     cpu_count = Column(Integer(), nullable=True)  # Core count

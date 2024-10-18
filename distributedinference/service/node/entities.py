@@ -33,7 +33,9 @@ class NodeInfoRequest(BaseModel):
     node_id: str = Field(description="Unique ID of the Node")
     gpu_model: Optional[str] = Field(description="GPU model", default=None)
     vram: Optional[int] = Field(description="VRAM in MB", default=None)
-    gpu_count: Optional[int] = Field(description="GPU count", default=None)
+    gpu_count: Optional[int] = Field(
+        description="GPU count", default=0
+    )  # keeping this optional for older node versions
     cpu_model: Optional[str] = Field(description="CPU model", default=None)
     cpu_count: Optional[int] = Field(description="CPU cores count", default=None)
     ram: Optional[int] = Field(description="RAM in MB", default=None)
