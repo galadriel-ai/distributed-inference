@@ -25,6 +25,10 @@ class NetworkStatsResponse(BaseModel):
     )
 
 
+class GetUserApiKeyExampleResponse(BaseModel):
+    api_key: str = Field(description="Example user API key")
+
+
 class UserApiKey(BaseModel):
     api_key_id: str = Field(description="Unique ID of the API key")
     api_key_prefix: str = Field(description="Partially revealed API key")

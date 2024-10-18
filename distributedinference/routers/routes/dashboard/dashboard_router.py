@@ -24,6 +24,7 @@ from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.api_key import create_api_key_service
 from distributedinference.service.api_key import delete_api_key_service
 from distributedinference.service.api_key import get_api_keys_service
+from distributedinference.service.api_key import get_example_api_key_service
 from distributedinference.service.auth import authentication
 from distributedinference.service.completions import chat_completions_handler_service
 from distributedinference.service.completions.entities import ChatCompletion
@@ -36,6 +37,7 @@ from distributedinference.service.network.entities import CreateApiKeyResponse
 from distributedinference.service.network.entities import DeleteApiKeyRequest
 from distributedinference.service.network.entities import DeleteApiKeyResponse
 from distributedinference.service.network.entities import GetApiKeysResponse
+from distributedinference.service.network.entities import GetUserApiKeyExampleResponse
 from distributedinference.service.network.entities import NetworkStatsResponse
 from distributedinference.service.node import create_node_service
 from distributedinference.service.node import get_user_aggregated_stats_service
@@ -85,6 +87,19 @@ async def get_network_stats(
     _: User = Depends(authentication.validate_session_token),
 ):
     return await get_network_stats_service.execute(node_repository, tokens_repository)
+
+
+@router.get(
+    "/api-key-example",
+    name="Api key example",
+    response_model=GetUserApiKeyExampleResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def get_api_key_example(
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    user: User = Depends(authentication.validate_session_token),
+):
+    return await get_example_api_key_service.execute(user, user_repository)
 
 
 @router.get(
