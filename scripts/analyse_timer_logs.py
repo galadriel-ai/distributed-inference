@@ -33,7 +33,7 @@ def _read_logs():
         line = file.readline()
         while line:
             message = _get_message(line)
-            if _is_timer_log(message):
+            if message and _is_timer_log(message):
                 name, duration = _get_name_and_duration(message)
                 if name in result:
                     result[name].append(duration)

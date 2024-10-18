@@ -20,11 +20,11 @@ DB_DATABASE = os.getenv("DB_DATABASE", "inference")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
-DB_USER_READ = os.getenv("DB_USER", "postgres")
-DB_PASSWORD_READ = os.getenv("DB_PASSWORD", "passw0rd")
-DB_DATABASE_READ = os.getenv("DB_DATABASE", "inference")
-DB_HOST_READ = os.getenv("DB_HOST", "localhost")
-DB_PORT_READ = os.getenv("DB_PORT", "5432")
+DB_USER_READ = os.getenv("DB_USER_READ", "postgres")
+DB_PASSWORD_READ = os.getenv("DB_PASSWORD_READ", "passw0rd")
+DB_DATABASE_READ = os.getenv("DB_DATABASE_READ", "inference")
+DB_HOST_READ = os.getenv("DB_HOST_READ", "localhost")
+DB_PORT_READ = os.getenv("DB_PORT_READ", "5432")
 
 MODEL_NAME_MAPPING = {
     "llama3.1": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",

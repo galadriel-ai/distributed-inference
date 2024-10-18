@@ -334,10 +334,12 @@ class NodeRepository:
     def __init__(
         self,
         session_provider: SessionProvider,
+        session_provider_read: SessionProvider,
         max_parallel_requests_per_node: int,
         max_parallel_requests_per_datacenter_node: int,
     ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
         self._max_parallel_requests_per_node = max_parallel_requests_per_node
         self._max_parallel_requests_per_datacenter_node = (
             max_parallel_requests_per_datacenter_node
@@ -369,7 +371,7 @@ class NodeRepository:
     @async_timer("node_repository.get_user_nodes", logger=logger)
     async def get_user_nodes(self, user_profile_id: UUID) -> List[UserNodeInfo]:
         data = {"user_profile_id": user_profile_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_USER_NODE_INFOS), data)
             result = []
             for row in rows:
@@ -399,7 +401,7 @@ class NodeRepository:
     @async_timer("node_repository.get_user_node_ids", logger=logger)
     async def get_user_node_ids(self, user_profile_id: UUID) -> List[UUID]:
         data = {"user_profile_id": user_profile_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_USER_NODE_IDS), data)
             results = []
             for row in rows:
@@ -411,7 +413,7 @@ class NodeRepository:
         self, user_profile_id: UUID, node_name: str
     ) -> Optional[UUID]:
         data = {"user_profile_id": user_profile_id, "name_alias": node_name}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_USER_NODE_ID_BY_NAME), data
             )
@@ -478,7 +480,7 @@ class NodeRepository:
 
     @async_timer("node_repository.get_connected_node_benchmarks", logger=logger)
     async def get_connected_node_benchmarks(self) -> List[NodeBenchmark]:
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
             return [
                 NodeBenchmark(
@@ -493,7 +495,7 @@ class NodeRepository:
 
     @async_timer("node_repository.get_connected_nodes_count", logger=logger)
     async def get_connected_nodes_count(self) -> int:
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_CONNECTED_NODE_COUNT)
             )
@@ -501,13 +503,13 @@ class NodeRepository:
 
     @async_timer("node_repository.get_connected_node_ids", logger=logger)
     async def get_connected_node_ids(self) -> List[UUID]:
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_IDS))
             return [row.node_info_id for row in result]
 
     @async_timer("node_repository.get_connected_node_metrics", logger=logger)
     async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             data = {"id": node_id}
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_CONNECTED_NODE_METRIC), data
@@ -534,7 +536,7 @@ class NodeRepository:
         self, node_ids: List[UUID]
     ) -> Dict[UUID, NodeMetrics]:
         data = {"node_ids": node_ids}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_NODE_METRICS_BY_IDS), data
             )
@@ -636,7 +638,7 @@ class NodeRepository:
     @async_timer("node_repository.get_node_info", logger=logger)
     async def get_node_info(self, user_id: UUID, node_id: UUID) -> Optional[NodeInfo]:
         data = {"id": node_id, "user_profile_id": user_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_NODE_INFO), data)
             row = result.first()
             if row:
@@ -663,7 +665,7 @@ class NodeRepository:
         self, user_id: UUID, node_name: str
     ) -> Optional[NodeInfo]:
         data = {"node_name": node_name, "user_profile_id": user_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_NODE_INFO_BY_NAME), data
             )
@@ -753,7 +755,7 @@ class NodeRepository:
 
     @async_timer("node_repository.get_nodes_count", logger=logger)
     async def get_nodes_count(self) -> int:
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_NODES_COUNT))
             row = result.first()
             if row:
@@ -766,7 +768,7 @@ class NodeRepository:
         if not connected_node_ids:
             return 0
         data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_SUM), data
             )
@@ -781,7 +783,7 @@ class NodeRepository:
         if not connected_node_ids:
             return []
         data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_BY_MODEL), data
             )

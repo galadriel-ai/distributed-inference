@@ -57,12 +57,15 @@ class UsageTier:
 
 class RateLimitRepository:
 
-    def __init__(self, session_provider: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
 
     @async_timer("rate_limit_repository.get_usage_tiers", logger=logger)
     async def get_usage_tiers(self) -> List[UsageTier]:
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             tiers = []
             rows = await session.execute(sqlalchemy.text(SQL_GET_USAGE_TIERS))
             for row in rows:
@@ -84,7 +87,7 @@ class RateLimitRepository:
     @async_timer("rate_limit_repository.get_usage_tier", logger=logger)
     async def get_usage_tier(self, tier_id: UUID) -> Optional[UsageTier]:
         data = {"id": tier_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_USAGE_TIER_BY_ID), data
             )
