@@ -257,6 +257,7 @@ async def test_save_node_info(node_repository, session_provider):
         node_id=NODE_UUID,
         gpu_model="NVIDIA GTX 1080",
         vram=8,
+        gpu_count=1,
         cpu_model="Intel i7",
         cpu_count=8,
         ram=16,
@@ -279,6 +280,7 @@ async def test_save_node_info(node_repository, session_provider):
     assert data["user_profile_id"] == node_id
     assert data["gpu_model"] == node_info.gpu_model
     assert data["vram"] == node_info.vram
+    assert data["gpu_count"] == node_info.gpu_count
     assert data["cpu_model"] == node_info.cpu_model
     assert data["cpu_count"] == node_info.cpu_count
     assert data["ram"] == node_info.ram

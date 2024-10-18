@@ -14,6 +14,7 @@ async def execute(
         name_alias=node_info.name_alias,
         gpu_model=node_info.gpu_model,
         vram=node_info.vram,
+        gpu_count=node_info.gpu_count,
         cpu_model=node_info.cpu_model,
         cpu_count=node_info.cpu_count,
         ram=node_info.ram,

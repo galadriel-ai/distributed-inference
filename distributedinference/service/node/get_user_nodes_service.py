@@ -37,6 +37,7 @@ async def _format(
                 name_alias=node.name_alias,
                 gpu_model=node.gpu_model,
                 vram=node.vram,
+                gpu_count=node.gpu_count,
                 cpu_model=node.cpu_model,
                 cpu_count=node.cpu_count,
                 ram=node.ram,

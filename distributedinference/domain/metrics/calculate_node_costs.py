@@ -1,5 +1,7 @@
+from collections import defaultdict
 from typing import Dict
 from typing import List
+from typing import DefaultDict
 
 from distributedinference.domain.node.entities import NodeBenchmark
 
@@ -49,15 +51,11 @@ FUZZY_PRICES = {
 
 
 def execute(nodes: List[NodeBenchmark]) -> Dict:
-    result = {}
+    result: DefaultDict[str, float] = defaultdict(float)
     for node in nodes:
-        if node.model_name in result:
-            result[node.model_name] = result[node.model_name] + _get_gpu_price(
-                node.gpu_model
-            )
-        else:
-            result[node.model_name] = _get_gpu_price(node.gpu_model)
-    return result
+        gpu_price = _get_gpu_price(node.gpu_model) * (node.gpu_count or 1)
+        result[node.model_name] += gpu_price
+    return dict(result)
 
 
 def _get_gpu_price(gpu_model: str) -> float:

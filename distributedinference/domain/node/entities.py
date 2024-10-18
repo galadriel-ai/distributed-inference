@@ -47,6 +47,7 @@ class NodeInfo:
     cpu_model: Optional[str] = None
     cpu_count: Optional[int] = None
     gpu_model: Optional[str] = None
+    gpu_count: Optional[int] = None
     vram: Optional[int] = None
     ram: Optional[int] = None
     network_download_speed: Optional[float] = None
@@ -70,6 +71,7 @@ class NodeBenchmark:
     model_name: str
     benchmark_tokens_per_second: float
     gpu_model: str
+    gpu_count: Optional[int] = None
 
 
 @dataclass
