@@ -7,6 +7,7 @@ from distributedinference.repository.authentication_api_repository import (
 )
 
 from distributedinference.repository.connection import get_session_provider
+from distributedinference.repository.connection import get_session_provider_read
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -48,7 +49,9 @@ def init_globals():
         settings.MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE,
     )
     _node_stats_repository_instance = NodeStatsRepository(get_session_provider())
-    _benchmark_repository_instance = BenchmarkRepository(get_session_provider())
+    _benchmark_repository_instance = BenchmarkRepository(
+        get_session_provider(), get_session_provider_read()
+    )
     _metrics_queue_repository = MetricsQueueRepository()
 
     _analytics = Analytics(

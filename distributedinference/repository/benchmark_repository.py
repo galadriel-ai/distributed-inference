@@ -60,8 +60,11 @@ WHERE
 
 class BenchmarkRepository:
 
-    def __init__(self, session_provider: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
 
     @async_timer("benchmark_repository.save_node_benchmark", logger=logger)
     async def save_node_benchmark(
@@ -87,7 +90,7 @@ class BenchmarkRepository:
         self, user_id: UUID, node_id: UUID, model_name: str
     ) -> Optional[NodeBenchmark]:
         data = {"id": node_id, "user_profile_id": user_id, "model_name": model_name}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_NODE_BENCHMARK), data
             )
