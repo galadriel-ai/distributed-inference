@@ -153,8 +153,11 @@ logger = api_logger.get()
 
 class UserRepository:
 
-    def __init__(self, session_provider: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
 
     @async_timer("user_repository.insert_user", logger=logger)
     async def insert_user(
@@ -231,7 +234,7 @@ class UserRepository:
     @async_timer("user_repository.get_user_by_api_key", logger=logger)
     async def get_user_by_api_key(self, api_key: str) -> Optional[User]:
         data = {"api_key": api_key}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
             row = result.first()
             if row:
@@ -248,7 +251,7 @@ class UserRepository:
     @async_timer("user_repository.get_user_by_username", logger=logger)
     async def get_user_by_username(self, username: str) -> Optional[User]:
         data = {"username": username}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_BY_USERNAME), data)
             row = result.first()
             if row:
@@ -268,7 +271,7 @@ class UserRepository:
         self, authentication_id: str
     ) -> Optional[User]:
         data = {"authentication_id": authentication_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_BY_AUTHENTICATION_ID), data
             )
@@ -287,7 +290,7 @@ class UserRepository:
     @async_timer("user_repository.get_user_by_email", logger=logger)
     async def get_user_by_email(self, email: str) -> Optional[User]:
         data = {"email": email.strip()}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_BY_EMAIL), data)
             row = result.first()
             if row:
@@ -305,7 +308,7 @@ class UserRepository:
     async def get_user_api_keys(self, user_profile_id: UUID) -> List[ApiKey]:
         data = {"user_profile_id": user_profile_id}
         api_keys = []
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_USER_API_KEYS), data)
             for row in rows:
                 api_keys.append(
@@ -331,7 +334,9 @@ if __name__ == "__main__":
 
     async def main():
         connection.init_defaults()
-        user_repository = UserRepository(connection.get_session_provider())
+        user_repository = UserRepository(
+            connection.get_session_provider(), connection.get_session_provider_read()
+        )
         user = await user_repository.get_user_by_username("dino")
         print(user.profile_data is None)
 

@@ -147,8 +147,11 @@ class UsageInformation:
 
 class TokensRepository:
 
-    def __init__(self, session_provider: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
 
     @async_timer("tokens_repository.insert_usage_tokens", logger=logger)
     async def insert_usage_tokens(self, ut: UsageTokens):
@@ -174,7 +177,7 @@ class TokensRepository:
     ) -> List[UsageTokens]:
         data = {"producer_node_info_id": node_id, "count": count}
         tokens = []
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_USER_LATEST_USAGE_TOKENS), data
             )
@@ -198,7 +201,7 @@ class TokensRepository:
     ) -> List[UsageNodeModelTotalTokens]:
         data = {"node_ids": node_ids}
         tokens = []
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_TOTAL_TOKENS_BY_NODE_IDS), data
             )
@@ -215,7 +218,7 @@ class TokensRepository:
     @async_timer("tokens_repository.get_latest_count_by_time", logger=logger)
     async def get_latest_count_by_time(self, hours: int = 24) -> int:
         data = {"start_id": historic_uuid(hours)}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_COUNT_BY_TIME), data)
             for row in rows:
                 return row.usage_count
@@ -226,7 +229,7 @@ class TokensRepository:
         self, node_id: UUID, hours: int = 24
     ) -> int:
         data = {"producer_node_info_id": node_id, "start_id": historic_uuid(hours)}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_COUNT_BY_TIME_AND_NODE), data
             )
@@ -239,7 +242,7 @@ class TokensRepository:
         self, user_id: UUID, hours: int = 24
     ) -> int:
         data = {"user_profile_id": user_id, "start_id": historic_uuid(hours)}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_COUNT_BY_TIME_AND_USER), data
             )
@@ -257,7 +260,7 @@ class TokensRepository:
             "consumer_user_profile_id": consumer_user_profile_id,
             "start_id": historic_uuid_seconds(seconds),
         }
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(
                     SQL_GET_COUNT_AND_OLDEST_USAGE_BY_TIME_AND_CONSUMER_USER_PROFILE_ID
@@ -285,7 +288,7 @@ class TokensRepository:
             "consumer_user_profile_id": consumer_user_profile_id,
             "start_id": historic_uuid_seconds(seconds),
         }
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(
                     SQL_GET_TOKENS_COUNT_AND_OLDEST_USAGE_BY_TIME_AND_CONSUMER_USER_PROFILE_ID
