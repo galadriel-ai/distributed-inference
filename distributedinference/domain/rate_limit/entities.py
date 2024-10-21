@@ -25,13 +25,22 @@ class RateLimitResult:
 
 
 @dataclass
-class UserRateLimit:
+class RateLimit:
+    max_requests: Optional[int]
+    max_tokens: Optional[int]
+    remaining_requests: Optional[int]
+    remaining_tokens: Optional[int]
+    reset_requests: Optional[int]
+    reset_tokens: Optional[int]
+
+
+@dataclass
+class UserRateLimitResponse:
+    usage_tier: UsageTier
+
     rate_limited: bool
     retry_after: Optional[int]
-    rate_limit_requests: Optional[int]
-    rate_limit_tokens: Optional[int]
-    rate_limit_remaining_requests: Optional[int]
-    rate_limit_remaining_tokens: Optional[int]
-    rate_limit_reset_requests: Optional[int]
-    rate_limit_reset_tokens: Optional[int]
+
+    rate_limit_minute: RateLimit
+    rate_limit_day: RateLimit
     # TODO: include usage_tier

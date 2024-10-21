@@ -50,7 +50,7 @@ from distributedinference.service.node.entities import ListNodeResponse
 from distributedinference.service.node.entities import UpdateNodeRequest
 from distributedinference.service.node.entities import UpdateNodeResponse
 from distributedinference.service.rate_limit import rate_limit_service
-from distributedinference.service.rate_limit.entities import RateLimit
+from distributedinference.service.rate_limit.entities import RateLimitResponse
 
 TAG = "Dashboard Network"
 router = APIRouter(prefix="/dashboard")
@@ -253,7 +253,11 @@ async def get_graph(
     )
 
 
-@router.get("/rate-limits", name="Get current rate limits and usage", response_model=RateLimit)
+@router.get(
+    "/rate-limits",
+    name="Get current rate limits and usage",
+    response_model=RateLimitResponse,
+)
 async def get_rate_limits(
     user: User = Depends(authentication.validate_session_token),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),

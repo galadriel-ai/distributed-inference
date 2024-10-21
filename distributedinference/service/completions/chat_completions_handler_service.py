@@ -8,7 +8,7 @@ import settings
 from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.rate_limit import rate_limit_use_case
-from distributedinference.domain.rate_limit.entities import UserRateLimit
+from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -77,24 +77,24 @@ async def execute(
     )
 
 
-def rate_limit_to_headers(rate_limit: UserRateLimit) -> Dict[str, str]:
+def rate_limit_to_headers(rate_limit: UserRateLimitResponse) -> Dict[str, str]:
     headers = {
-        "x-ratelimit-limit-requests": str(rate_limit.rate_limit_requests),
-        "x-ratelimit-limit-tokens": str(rate_limit.rate_limit_tokens or 0),
+        "x-ratelimit-limit-requests": str(rate_limit.rate_limit_day.max_requests),
+        "x-ratelimit-limit-tokens": str(rate_limit.rate_limit_minute.max_tokens or 0),
         "x-ratelimit-remaining-requests": str(
-            rate_limit.rate_limit_remaining_requests or 0
+            rate_limit.rate_limit_day.remaining_requests or 0
         ),
         "x-ratelimit-remaining-tokens": str(
-            rate_limit.rate_limit_remaining_tokens or 0
+            rate_limit.rate_limit_minute.remaining_tokens or 0
         ),
         "x-ratelimit-reset-requests": (
-            f"{rate_limit.rate_limit_reset_requests}s"
-            if rate_limit.rate_limit_reset_requests is not None
+            f"{rate_limit.rate_limit_day.reset_requests}s"
+            if rate_limit.rate_limit_day.reset_requests is not None
             else "0s"
         ),
         "x-ratelimit-reset-tokens": (
-            f"{rate_limit.rate_limit_reset_tokens}s"
-            if rate_limit.rate_limit_reset_tokens is not None
+            f"{rate_limit.rate_limit_minute.reset_tokens}s"
+            if rate_limit.rate_limit_minute.reset_tokens is not None
             else "0s"
         ),
     }
