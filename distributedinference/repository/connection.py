@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import settings
+from distributedinference import api_logger
 
 connection = {}
 connection_read = {}
@@ -12,6 +13,8 @@ connection_read = {}
 DEFAULT_POOL_SIZE = 50
 DEFAULT_POOL_OVERFLOW = 100
 DEFAULT_POOL_TIMEOUT = 3
+
+logger = api_logger.get()
 
 
 # pylint: disable=R0913
@@ -28,6 +31,7 @@ def init(
 ):
     global connection
     if not connection:
+        logger.info("connection.py - creating new engine and session maker")
         url = "postgresql+asyncpg://{}:{}@{}:{}/{}"
         url = url.format(user, password, host, port, db)
 
@@ -39,7 +43,7 @@ def init(
             pool_size=pool_size,
             pool_recycle=1800,
         )
-        session_maker = async_sessionmaker(bind=engine)
+        session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
         connection = {"engine": engine, "session_maker": session_maker}
 
 
@@ -66,7 +70,7 @@ def init_read(
             pool_size=pool_size,
             pool_recycle=1800,
         )
-        session_maker = async_sessionmaker(bind=engine)
+        session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
         connection_read = {"engine": engine, "session_maker": session_maker}
 
 
