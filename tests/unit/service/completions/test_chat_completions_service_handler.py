@@ -5,13 +5,13 @@ import distributedinference.service.completions.chat_completions_handler_service
 from distributedinference.service.completions.streaming_response import (
     StreamingResponseWithStatusCode,
 )
-from distributedinference.service.completions.entities import RateLimit
+from distributedinference.domain.rate_limit.entities import UserRateLimit
 from distributedinference.service.error_responses import RateLimitError
 
 
 async def test_execute_no_rate_limit():
     # Mock the check_rate_limit function to simulate no rate limit
-    rate_limit_result = RateLimit(
+    rate_limit_result = UserRateLimit(
         rate_limited=False,
         retry_after=None,
         rate_limit_requests=100,
@@ -23,7 +23,7 @@ async def test_execute_no_rate_limit():
     )
 
     with patch(
-        "distributedinference.service.completions.chat_completions_handler_service.check_rate_limit",
+        "distributedinference.service.completions.chat_completions_handler_service.rate_limit_use_case.execute",
         return_value=rate_limit_result,
     ), patch(
         "distributedinference.service.completions.chat_completions_handler_service.chat_completions_service.execute",
@@ -52,7 +52,7 @@ async def test_execute_no_rate_limit():
 
 
 async def test_execute_no_rate_limit_stream():
-    rate_limit_result = RateLimit(
+    rate_limit_result = UserRateLimit(
         rate_limited=False,
         retry_after=None,
         rate_limit_requests=100,
@@ -64,7 +64,7 @@ async def test_execute_no_rate_limit_stream():
     )
 
     with patch(
-        "distributedinference.service.completions.chat_completions_handler_service.check_rate_limit",
+        "distributedinference.service.completions.chat_completions_handler_service.rate_limit_use_case.execute",
         return_value=rate_limit_result,
     ), patch(
         "distributedinference.service.completions.chat_completions_handler_service.chat_completions_stream_service.execute",
@@ -94,7 +94,7 @@ async def test_execute_no_rate_limit_stream():
 
 
 async def test_execute_rate_limited():
-    rate_limit_result = RateLimit(
+    rate_limit_result = UserRateLimit(
         rate_limited=True,
         retry_after=30,
         rate_limit_requests=100,
@@ -106,7 +106,7 @@ async def test_execute_rate_limited():
     )
 
     with patch(
-        "distributedinference.service.completions.chat_completions_handler_service.check_rate_limit",
+        "distributedinference.service.completions.chat_completions_handler_service.rate_limit_use_case.execute",
         return_value=rate_limit_result,
     ):
         response = MagicMock()

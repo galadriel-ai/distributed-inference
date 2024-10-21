@@ -1,14 +1,14 @@
-from uuid import UUID
-from datetime import datetime, timezone
-from dataclasses import dataclass
+from datetime import datetime
+from datetime import timezone
 from typing import Optional
+from uuid import UUID
 
 from distributedinference import api_logger
+from distributedinference.domain.rate_limit.entities import RateLimitResult
+from distributedinference.domain.rate_limit.entities import UserRateLimit
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
-from distributedinference.service.completions.entities import RateLimit
-from distributedinference.utils.timer import async_timer
+from distributedinference.repository.tokens_repository import TokensRepository
 
 RESET_REQUESTS = 60
 RESET_TOKENS = 60
@@ -18,23 +18,15 @@ SECONDS_IN_A_DAY = 86400
 logger = api_logger.get()
 
 
-@dataclass
-class RateLimitResult:
-    rate_limited: bool
-    retry_after: Optional[int]
-    remaining: Optional[int]
-
-
 class UsageTierNotFoundError(Exception):
     pass
 
 
-@async_timer("rate_limit.check_rate_limit", logger=logger)
-async def check_rate_limit(
+async def execute(
     user: User,
     tokens_repository: TokensRepository,
     rate_limit_repository: RateLimitRepository,
-) -> RateLimit:
+) -> UserRateLimit:
     usage_tier = await rate_limit_repository.get_usage_tier(user.usage_tier_id)
     if not usage_tier:
         raise UsageTierNotFoundError("Usage tier not found")
@@ -99,7 +91,7 @@ async def check_rate_limit(
         [tokens_min_result.remaining, tokens_day_result.remaining]
     )
 
-    return RateLimit(
+    return UserRateLimit(
         rate_limited=rate_limited,
         retry_after=retry_after,
         rate_limit_requests=usage_tier.max_requests_per_day,
