@@ -1,11 +1,11 @@
 import time
-from distributedinference import api_logger
 
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat import CompletionCreateParams
 from openai.types.chat.chat_completion import Choice
 from uuid_extensions import uuid7
 
+from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.node import run_inference_use_case
 from distributedinference.domain.node.entities import InferenceRequest
