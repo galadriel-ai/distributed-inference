@@ -1,4 +1,5 @@
 import time
+from distributedinference import api_logger
 
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat import CompletionCreateParams
@@ -18,9 +19,13 @@ from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
+from distributedinference.utils.timer import async_timer
+
+logger = api_logger.get()
 
 
 # pylint: disable=R0913
+@async_timer("chat_completions_service.execute", logger=logger)
 async def execute(
     user: User,
     request: ChatCompletionRequest,
