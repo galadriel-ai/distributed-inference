@@ -15,6 +15,7 @@ import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.metrics import calculate_node_costs
+from distributedinference.domain.metrics import sql_engine_metrics
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -107,6 +108,7 @@ async def get_metrics(
 
     await _set_node_tokens(tokens_repository, connected_node_ids)
     await _set_node_costs(nodes)
+    await sql_engine_metrics.execute()
     metrics_data = generate_latest(registry)
     return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)
 
