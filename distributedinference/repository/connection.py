@@ -16,6 +16,7 @@ DEFAULT_POOL_TIMEOUT = 3
 
 logger = api_logger.get()
 
+
 # pylint: disable=R0913
 # pylint: disable=W0603
 def init(
@@ -42,7 +43,7 @@ def init(
             pool_size=pool_size,
             pool_recycle=1800,
         )
-        session_maker = async_sessionmaker(bind=engine)
+        session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
         connection = {"engine": engine, "session_maker": session_maker}
 
 
@@ -69,10 +70,7 @@ def init_read(
             pool_size=pool_size,
             pool_recycle=1800,
         )
-        session_maker = async_sessionmaker(
-            bind=engine,
-            expire_on_commit=False
-        )
+        session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
         connection_read = {"engine": engine, "session_maker": session_maker}
 
 
