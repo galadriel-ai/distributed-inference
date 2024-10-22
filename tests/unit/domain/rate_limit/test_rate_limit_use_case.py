@@ -1,17 +1,19 @@
-import pytest
-from unittest.mock import patch
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from unittest.mock import AsyncMock
-from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 from uuid import UUID
 
+import pytest
 from uuid_extensions import uuid7
 
+from distributedinference.domain.rate_limit import rate_limit_use_case as use_case
+from distributedinference.domain.rate_limit.entities import UsageTier
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.tokens_repository import UsageInformation
-from distributedinference.repository.tokens_repository import TokensRepository
-from distributedinference.repository.rate_limit_repository import UsageTier
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
-from distributedinference.service.completions.rate_limit import check_rate_limit
+from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.tokens_repository import UsageInformation
 
 
 @pytest.fixture
@@ -65,14 +67,19 @@ async def test_rate_limit_not_exceeded(
         UsageInformation(count=0, oldest_usage_id=None, oldest_usage_created_at=None)
     )
 
-    result = await check_rate_limit(
+    result = await use_case.execute(
         user, mock_tokens_repository, mock_rate_limit_repository
     )
 
     assert result.rate_limited is False
     assert result.retry_after is None
-    assert result.rate_limit_remaining_requests == 3
-    assert result.rate_limit_remaining_tokens == 1000
+    assert result.rate_limit_day.remaining_requests == usage_tier.max_requests_per_day
+    assert result.rate_limit_day.remaining_tokens == usage_tier.max_tokens_per_day
+    assert (
+        result.rate_limit_minute.remaining_requests
+        == usage_tier.max_requests_per_minute
+    )
+    assert result.rate_limit_minute.remaining_tokens == usage_tier.max_tokens_per_minute
 
 
 async def test_rate_limit_exceeded_by_requests_per_minute(
@@ -112,17 +119,20 @@ async def test_rate_limit_exceeded_by_requests_per_minute(
     ]
 
     with patch(
-        "distributedinference.service.completions.rate_limit.datetime"
+        "distributedinference.domain.rate_limit.rate_limit_use_case.datetime"
     ) as mock_datetime:
         mock_datetime.now.return_value = fixed_now
         mock_datetime.utcnow.return_value = fixed_now
-        result = await check_rate_limit(
+        result = await use_case.execute(
             user, mock_tokens_repository, mock_rate_limit_repository
         )
 
     assert result.rate_limited is True
     assert result.retry_after == 30  # Retry after 30 seconds for minute-level limit
-    assert result.rate_limit_remaining_requests == 0
+    assert result.rate_limit_minute.remaining_requests == 0
+    assert (
+        result.rate_limit_day.remaining_requests == usage_tier.max_requests_per_day - 50
+    )
 
 
 async def test_rate_limit_exceeded_by_requests_per_day(
@@ -162,17 +172,21 @@ async def test_rate_limit_exceeded_by_requests_per_day(
     ]
 
     with patch(
-        "distributedinference.service.completions.rate_limit.datetime"
+        "distributedinference.domain.rate_limit.rate_limit_use_case.datetime"
     ) as mock_datetime:
         mock_datetime.now.return_value = fixed_now
         mock_datetime.utcnow.return_value = fixed_now
-        result = await check_rate_limit(
+        result = await use_case.execute(
             user, mock_tokens_repository, mock_rate_limit_repository
         )
 
     assert result.rate_limited is True
     assert result.retry_after == 68400  # Retry after 19h for day-level limit
-    assert result.rate_limit_remaining_requests == 0  # No more requests available
+    assert result.rate_limit_day.remaining_requests == 0  # No more requests available
+    assert (
+        result.rate_limit_minute.remaining_requests
+        == usage_tier.max_requests_per_minute - 2
+    )
 
 
 async def test_rate_limit_exceeded_by_tokens_per_minute(
@@ -213,11 +227,11 @@ async def test_rate_limit_exceeded_by_tokens_per_minute(
     ]
 
     with patch(
-        "distributedinference.service.completions.rate_limit.datetime"
+        "distributedinference.domain.rate_limit.rate_limit_use_case.datetime"
     ) as mock_datetime:
         mock_datetime.now.return_value = fixed_now
         mock_datetime.utcnow.return_value = fixed_now
-        result = await check_rate_limit(
+        result = await use_case.execute(
             user, mock_tokens_repository, mock_rate_limit_repository
         )
 
@@ -225,7 +239,10 @@ async def test_rate_limit_exceeded_by_tokens_per_minute(
     assert (
         result.retry_after == 30
     )  # Retry after remaining 30 seconds for the minute-level token limit
-    assert result.rate_limit_remaining_tokens == 0
+    assert result.rate_limit_minute.remaining_tokens == 0
+    assert (
+        result.rate_limit_day.remaining_tokens == usage_tier.max_tokens_per_day - 5000
+    )
 
 
 async def test_rate_limit_exceeded_by_tokens_per_day(
@@ -267,17 +284,21 @@ async def test_rate_limit_exceeded_by_tokens_per_day(
     ]
 
     with patch(
-        "distributedinference.service.completions.rate_limit.datetime"
+        "distributedinference.domain.rate_limit.rate_limit_use_case.datetime"
     ) as mock_datetime:
         mock_datetime.now.return_value = fixed_now
         mock_datetime.utcnow.return_value = fixed_now
-        result = await check_rate_limit(
+        result = await use_case.execute(
             user, mock_tokens_repository, mock_rate_limit_repository
         )
 
     assert result.rate_limited is True
     assert result.retry_after == 68400  # Retry after 19h for day-level token limit
-    assert result.rate_limit_remaining_tokens == 0  # No more tokens available
+    assert result.rate_limit_day.remaining_tokens == 0  # No more tokens available
+    assert (
+        result.rate_limit_minute.remaining_tokens
+        == usage_tier.max_tokens_per_minute - 100
+    )
 
 
 async def test_no_rate_limit_on_unlimited_tier(
@@ -311,11 +332,13 @@ async def test_no_rate_limit_on_unlimited_tier(
         )
     )
 
-    result = await check_rate_limit(
+    result = await use_case.execute(
         user, mock_tokens_repository, mock_rate_limit_repository
     )
 
     assert result.rate_limited is False
     assert result.retry_after is None
-    assert result.rate_limit_remaining_requests is None
-    assert result.rate_limit_remaining_tokens is None
+    assert result.rate_limit_minute.remaining_requests is None
+    assert result.rate_limit_minute.remaining_tokens is None
+    assert result.rate_limit_day.remaining_requests is None
+    assert result.rate_limit_day.remaining_tokens is None

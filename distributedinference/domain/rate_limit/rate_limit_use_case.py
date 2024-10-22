@@ -1,14 +1,15 @@
-from uuid import UUID
-from datetime import datetime, timezone
-from dataclasses import dataclass
+from datetime import datetime
+from datetime import timezone
 from typing import Optional
+from uuid import UUID
 
 from distributedinference import api_logger
+from distributedinference.domain.rate_limit.entities import RateLimit
+from distributedinference.domain.rate_limit.entities import RateLimitResult
+from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
-from distributedinference.service.completions.entities import RateLimit
-from distributedinference.utils.timer import async_timer
+from distributedinference.repository.tokens_repository import TokensRepository
 
 RESET_REQUESTS = 60
 RESET_TOKENS = 60
@@ -18,31 +19,18 @@ SECONDS_IN_A_DAY = 86400
 logger = api_logger.get()
 
 
-@dataclass
-class RateLimitResult:
-    rate_limited: bool
-    retry_after: Optional[int]
-    remaining: Optional[int]
-
-
 class UsageTierNotFoundError(Exception):
     pass
 
 
-@async_timer("rate_limit.check_rate_limit", logger=logger)
-async def check_rate_limit(
+async def execute(
     user: User,
     tokens_repository: TokensRepository,
     rate_limit_repository: RateLimitRepository,
-) -> RateLimit:
+) -> UserRateLimitResponse:
     usage_tier = await rate_limit_repository.get_usage_tier(user.usage_tier_id)
     if not usage_tier:
         raise UsageTierNotFoundError("Usage tier not found")
-
-    rate_limited = False
-    retry_after = None
-    remaining_requests = None
-    remaining_tokens = None
 
     # Check rate limits for requests and tokens per minute and per day
     request_min_result = await _check_limit(
@@ -92,23 +80,28 @@ async def check_rate_limit(
         default=None,
     )
 
-    remaining_requests = _get_min_value(
-        [request_min_result.remaining, request_day_result.remaining]
-    )
-    remaining_tokens = _get_min_value(
-        [tokens_min_result.remaining, tokens_day_result.remaining]
-    )
-
-    return RateLimit(
+    return UserRateLimitResponse(
+        usage_tier=usage_tier,
         rate_limited=rate_limited,
         retry_after=retry_after,
-        rate_limit_requests=usage_tier.max_requests_per_day,
-        rate_limit_tokens=usage_tier.max_tokens_per_minute,
-        rate_limit_remaining_requests=remaining_requests,
-        rate_limit_remaining_tokens=remaining_tokens,
-        rate_limit_reset_requests=RESET_REQUESTS,
-        # TODO figure out how to calculate this
-        rate_limit_reset_tokens=RESET_TOKENS,  # TODO figure out how to calculate this
+        rate_limit_minute=RateLimit(
+            max_requests=usage_tier.max_requests_per_minute,
+            max_tokens=usage_tier.max_tokens_per_minute,
+            remaining_requests=request_min_result.remaining,
+            remaining_tokens=tokens_min_result.remaining,
+            # TODO figure out how to calculate these
+            reset_requests=RESET_REQUESTS,
+            reset_tokens=RESET_TOKENS,
+        ),
+        rate_limit_day=RateLimit(
+            max_requests=usage_tier.max_requests_per_day,
+            max_tokens=usage_tier.max_tokens_per_day,
+            remaining_requests=request_day_result.remaining,
+            remaining_tokens=tokens_day_result.remaining,
+            # TODO figure out how to calculate these
+            reset_requests=RESET_REQUESTS,
+            reset_tokens=RESET_TOKENS,
+        ),
     )
 
 
@@ -136,8 +129,3 @@ def _elapsed_seconds(since: datetime) -> float:
     if since.tzinfo is None:
         since = since.replace(tzinfo=timezone.utc)
     return (datetime.now(timezone.utc) - since).total_seconds()
-
-
-def _get_min_value(values: list[Optional[int]]) -> Optional[int]:
-    filtered_values = [value for value in values if value is not None]
-    return min(filtered_values) if filtered_values else None

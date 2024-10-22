@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-from datetime import datetime
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -7,6 +5,7 @@ from uuid import UUID
 import sqlalchemy
 
 from distributedinference import api_logger
+from distributedinference.domain.rate_limit.entities import UsageTier
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.utils.timer import async_timer
 
@@ -40,19 +39,6 @@ WHERE id = :id;
 """
 
 logger = api_logger.get()
-
-
-@dataclass
-class UsageTier:
-    id: UUID
-    name: str
-    description: Optional[str]
-    max_tokens_per_minute: Optional[int]
-    max_tokens_per_day: Optional[int]
-    max_requests_per_minute: Optional[int]
-    max_requests_per_day: Optional[int]
-    created_at: datetime
-    last_updated_at: datetime
 
 
 class RateLimitRepository:
