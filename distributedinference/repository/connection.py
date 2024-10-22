@@ -10,9 +10,9 @@ from distributedinference import api_logger
 connection = {}
 connection_read = {}
 
-DEFAULT_POOL_SIZE = 50
-DEFAULT_POOL_OVERFLOW = 100
-DEFAULT_POOL_TIMEOUT = 3
+DEFAULT_POOL_SIZE = 100
+DEFAULT_POOL_OVERFLOW = 0
+DEFAULT_POOL_TIMEOUT = 1
 
 logger = api_logger.get()
 
