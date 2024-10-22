@@ -167,8 +167,11 @@ class TokensRepository:
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
+            logger.debug("tokens_repository.insert_usage_tokens execute()")
             await session.execute(sqlalchemy.text(SQL_INSERT_USAGE_TOKENS), data)
+            logger.debug("tokens_repository.insert_usage_tokens commit()")
             await session.commit()
+            logger.debug("tokens_repository.insert_usage_tokens done()")
 
     # pylint: disable=W0613
     @async_timer("tokens_repository.get_user_latest_usage_tokens", logger=logger)
