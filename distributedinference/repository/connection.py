@@ -32,7 +32,7 @@ def init(
     global connection
     if not connection:
         logger.info("connection.py - creating new engine and session maker")
-        url = "postgresql+asyncpg://{}:{}@{}:{}/{}"
+        url = "postgresql+psycopg_async://{}:{}@{}:{}/{}"
         url = url.format(user, password, host, port, db)
 
         # The return value of create_engine() is our connection object
@@ -59,7 +59,7 @@ def init_read(
 ):
     global connection_read
     if not connection_read:
-        url = "postgresql+asyncpg://{}:{}@{}:{}/{}"
+        url = "postgresql+psycopg_async://{}:{}@{}:{}/{}"
         url = url.format(user, password, host, port, db)
 
         # The return value of create_engine() is our connection object
