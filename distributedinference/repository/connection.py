@@ -43,7 +43,7 @@ def init(
             pool_size=pool_size,
             pool_recycle=1800,
         )
-        session_maker = async_sessionmaker(bind=engine, expire_on_commit=True)
+        session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
         connection = {"engine": engine, "session_maker": session_maker}
 
 
