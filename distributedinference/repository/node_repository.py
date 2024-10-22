@@ -767,7 +767,7 @@ class NodeRepository:
         connected_node_ids = await self.get_connected_node_ids()
         if not connected_node_ids:
             return 0
-        data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
+        data = {"node_ids": connected_node_ids}
         async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_SUM), data
@@ -782,7 +782,7 @@ class NodeRepository:
         connected_node_ids = await self.get_connected_node_ids()
         if not connected_node_ids:
             return []
-        data = {"node_ids": tuple(str(i) for i in connected_node_ids)}
+        data = {"node_ids": connected_node_ids}
         async with self._session_provider_read.get() as session:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_BENCHMARK_TOKENS_BY_MODEL), data
