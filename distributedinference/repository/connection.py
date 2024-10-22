@@ -10,9 +10,9 @@ from distributedinference import api_logger
 connection = {}
 connection_read = {}
 
-DEFAULT_POOL_SIZE = 50
-DEFAULT_POOL_OVERFLOW = 100
-DEFAULT_POOL_TIMEOUT = 3
+DEFAULT_POOL_SIZE = 100
+DEFAULT_POOL_OVERFLOW = 0
+DEFAULT_POOL_TIMEOUT = 1
 
 logger = api_logger.get()
 
@@ -43,7 +43,7 @@ def init(
             pool_size=pool_size,
             pool_recycle=1800,
         )
-        session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
+        session_maker = async_sessionmaker(bind=engine, expire_on_commit=True)
         connection = {"engine": engine, "session_maker": session_maker}
 
 
