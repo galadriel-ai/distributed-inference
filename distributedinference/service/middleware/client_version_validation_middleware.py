@@ -22,7 +22,7 @@ class SupportedVersionRange:
 
 # pylint: disable=E1120
 class Client(str, Enum):
-    GPU_NODE = ("gpu-node", SupportedVersionRange("0.0.11", "0.0.13"))
+    GPU_NODE = ("gpu-node", SupportedVersionRange("0.0.11", "0.0.14"))
 
     def __new__(cls, value, version_range):
         obj = str.__new__(cls, value)
