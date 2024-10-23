@@ -24,6 +24,7 @@ from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.api_key import create_api_key_service
 from distributedinference.service.api_key import delete_api_key_service
 from distributedinference.service.api_key import get_api_keys_service
+from distributedinference.service.api_key import get_example_api_key_service
 from distributedinference.service.auth import authentication
 from distributedinference.service.completions import chat_completions_handler_service
 from distributedinference.service.completions.entities import ChatCompletion
@@ -36,6 +37,7 @@ from distributedinference.service.network.entities import CreateApiKeyResponse
 from distributedinference.service.network.entities import DeleteApiKeyRequest
 from distributedinference.service.network.entities import DeleteApiKeyResponse
 from distributedinference.service.network.entities import GetApiKeysResponse
+from distributedinference.service.network.entities import GetUserApiKeyExampleResponse
 from distributedinference.service.network.entities import NetworkStatsResponse
 from distributedinference.service.node import create_node_service
 from distributedinference.service.node import get_user_aggregated_stats_service
@@ -47,6 +49,8 @@ from distributedinference.service.node.entities import GetUserAggregatedStatsRes
 from distributedinference.service.node.entities import ListNodeResponse
 from distributedinference.service.node.entities import UpdateNodeRequest
 from distributedinference.service.node.entities import UpdateNodeResponse
+from distributedinference.service.rate_limit import rate_limit_service
+from distributedinference.service.rate_limit.entities import RateLimitResponse
 
 TAG = "Dashboard Network"
 router = APIRouter(prefix="/dashboard")
@@ -85,6 +89,19 @@ async def get_network_stats(
     _: User = Depends(authentication.validate_session_token),
 ):
     return await get_network_stats_service.execute(node_repository, tokens_repository)
+
+
+@router.get(
+    "/api-key-example",
+    name="Api key example",
+    response_model=GetUserApiKeyExampleResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def get_api_key_example(
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
+    user: User = Depends(authentication.validate_session_token),
+):
+    return await get_example_api_key_service.execute(user, user_repository)
 
 
 @router.get(
@@ -233,4 +250,21 @@ async def get_graph(
 ):
     return await graph_service.execute(
         graph_type, node_name, user, grafana_repository, node_repository
+    )
+
+
+@router.get(
+    "/rate-limits",
+    name="Get current rate limits and usage",
+    response_model=RateLimitResponse,
+)
+async def get_rate_limits(
+    user: User = Depends(authentication.validate_session_token),
+    tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
+    rate_limit_repository: RateLimitRepository = Depends(
+        dependencies.get_rate_limit_repository
+    ),
+):
+    return await rate_limit_service.execute(
+        user, tokens_repository, rate_limit_repository
     )

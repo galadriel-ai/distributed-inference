@@ -36,16 +36,6 @@ VALUES (
 );
 """
 
-SQL_UPDATE_USERNAME_AND_IS_PASSWORD_SET = """
-UPDATE 
-    user_profile 
-SET 
-    is_password_set = :is_password_set,
-    username = :username,
-    last_updated_at = :last_updated_at
-WHERE authentication_id = :authentication_id; 
-"""
-
 SQL_UPDATE_USER_PROFILE_DATA = """
 UPDATE 
     user_profile 
@@ -89,21 +79,6 @@ WHERE
     AND ak.is_deleted IS FALSE;
 """
 
-SQL_GET_BY_USERNAME = """
-SELECT
-    id,
-    name,
-    username,
-    email,
-    profile_data,
-    usage_tier_id,
-    authentication_id,
-    created_at,
-    last_updated_at
-FROM user_profile
-WHERE username ILIKE :username;
-"""
-
 SQL_GET_BY_AUTHENTICATION_ID = """
 SELECT
     up.id,
@@ -138,7 +113,8 @@ SELECT
     api_key,
     created_at
 FROM api_key
-WHERE user_profile_id = :user_profile_id AND is_deleted = false;
+WHERE user_profile_id = :user_profile_id AND is_deleted = false
+ORDER BY id;
 """
 
 SQL_DELETE_USER_API_KEY = """
@@ -147,14 +123,16 @@ SET is_deleted = true
 WHERE user_profile_id = :user_profile_id AND id = :api_key_id;
 """
 
-
 logger = api_logger.get()
 
 
 class UserRepository:
 
-    def __init__(self, session_provider: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
 
     @async_timer("user_repository.insert_user", logger=logger)
     async def insert_user(
@@ -174,28 +152,6 @@ class UserRepository:
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_INSERT), data)
-            await session.commit()
-
-    @async_timer(
-        "user_repository.update_user_username_and_password_by_authentication_id",
-        logger=logger,
-    )
-    async def update_user_username_and_password_by_authentication_id(
-        self,
-        authentication_id: str,
-        username: str,
-        is_password_set: bool,
-    ):
-        data = {
-            "authentication_id": authentication_id,
-            "username": username,
-            "is_password_set": is_password_set,
-            "last_updated_at": utcnow(),
-        }
-        async with self._session_provider.get() as session:
-            await session.execute(
-                sqlalchemy.text(SQL_UPDATE_USERNAME_AND_IS_PASSWORD_SET), data
-            )
             await session.commit()
 
     @async_timer("user_repository.update_user_profile_data", logger=logger)
@@ -231,7 +187,7 @@ class UserRepository:
     @async_timer("user_repository.get_user_by_api_key", logger=logger)
     async def get_user_by_api_key(self, api_key: str) -> Optional[User]:
         data = {"api_key": api_key}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_BY_API_KEY), data)
             row = result.first()
             if row:
@@ -245,30 +201,12 @@ class UserRepository:
                 )
         return None
 
-    @async_timer("user_repository.get_user_by_username", logger=logger)
-    async def get_user_by_username(self, username: str) -> Optional[User]:
-        data = {"username": username}
-        async with self._session_provider.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_BY_USERNAME), data)
-            row = result.first()
-            if row:
-                return User(
-                    uid=row.id,
-                    name=row.name,
-                    username=row.username,
-                    email=row.email,
-                    usage_tier_id=row.usage_tier_id,
-                    profile_data=row.profile_data,
-                    authentication_id=row.authentication_id,
-                )
-        return None
-
     @async_timer("user_repository.get_user_by_authentication_id", logger=logger)
     async def get_user_by_authentication_id(
         self, authentication_id: str
     ) -> Optional[User]:
         data = {"authentication_id": authentication_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_BY_AUTHENTICATION_ID), data
             )
@@ -287,7 +225,7 @@ class UserRepository:
     @async_timer("user_repository.get_user_by_email", logger=logger)
     async def get_user_by_email(self, email: str) -> Optional[User]:
         data = {"email": email.strip()}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_BY_EMAIL), data)
             row = result.first()
             if row:
@@ -305,7 +243,7 @@ class UserRepository:
     async def get_user_api_keys(self, user_profile_id: UUID) -> List[ApiKey]:
         data = {"user_profile_id": user_profile_id}
         api_keys = []
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_USER_API_KEYS), data)
             for row in rows:
                 api_keys.append(
@@ -323,16 +261,3 @@ class UserRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_DELETE_USER_API_KEY), data)
             await session.commit()
-
-
-if __name__ == "__main__":
-    import asyncio
-    from distributedinference.repository import connection
-
-    async def main():
-        connection.init_defaults()
-        user_repository = UserRepository(connection.get_session_provider())
-        user = await user_repository.get_user_by_username("dino")
-        print(user.profile_data is None)
-
-    asyncio.run(main())

@@ -12,6 +12,7 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
+from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
@@ -23,6 +24,8 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
+
+logger = api_logger.get()
 
 node_time_to_first_token_histogram = Histogram(
     "node_time_to_first_token_histogram",
@@ -109,6 +112,9 @@ async def execute(
             metrics_increment.inference_tokens_per_second = (
                 usage.completion_tokens / time_elapsed_after_first_token
             )
+            logger.debug(
+                f"Inference generates {usage.completion_tokens} tokens, and takes {time_elapsed_after_first_token}s. TPS: {metrics_increment.inference_tokens_per_second} TTFT: {first_token_time}"
+            )
         if request_successful:
             metrics_increment.requests_successful_incerement += 1
         else:
@@ -129,13 +135,15 @@ def _select_and_track_node(
     analytics.track_event(
         user_uid,
         AnalyticsEvent(
-            EventName.USER_EXECUTED_INFERENCE_REQUEST, {"node_id": node.uid}
+            EventName.USER_EXECUTED_INFERENCE_REQUEST,
+            {"node_id": node.uid, "model": request.model},
         ),
     )
     analytics.track_event(
         node.user_id,
         AnalyticsEvent(
-            EventName.USER_NODE_SELECTED_FOR_INFERENCE, {"node_id": node.uid}
+            EventName.USER_NODE_SELECTED_FOR_INFERENCE,
+            {"node_id": node.uid, "model": request.model},
         ),
     )
     return node

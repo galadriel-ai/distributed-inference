@@ -6,6 +6,7 @@ import settings
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
+from distributedinference.domain.api_key import create_api_key_use_case
 from distributedinference.domain.auth import signup_user_use_case
 from distributedinference.domain.auth.entities import UserSignup
 from distributedinference.domain.user.entities import User
@@ -44,6 +45,8 @@ async def execute(
     await user_repository.insert_user(user, is_password_set=True)
     analytics.track_event(user.uid, AnalyticsEvent(EventName.SIGNUP, {}))
     analytics.identify_user(user)
+
+    await create_api_key_use_case.execute(user, user_repository)
 
     return SignupResponse(
         email=signup_request.email,

@@ -7,6 +7,7 @@ from distributedinference.repository.authentication_api_repository import (
 )
 
 from distributedinference.repository.connection import get_session_provider
+from distributedinference.repository.connection import get_session_provider_read
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -23,6 +24,7 @@ _node_repository_instance: NodeRepository
 _node_stats_repository_instance: NodeStatsRepository
 _benchmark_repository_instance: BenchmarkRepository
 _metrics_queue_repository: MetricsQueueRepository
+_rate_limit_repository: RateLimitRepository
 
 _authentication_api_repository: AuthenticationApiRepository
 _analytics: Analytics
@@ -38,18 +40,27 @@ def init_globals():
     global _node_stats_repository_instance
     global _benchmark_repository_instance
     global _metrics_queue_repository
+    global _rate_limit_repository
     global _authentication_api_repository
     global _analytics
     global _protocol_handler
     global _grafana_api_repository
     _node_repository_instance = NodeRepository(
         get_session_provider(),
+        get_session_provider_read(),
         settings.MAX_PARALLEL_REQUESTS_PER_NODE,
         settings.MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE,
     )
-    _node_stats_repository_instance = NodeStatsRepository(get_session_provider())
-    _benchmark_repository_instance = BenchmarkRepository(get_session_provider())
+    _node_stats_repository_instance = NodeStatsRepository(
+        get_session_provider(), get_session_provider_read()
+    )
+    _benchmark_repository_instance = BenchmarkRepository(
+        get_session_provider(), get_session_provider_read()
+    )
     _metrics_queue_repository = MetricsQueueRepository()
+    _rate_limit_repository = RateLimitRepository(
+        get_session_provider(), get_session_provider_read()
+    )
 
     _analytics = Analytics(
         posthog=init_posthog(
@@ -84,11 +95,11 @@ def get_benchmark_repository() -> BenchmarkRepository:
 
 
 def get_user_repository() -> UserRepository:
-    return UserRepository(get_session_provider())
+    return UserRepository(get_session_provider(), get_session_provider_read())
 
 
 def get_tokens_repository() -> TokensRepository:
-    return TokensRepository(get_session_provider())
+    return TokensRepository(get_session_provider(), get_session_provider_read())
 
 
 def get_metrics_queue_repository() -> MetricsQueueRepository:
@@ -112,4 +123,4 @@ def get_grafana_repository() -> GrafanaApiRepository:
 
 
 def get_rate_limit_repository() -> RateLimitRepository:
-    return RateLimitRepository(get_session_provider())
+    return _rate_limit_repository

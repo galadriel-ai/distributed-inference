@@ -40,13 +40,16 @@ logger = api_logger.get()
 
 class NodeStatsRepository:
 
-    def __init__(self, session_provider: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
 
     @async_timer("node_stats_repository.get_node_stats", logger=logger)
     async def get_node_stats(self, user_id: UUID, node_id: UUID) -> Optional[NodeStats]:
         data = {"id": node_id, "user_profile_id": user_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATS), data)
             row = result.first()
             if row:
@@ -68,7 +71,7 @@ class NodeStatsRepository:
         self, user_id: UUID
     ) -> Optional[UserAggregatedStats]:
         data = {"user_profile_id": user_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_USER_STATS), data)
             row = result.first()
             if row:

@@ -35,7 +35,10 @@ def session_provider():
 @pytest.fixture
 def node_repository(session_provider):
     return NodeRepository(
-        session_provider, MAX_PARALLEL_REQUESTS, MAX_PARALLEL_DATACENTER_REQUESTS
+        session_provider,
+        session_provider,
+        MAX_PARALLEL_REQUESTS,
+        MAX_PARALLEL_DATACENTER_REQUESTS,
     )
 
 

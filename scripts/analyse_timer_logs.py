@@ -9,18 +9,21 @@ PYTHONPATH=. python scripts/analyse_timer_logs.py
 
 import json
 from typing import List
-from typing import Optional
+from datetime import datetime, timedelta
 
 import settings
 
 
-def main():
-    all_timer_results = _read_logs()
+def main(last_minutes: int = 30):
+    now = datetime.now()
+    time_filter = now - timedelta(minutes=last_minutes)
+
+    all_timer_results = _read_logs(time_filter)
     for name, durations in all_timer_results.items():
         _print_result(name, durations)
 
 
-def _read_logs():
+def _read_logs(time_filter):
     """
     Reads log file line by line:
     * filters out only timer logs
@@ -32,24 +35,26 @@ def _read_logs():
     with open(settings.LOG_FILE_PATH, "r") as file:
         line = file.readline()
         while line:
-            message = _get_message(line)
-            if _is_timer_log(message):
-                name, duration = _get_name_and_duration(message)
-                if name in result:
-                    result[name].append(duration)
-                else:
-                    result[name] = [duration]
+            message, timestamp = _get_message_and_timestamp(line)
+            if timestamp and timestamp > time_filter:
+                if message and _is_timer_log(message):
+                    name, duration = _get_name_and_duration(message)
+                    if name in result:
+                        result[name].append(duration)
+                    else:
+                        result[name] = [duration]
             line = file.readline()
     return result
 
 
-def _get_message(line: str) -> Optional[str]:
+def _get_message_and_timestamp(line: str) -> (str, datetime):
     try:
         line = line.strip()
         line = json.loads(line)
-        return line["message"]
+        date_obj = datetime.strptime(line["asctime"], "%Y-%m-%d %H:%M:%S,%f")
+        return line["message"], date_obj
     except:
-        return None
+        return None, None
 
 
 def _is_timer_log(message: str) -> bool:
@@ -74,4 +79,4 @@ def _print_result(name: str, durations: List[float]) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(last_minutes=1440)

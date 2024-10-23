@@ -1,29 +1,60 @@
+from datetime import datetime
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from uuid_extensions import uuid7
+
 import distributedinference.service.completions.chat_completions_handler_service as service
+from distributedinference.domain.rate_limit.entities import RateLimit
+from distributedinference.domain.rate_limit.entities import UsageTier
 from distributedinference.service.completions.streaming_response import (
     StreamingResponseWithStatusCode,
 )
-from distributedinference.service.completions.entities import RateLimit
+from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.service.error_responses import RateLimitError
+
+
+def _get_usage_tier():
+    return UsageTier(
+        id=uuid7(),
+        name="usage tier",
+        description="usage tier description",
+        max_tokens_per_minute=12,
+        max_tokens_per_day=12,
+        max_requests_per_minute=12,
+        max_requests_per_day=12,
+        created_at=datetime(2024, 1, 1),
+        last_updated_at=datetime(2024, 1, 1),
+    )
 
 
 async def test_execute_no_rate_limit():
     # Mock the check_rate_limit function to simulate no rate limit
-    rate_limit_result = RateLimit(
+    rate_limit_result = UserRateLimitResponse(
         rate_limited=False,
         retry_after=None,
-        rate_limit_requests=100,
-        rate_limit_tokens=1000,
-        rate_limit_remaining_requests=99,
-        rate_limit_remaining_tokens=999,
-        rate_limit_reset_requests=60,
-        rate_limit_reset_tokens=60,
+        usage_tier=_get_usage_tier(),
+        rate_limit_minute=RateLimit(
+            max_requests=3,
+            max_tokens=1000,
+            remaining_requests=99,
+            remaining_tokens=999,
+            reset_requests=60,
+            reset_tokens=60,
+        ),
+        rate_limit_day=RateLimit(
+            max_requests=100,
+            max_tokens=10000,
+            remaining_requests=999,
+            remaining_tokens=9999,
+            reset_requests=60,
+            reset_tokens=60,
+        ),
     )
 
     with patch(
-        "distributedinference.service.completions.chat_completions_handler_service.check_rate_limit",
+        "distributedinference.service.completions.chat_completions_handler_service.rate_limit_use_case.execute",
         return_value=rate_limit_result,
     ), patch(
         "distributedinference.service.completions.chat_completions_handler_service.chat_completions_service.execute",
@@ -43,7 +74,7 @@ async def test_execute_no_rate_limit():
 
         assert response.headers["x-ratelimit-limit-requests"] == "100"
         assert response.headers["x-ratelimit-limit-tokens"] == "1000"
-        assert response.headers["x-ratelimit-remaining-requests"] == "99"
+        assert response.headers["x-ratelimit-remaining-requests"] == "999"
         assert response.headers["x-ratelimit-remaining-tokens"] == "999"
         assert response.headers["x-ratelimit-reset-requests"] == "60s"
         assert response.headers["x-ratelimit-reset-tokens"] == "60s"
@@ -52,19 +83,30 @@ async def test_execute_no_rate_limit():
 
 
 async def test_execute_no_rate_limit_stream():
-    rate_limit_result = RateLimit(
+    rate_limit_result = UserRateLimitResponse(
         rate_limited=False,
         retry_after=None,
-        rate_limit_requests=100,
-        rate_limit_tokens=1000,
-        rate_limit_remaining_requests=99,
-        rate_limit_remaining_tokens=999,
-        rate_limit_reset_requests=60,
-        rate_limit_reset_tokens=60,
+        usage_tier=_get_usage_tier(),
+        rate_limit_minute=RateLimit(
+            max_requests=3,
+            max_tokens=1000,
+            remaining_requests=99,
+            remaining_tokens=999,
+            reset_requests=60,
+            reset_tokens=60,
+        ),
+        rate_limit_day=RateLimit(
+            max_requests=100,
+            max_tokens=10000,
+            remaining_requests=999,
+            remaining_tokens=9999,
+            reset_requests=60,
+            reset_tokens=60,
+        ),
     )
 
     with patch(
-        "distributedinference.service.completions.chat_completions_handler_service.check_rate_limit",
+        "distributedinference.service.completions.chat_completions_handler_service.rate_limit_use_case.execute",
         return_value=rate_limit_result,
     ), patch(
         "distributedinference.service.completions.chat_completions_handler_service.chat_completions_stream_service.execute",
@@ -85,7 +127,7 @@ async def test_execute_no_rate_limit_stream():
         assert isinstance(result, StreamingResponseWithStatusCode)
         assert result.headers["x-ratelimit-limit-requests"] == "100"
         assert result.headers["x-ratelimit-limit-tokens"] == "1000"
-        assert result.headers["x-ratelimit-remaining-requests"] == "99"
+        assert result.headers["x-ratelimit-remaining-requests"] == "999"
         assert result.headers["x-ratelimit-remaining-tokens"] == "999"
         assert result.headers["x-ratelimit-reset-requests"] == "60s"
         assert result.headers["x-ratelimit-reset-tokens"] == "60s"
@@ -94,19 +136,30 @@ async def test_execute_no_rate_limit_stream():
 
 
 async def test_execute_rate_limited():
-    rate_limit_result = RateLimit(
+    rate_limit_result = UserRateLimitResponse(
         rate_limited=True,
         retry_after=30,
-        rate_limit_requests=100,
-        rate_limit_tokens=1000,
-        rate_limit_remaining_requests=0,
-        rate_limit_remaining_tokens=0,
-        rate_limit_reset_requests=60,
-        rate_limit_reset_tokens=60,
+        usage_tier=_get_usage_tier(),
+        rate_limit_minute=RateLimit(
+            max_requests=3,
+            max_tokens=1000,
+            remaining_requests=99,
+            remaining_tokens=0,
+            reset_requests=60,
+            reset_tokens=60,
+        ),
+        rate_limit_day=RateLimit(
+            max_requests=100,
+            max_tokens=10000,
+            remaining_requests=0,
+            remaining_tokens=9999,
+            reset_requests=60,
+            reset_tokens=60,
+        ),
     )
 
     with patch(
-        "distributedinference.service.completions.chat_completions_handler_service.check_rate_limit",
+        "distributedinference.service.completions.chat_completions_handler_service.rate_limit_use_case.execute",
         return_value=rate_limit_result,
     ):
         response = MagicMock()

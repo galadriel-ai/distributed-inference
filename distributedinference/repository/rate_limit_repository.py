@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-from datetime import datetime
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -7,6 +5,7 @@ from uuid import UUID
 import sqlalchemy
 
 from distributedinference import api_logger
+from distributedinference.domain.rate_limit.entities import UsageTier
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.utils.timer import async_timer
 
@@ -42,27 +41,17 @@ WHERE id = :id;
 logger = api_logger.get()
 
 
-@dataclass
-class UsageTier:
-    id: UUID
-    name: str
-    description: Optional[str]
-    max_tokens_per_minute: Optional[int]
-    max_tokens_per_day: Optional[int]
-    max_requests_per_minute: Optional[int]
-    max_requests_per_day: Optional[int]
-    created_at: datetime
-    last_updated_at: datetime
-
-
 class RateLimitRepository:
 
-    def __init__(self, session_provider: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
 
     @async_timer("rate_limit_repository.get_usage_tiers", logger=logger)
     async def get_usage_tiers(self) -> List[UsageTier]:
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             tiers = []
             rows = await session.execute(sqlalchemy.text(SQL_GET_USAGE_TIERS))
             for row in rows:
@@ -84,7 +73,7 @@ class RateLimitRepository:
     @async_timer("rate_limit_repository.get_usage_tier", logger=logger)
     async def get_usage_tier(self, tier_id: UUID) -> Optional[UsageTier]:
         data = {"id": tier_id}
-        async with self._session_provider.get() as session:
+        async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_USAGE_TIER_BY_ID), data
             )
