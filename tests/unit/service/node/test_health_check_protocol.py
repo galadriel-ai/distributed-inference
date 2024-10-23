@@ -109,7 +109,17 @@ async def test_add_node(health_check_protocol):
     assert not health_check_protocol.active_nodes[NODE_NAME].waiting_for_response
 
 
-@pytest.mark.asyncio
+async def test_add_node_but_unsupported_node_version(health_check_protocol):
+    # Setup
+    websocket = AsyncMock(spec=WebSocket)
+
+    # Execute
+    health_check_protocol.add_node(NODE_UUID, NODE_NAME, "0.0.10", websocket)
+
+    # Assert
+    assert not NODE_NAME in health_check_protocol.active_nodes
+
+
 async def test_remove_node(health_check_protocol):
     # Setup
     node_id = "test_node"

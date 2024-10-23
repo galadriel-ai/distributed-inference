@@ -24,7 +24,7 @@ from distributedinference.service.node.protocol.health_check.entities import (
 logger = api_logger.get()
 
 
-SUPPORTED_NODE_VERSION = "0.0.13"
+SUPPORTED_NODE_VERSION = "0.0.15"
 
 
 @dataclass
@@ -50,18 +50,18 @@ class HealthCheckProtocol:
         self.active_nodes: Dict[str, NodeHealthCheckInfo] = {}
         logger.info(f"{self.PROTOCOL_NAME}: Protocol initialized")
 
-    async def handle(self, data: Any):
+    async def handle(self, data: Any) -> Any:
         try:
             response = HealthCheckResponse(**data)
         except:
             logger.warning(f"{self.PROTOCOL_NAME}: Invalid data received: {data}")
-            return
+            return None
 
         if response.node_id not in self.active_nodes:
             logger.warning(
                 f"{self.PROTOCOL_NAME}: Received health check response from an unknown node {response.node_id}"
             )
-            return
+            return None
 
         node_info = self.active_nodes[response.node_id]
         if (
@@ -73,7 +73,7 @@ class HealthCheckProtocol:
             )
             is False
         ):
-            return
+            return None
 
         await self._received_health_check_response(response, node_info)
 
@@ -126,11 +126,10 @@ class HealthCheckProtocol:
                 f"{self.PROTOCOL_NAME}: Node {node_id} is using an unsupported version {node_version}"
             )
             return False
-        current_time = _current_milli_time()
         self.active_nodes[node_id] = NodeHealthCheckInfo(
             websocket=websocket,
             node_uuid=node_uuid,
-            next_request_time=current_time
+            next_request_time=_current_milli_time()
             + settings.NODE_HEALTH_CHECK_INTERVAL_SECONDS * 1000,
             last_request_nonce=None,
         )
@@ -178,11 +177,8 @@ class HealthCheckProtocol:
         node_info.next_request_time = 0
         node_info.waiting_for_response = True
         node_info.last_request_nonce = nonce
-
-        sent_time = _current_milli_time()
-
         logger.info(
-            f"{self.PROTOCOL_NAME}: Sent health check request to node {node_id}, sent time = {sent_time}, nonce = {nonce}"
+            f"{self.PROTOCOL_NAME}: Sent health check request to node {node_id}, sent time = {_current_milli_time()}, nonce = {nonce}"
         )
 
 
