@@ -77,37 +77,8 @@ class HealthCheckProtocol:
 
         await self._received_health_check_response(response, node_info)
 
-    async def _received_health_check_response(
-        self, response: HealthCheckResponse, node_info: NodeHealthCheckInfo
-    ):
-        node_info.next_request_time = _current_milli_time() + (
-            settings.NODE_HEALTH_CHECK_INTERVAL_SECONDS * 1000
-        )
-        node_info.waiting_for_response = False
-        node_info.last_request_nonce = None
-
-        node_health = NodeHealth(
-            node_id=node_info.node_uuid,
-            cpu_percent=response.cpu_percent,
-            ram_percent=response.ram_percent,
-            disk_percent=response.disk_percent,
-            gpus=[
-                NodeGPUHealth(
-                    gpu_percent=gpu.gpu_percent, vram_percent=gpu.vram_percent
-                )
-                for gpu in response.gpus
-            ],
-        )
-        await self.node_repository.save_node_health(
-            node_id=node_info.node_uuid,
-            health=node_health,
-        )
-        logger.info(
-            f"{self.PROTOCOL_NAME}: Received health check response from node {response.node_id}, nonce = {node_info.last_request_nonce}"
-        )
-
     async def run(self):
-        await self.send_health_check_requests()
+        await self._send_health_check_requests()
 
     def add_node(
         self,
@@ -150,14 +121,14 @@ class HealthCheckProtocol:
         )
         return True
 
-    async def send_health_check_requests(self):
+    async def _send_health_check_requests(self):
         current_time = _current_milli_time()
         for node_id, node_info in self.active_nodes.items():
             if current_time > node_info.next_request_time:
                 if not node_info.waiting_for_response:
-                    await self.send_health_check_request(node_id)
+                    await self._send_health_check_request(node_id)
 
-    async def send_health_check_request(self, node_id: str):
+    async def _send_health_check_request(self, node_id: str):
         node_info = self.active_nodes[node_id]
         nonce = str(uuid.uuid4())
         health_check_request = HealthCheckRequest(
@@ -179,6 +150,35 @@ class HealthCheckProtocol:
         node_info.last_request_nonce = nonce
         logger.info(
             f"{self.PROTOCOL_NAME}: Sent health check request to node {node_id}, sent time = {_current_milli_time()}, nonce = {nonce}"
+        )
+
+    async def _received_health_check_response(
+        self, response: HealthCheckResponse, node_info: NodeHealthCheckInfo
+    ):
+        node_info.next_request_time = _current_milli_time() + (
+            settings.NODE_HEALTH_CHECK_INTERVAL_SECONDS * 1000
+        )
+        node_info.waiting_for_response = False
+        node_info.last_request_nonce = None
+
+        node_health = NodeHealth(
+            node_id=node_info.node_uuid,
+            cpu_percent=response.cpu_percent,
+            ram_percent=response.ram_percent,
+            disk_percent=response.disk_percent,
+            gpus=[
+                NodeGPUHealth(
+                    gpu_percent=gpu.gpu_percent, vram_percent=gpu.vram_percent
+                )
+                for gpu in response.gpus
+            ],
+        )
+        await self.node_repository.save_node_health(
+            node_id=node_info.node_uuid,
+            health=node_health,
+        )
+        logger.info(
+            f"{self.PROTOCOL_NAME}: Received health check response from node {response.node_id}, nonce = {node_info.last_request_nonce}"
         )
 
 
