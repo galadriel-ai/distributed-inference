@@ -58,11 +58,6 @@ METRICS_JOB_TIMEOUT_BETWEEN_RUNS_SECONDS = int(
 # if prometheus py client will be used in multiprocessing mode, needs to point to an existing dir
 PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR", None)
 
-STYTCH_PROJECT_ID = os.getenv("STYTCH_PROJECT_ID", None)
-STYTCH_SECRET = os.getenv("STYTCH_SECRET", None)
-# Logged in user session duration (can use one token for this duration)
-SESSION_DURATION_MINUTES = 2 * 24 * 60
-
 # Protocols related settings
 PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS = (
     3  # Protocol response check every 3 second
@@ -84,7 +79,6 @@ GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", None)
 RUN_CRON_JOBS = os.getenv("RUN_CRON_JOBS", False)
 TESTING_API_KEY = os.getenv("TESTING_API_KEY", "")
 
-
 # Rate limit
 DEFAULT_USAGE_TIER_UUID = "06706644-2409-7efd-8000-3371c5d632d3"  # Free
 
@@ -92,6 +86,17 @@ DEFAULT_USAGE_TIER_UUID = "06706644-2409-7efd-8000-3371c5d632d3"  # Free
 HEALTH_CHECK_JOB_TIMEOUT_BETWEEN_RUNS_SECONDS = int(
     os.getenv("HEALTH_CHECK_JOB_TIMEOUT_BETWEEN_RUNS_SECONDS", "15")
 )
+
+# ==== EXTERNAL DEPENDENCIES ====
+
+# stytch - authentication provider
+STYTCH_PROJECT_ID = os.getenv("STYTCH_PROJECT_ID", None)
+STYTCH_SECRET = os.getenv("STYTCH_SECRET", None)
+# Logged in user session duration (can use one token for this duration)
+SESSION_DURATION_MINUTES = 2 * 24 * 60
+
+# stripe - payment provider
+STRIPE_API_KEY = os.getenv("STRIPE_API_KEY", None)
 
 
 def is_production():

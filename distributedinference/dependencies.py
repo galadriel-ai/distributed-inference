@@ -15,6 +15,7 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.payment_api_repository import PaymentApiRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
@@ -26,11 +27,13 @@ _benchmark_repository_instance: BenchmarkRepository
 _metrics_queue_repository: MetricsQueueRepository
 _rate_limit_repository: RateLimitRepository
 
-_authentication_api_repository: AuthenticationApiRepository
 _analytics: Analytics
 _protocol_handler: ProtocolHandler
 
 _grafana_api_repository: GrafanaApiRepository
+
+_authentication_api_repository: AuthenticationApiRepository
+_payment_api_repository: PaymentApiRepository
 
 
 # pylint: disable=W0603
@@ -41,10 +44,11 @@ def init_globals():
     global _benchmark_repository_instance
     global _metrics_queue_repository
     global _rate_limit_repository
-    global _authentication_api_repository
     global _analytics
     global _protocol_handler
     global _grafana_api_repository
+    global _authentication_api_repository
+    global _payment_api_repository
     _node_repository_instance = NodeRepository(
         get_session_provider(),
         get_session_provider_read(),
@@ -70,16 +74,19 @@ def init_globals():
         logger=api_logger.get(),
     )
 
-    if settings.is_production() or (
-        settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET
-    ):
-        _authentication_api_repository = AuthenticationApiRepository()
-
     _protocol_handler = ProtocolHandler()
     if settings.GRAFANA_API_BASE_URL and settings.GRAFANA_API_KEY:
         _grafana_api_repository = GrafanaApiRepository(
             settings.GRAFANA_API_BASE_URL, settings.GRAFANA_API_KEY
         )
+
+    if settings.is_production() or (
+        settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET
+    ):
+        _authentication_api_repository = AuthenticationApiRepository()
+    _payment_api_repository = PaymentApiRepository(
+        settings.STRIPE_API_KEY
+    )
 
 
 def get_node_repository() -> NodeRepository:
@@ -106,10 +113,6 @@ def get_metrics_queue_repository() -> MetricsQueueRepository:
     return _metrics_queue_repository
 
 
-def get_authentication_api_repository() -> AuthenticationApiRepository:
-    return _authentication_api_repository
-
-
 def get_analytics() -> Analytics:
     return _analytics
 
@@ -124,3 +127,11 @@ def get_grafana_repository() -> GrafanaApiRepository:
 
 def get_rate_limit_repository() -> RateLimitRepository:
     return _rate_limit_repository
+
+
+def get_authentication_api_repository() -> AuthenticationApiRepository:
+    return _authentication_api_repository
+
+
+def get_payment_api_repository() -> PaymentApiRepository:
+    return _payment_api_repository
