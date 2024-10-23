@@ -135,13 +135,15 @@ def _select_and_track_node(
     analytics.track_event(
         user_uid,
         AnalyticsEvent(
-            EventName.USER_EXECUTED_INFERENCE_REQUEST, {"node_id": node.uid}
+            EventName.USER_EXECUTED_INFERENCE_REQUEST,
+            {"node_id": node.uid, "model": request.model},
         ),
     )
     analytics.track_event(
         node.user_id,
         AnalyticsEvent(
-            EventName.USER_NODE_SELECTED_FOR_INFERENCE, {"node_id": node.uid}
+            EventName.USER_NODE_SELECTED_FOR_INFERENCE,
+            {"node_id": node.uid, "model": request.model},
         ),
     )
     return node
