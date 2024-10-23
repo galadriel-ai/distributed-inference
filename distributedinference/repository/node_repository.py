@@ -17,6 +17,7 @@ from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.domain.node.entities import InferenceError
@@ -318,6 +319,31 @@ LEFT JOIN node_info ni ON nb.node_id = ni.id
 WHERE ni.id = ANY(:node_ids)
 GROUP BY nb.model_name
 ORDER BY benchmark_total_tokens_per_second DESC;
+"""
+
+SQL_INSERT_NODE_HEALTH = """
+INSERT INTO node_health (
+    id,
+    node_info_id,
+    cpu_percent,
+    ram_percent,
+    disk_percent,
+    gpu_percent,
+    vram_percent,
+    created_at,
+    last_updated_at
+)
+VALUES (
+    :id,
+    :node_info_id,
+    :cpu_percent,
+    :ram_percent,
+    :disk_percent,
+    :gpu_percent,
+    :vram_percent,
+    :created_at,
+    :last_updated_at
+);
 """
 
 
@@ -792,6 +818,23 @@ class NodeRepository:
                 )
                 for row in rows
             ]
+
+    @async_timer("node_repository.save_node_health", logger=logger)
+    async def save_node_health(self, node_id: UUID, health: NodeHealth):
+        data = {
+            "id": str(uuid7()),
+            "node_info_id": node_id,
+            "cpu_percent": health.cpu_percent,
+            "ram_percent": health.ram_percent,
+            "disk_percent": health.disk_percent,
+            "gpu_percent": [gpu.gpu_percent for gpu in health.gpus],
+            "vram_percent": [gpu.vram_percent for gpu in health.gpus],
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT_NODE_HEALTH), data)
+            await session.commit()
 
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest

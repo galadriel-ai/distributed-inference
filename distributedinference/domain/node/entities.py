@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import List
 from typing import Dict
 from typing import Optional
 from uuid import UUID
@@ -72,6 +73,21 @@ class NodeBenchmark:
     benchmark_tokens_per_second: float
     gpu_model: str
     gpu_count: Optional[int] = None
+
+
+@dataclass
+class NodeGPUHealth:
+    gpu_percent: int
+    vram_percent: int
+
+
+@dataclass
+class NodeHealth:
+    node_id: UUID
+    cpu_percent: int
+    ram_percent: int
+    disk_percent: int
+    gpus: List[NodeGPUHealth]
 
 
 @dataclass

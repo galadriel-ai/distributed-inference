@@ -1,0 +1,230 @@
+import time
+import uuid
+from typing import Any
+from typing import Dict
+from typing import Optional
+from uuid import UUID
+from dataclasses import dataclass
+
+import settings
+from fastapi.encoders import jsonable_encoder
+from starlette.websockets import WebSocket
+from packaging import version
+
+from distributedinference import api_logger
+from distributedinference.domain.node.entities import NodeHealth
+from distributedinference.domain.node.entities import NodeGPUHealth
+from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service.node.protocol.health_check.entities import (
+    HealthCheckRequest,
+    HealthCheckMessageType,
+    HealthCheckResponse,
+)
+
+logger = api_logger.get()
+
+
+SUPPORTED_NODE_VERSION = "0.0.13"
+
+
+@dataclass
+class NodeHealthCheckInfo:
+    websocket: WebSocket
+    node_uuid: UUID
+
+    next_request_time: float = 0
+    waiting_for_response: bool = False
+    last_request_nonce: Optional[str] = None
+
+
+class HealthCheckProtocol:
+
+    PROTOCOL_NAME = "health-check"
+    PROTOCOL_VERSION = "1.0"
+
+    def __init__(
+        self,
+        node_repository: NodeRepository,
+    ):
+        self.node_repository = node_repository
+        self.active_nodes: Dict[str, NodeHealthCheckInfo] = {}
+        logger.info(f"{self.PROTOCOL_NAME}: Protocol initialized")
+
+    async def handle(self, data: Any):
+        try:
+            response = HealthCheckResponse(**data)
+        except:
+            logger.warning(f"{self.PROTOCOL_NAME}: Invalid data received: {data}")
+            return
+
+        if response.node_id not in self.active_nodes:
+            logger.warning(
+                f"{self.PROTOCOL_NAME}: Received health check response from an unknown node {response.node_id}"
+            )
+            return
+
+        node_info = self.active_nodes[response.node_id]
+        if (
+            _protocol_validations(
+                node_info,
+                response,
+                self.PROTOCOL_NAME,
+                self.PROTOCOL_VERSION,
+            )
+            is False
+        ):
+            return
+
+        await self._received_health_check_response(response, node_info)
+
+    async def _received_health_check_response(
+        self, response: HealthCheckResponse, node_info: NodeHealthCheckInfo
+    ):
+        node_info.next_request_time = _current_milli_time() + (
+            settings.NODE_HEALTH_CHECK_INTERVAL_SECONDS * 1000
+        )
+        node_info.waiting_for_response = False
+        node_info.last_request_nonce = None
+
+        node_health = NodeHealth(
+            node_id=node_info.node_uuid,
+            cpu_percent=response.cpu_percent,
+            ram_percent=response.ram_percent,
+            disk_percent=response.disk_percent,
+            gpus=[
+                NodeGPUHealth(
+                    gpu_percent=gpu.gpu_percent, vram_percent=gpu.vram_percent
+                )
+                for gpu in response.gpus
+            ],
+        )
+        await self.node_repository.save_node_health(
+            node_id=node_info.node_uuid,
+            health=node_health,
+        )
+        logger.info(
+            f"{self.PROTOCOL_NAME}: Received health check response from node {response.node_id}, nonce = {node_info.last_request_nonce}"
+        )
+
+    async def run(self):
+        await self.send_health_check_requests()
+
+    def add_node(
+        self,
+        node_uuid: UUID,
+        node_id: str,
+        node_version: Optional[str],
+        websocket: WebSocket,
+    ) -> bool:
+        if node_id in self.active_nodes:
+            logger.warning(
+                f"{self.PROTOCOL_NAME}: Node {node_id} already exists in the active nodes"
+            )
+            return False
+        if not _is_supported_node_version(node_version):
+            logger.warning(
+                f"{self.PROTOCOL_NAME}: Node {node_id} is using an unsupported version {node_version}"
+            )
+            return False
+        current_time = _current_milli_time()
+        self.active_nodes[node_id] = NodeHealthCheckInfo(
+            websocket=websocket,
+            node_uuid=node_uuid,
+            next_request_time=current_time
+            + settings.NODE_HEALTH_CHECK_INTERVAL_SECONDS * 1000,
+            last_request_nonce=None,
+        )
+        logger.info(
+            f"{self.PROTOCOL_NAME}: Node {node_id} has been added to the active nodes"
+        )
+        return True
+
+    async def remove_node(self, node_id: str) -> bool:
+        if node_id not in self.active_nodes:
+            logger.warning(
+                f"{self.PROTOCOL_NAME}: Node {node_id} does not exist in the active nodes"
+            )
+            return False
+        del self.active_nodes[node_id]
+        logger.info(
+            f"{self.PROTOCOL_NAME}: Node {node_id} has been deleted from the active nodes"
+        )
+        return True
+
+    async def send_health_check_requests(self):
+        current_time = _current_milli_time()
+        for node_id, node_info in self.active_nodes.items():
+            if current_time > node_info.next_request_time:
+                if not node_info.waiting_for_response:
+                    await self.send_health_check_request(node_id)
+
+    async def send_health_check_request(self, node_id: str):
+        node_info = self.active_nodes[node_id]
+        nonce = str(uuid.uuid4())
+        health_check_request = HealthCheckRequest(
+            protocol_version=self.PROTOCOL_VERSION,
+            message_type=HealthCheckMessageType.HEALTH_CHECK_REQUEST,
+            node_id=node_id,
+            nonce=nonce,
+        )
+
+        websocket = self.active_nodes[node_id].websocket
+        message = {
+            "protocol": self.PROTOCOL_NAME,
+            "data": jsonable_encoder(health_check_request),
+        }
+        await websocket.send_json(message)
+
+        node_info.next_request_time = 0
+        node_info.waiting_for_response = True
+        node_info.last_request_nonce = nonce
+
+        sent_time = _current_milli_time()
+
+        logger.info(
+            f"{self.PROTOCOL_NAME}: Sent health check request to node {node_id}, sent time = {sent_time}, nonce = {nonce}"
+        )
+
+
+def _current_milli_time():
+    return round(time.time() * 1000)
+
+
+def _is_supported_node_version(node_version: Optional[str]) -> bool:
+    if not node_version:
+        return False
+    return version.parse(node_version) >= version.parse(SUPPORTED_NODE_VERSION)
+
+
+def _protocol_validations(
+    node_info: NodeHealthCheckInfo,
+    response: HealthCheckResponse,
+    protocol_name: str,
+    protocol_version: str,
+) -> bool:
+    if response.protocol_version != protocol_version:
+        logger.warning(
+            f"{protocol_name}: Received pong with invalid protocol version from node {response.node_id}"
+        )
+        return False
+    if (
+        HealthCheckMessageType(response.message_type)
+        != HealthCheckMessageType.HEALTH_CHECK_RESPONSE
+    ):
+        logger.warning(
+            f"{protocol_name}: Received unexpected message type from node {response.node_id}, {response.message_type}"
+        )
+        return False
+
+    if not node_info.waiting_for_response:
+        logger.warning(
+            f"{protocol_name}: Received unexpected health check response from node {response.node_id}"
+        )
+        return False
+
+    if response.nonce != node_info.last_request_nonce:
+        logger.warning(
+            f"{protocol_name}: Received health check response with invalid nonce from node {response.node_id}, expected {node_info.last_request_nonce}, got {response.nonce}"
+        )
+        return False
+    return True

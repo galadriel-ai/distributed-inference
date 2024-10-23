@@ -44,6 +44,7 @@ async def lifespan(_: FastAPI):
         protocol_handler.execute(
             dependencies.get_protocol_handler(),
             dependencies.get_metrics_queue_repository(),
+            dependencies.get_node_repository(),
         )
     )
     health_task = asyncio.create_task(
