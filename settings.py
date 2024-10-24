@@ -76,6 +76,7 @@ GALADRIEL_PROTOCOL_CONFIG = {
         "ping_miss_threshold": 3,  # If 3 consecutive pings are missed, mark the node as offline
     },
 }
+NODE_HEALTH_CHECK_INTERVAL_SECONDS = int(os.getenv("NODE_HEALTH_CHECK_INTERVAL", "563"))
 
 # Grafana API
 GRAFANA_API_BASE_URL = os.getenv("GRAFANA_API_BASE_URL", None)

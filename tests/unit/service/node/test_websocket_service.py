@@ -25,7 +25,9 @@ from distributedinference.service.node.protocol.ping_pong_protocol import (
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
-NODE_INFO = NodeInfo(node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias")
+NODE_INFO = NodeInfo(
+    node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias", version="0.0.1"
+)
 
 
 async def test_execute_node_no_model_header():
@@ -353,7 +355,7 @@ async def test_execute_websocket_disconnect():
 
 
 @pytest.mark.asyncio
-async def test_execute_ping_pong_protocol():
+async def test_execute_protocols():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
@@ -369,8 +371,11 @@ async def test_execute_ping_pong_protocol():
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
     ping_pong_protocol.add_node = Mock()
     ping_pong_protocol.remove_node = AsyncMock()
+    health_check_protocol = AsyncMock(spec=PingPongProtocol)
+    health_check_protocol.add_node = Mock()
+    health_check_protocol.remove_node = AsyncMock()
     protocol_handler = AsyncMock(spec=ProtocolHandler)
-    protocol_handler.get = Mock(return_value=ping_pong_protocol)
+    protocol_handler.get = Mock(side_effect=[ping_pong_protocol, health_check_protocol])
 
     node_repository.register_node = Mock(return_value=True)
     node_repository.get_node_benchmark = AsyncMock(
@@ -410,6 +415,14 @@ async def test_execute_ping_pong_protocol():
 
     # Check if remove_node was called
     ping_pong_protocol.remove_node.assert_called_once_with(str(NODE_UUID))
+
+    # Check if add_node was called
+    health_check_protocol.add_node.assert_called_once_with(
+        NODE_UUID, str(NODE_UUID), NODE_INFO.version, websocket
+    )
+
+    # Check if remove_node was called
+    health_check_protocol.remove_node.assert_called_once_with(str(NODE_UUID))
 
     # Verify other expected method calls
     websocket.accept.assert_called_once()

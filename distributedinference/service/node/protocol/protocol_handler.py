@@ -7,8 +7,12 @@ from fastapi.exceptions import WebSocketException
 
 import settings
 from distributedinference import api_logger
+from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
+)
+from distributedinference.service.node.protocol.health_check.protocol import (
+    HealthCheckProtocol,
 )
 from distributedinference.service.node.protocol.ping_pong_protocol import (
     PingPongProtocol,
@@ -59,18 +63,22 @@ class ProtocolHandler:
 async def execute(
     protocol_handler: ProtocolHandler,
     metrics_queue_repository: MetricsQueueRepository,
+    node_repository: NodeRepository,
 ) -> None:
     try:
         logger.info("Started Protocol Handler")
 
         # Instantiate and Register the protocols
         for protocol_name, config in settings.GALADRIEL_PROTOCOL_CONFIG.items():
+            # TODO this should be refactored
             if protocol_name == settings.PING_PONG_PROTOCOL_NAME:
                 ping_pong_protocol = PingPongProtocol(
                     metrics_queue_repository, protocol_name, config
                 )
                 protocol_handler.register(protocol_name, ping_pong_protocol)
-
+        protocol_handler.register(
+            HealthCheckProtocol.PROTOCOL_NAME, HealthCheckProtocol(node_repository)
+        )
         while True:
             # trigger protocol runs every PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS seconds
             await asyncio.sleep(settings.PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS)
