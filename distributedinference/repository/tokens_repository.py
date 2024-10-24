@@ -102,6 +102,7 @@ FROM
     usage_tokens ut
 WHERE
     ut.consumer_user_profile_id = :consumer_user_profile_id
+    AND model_name = :model
     AND ut.id > :start_id;
 """
 
@@ -114,6 +115,7 @@ FROM
     usage_tokens ut
 WHERE
     ut.consumer_user_profile_id = :consumer_user_profile_id
+    AND model_name = :model
     AND ut.id > :start_id;
 """
 
@@ -257,11 +259,12 @@ class TokensRepository:
         "tokens_repository.get_requests_usage_by_time_and_consumer", logger=logger
     )
     async def get_requests_usage_by_time_and_consumer(
-        self, consumer_user_profile_id: UUID, seconds: int = 60
+        self, consumer_user_profile_id: UUID, model: str, seconds: int = 60
     ) -> UsageInformation:
         data = {
             "consumer_user_profile_id": consumer_user_profile_id,
             "start_id": historic_uuid_seconds(seconds),
+            "model": model,
         }
         async with self._session_provider_read.get() as session:
             result = await session.execute(
@@ -285,10 +288,14 @@ class TokensRepository:
         "tokens_repository.get_tokens_usage_by_time_and_consumer", logger=logger
     )
     async def get_tokens_usage_by_time_and_consumer(
-        self, consumer_user_profile_id: UUID, seconds: int = 60
+        self,
+        consumer_user_profile_id: UUID,
+        model: str,
+        seconds: int = 60,
     ) -> UsageInformation:
         data = {
             "consumer_user_profile_id": consumer_user_profile_id,
+            "model": model,
             "start_id": historic_uuid_seconds(seconds),
         }
         async with self._session_provider_read.get() as session:
