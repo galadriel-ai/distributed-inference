@@ -22,6 +22,9 @@ from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service.node.protocol.health_check.protocol import (
+    HealthCheckProtocol,
+)
 from distributedinference.service.node.protocol.ping_pong_protocol import (
     PingPongProtocol,
 )
@@ -91,6 +94,12 @@ async def execute(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Node could not be added to the active nodes",
         )
+    health_check_protocol: HealthCheckProtocol = protocol_handler.get(
+        HealthCheckProtocol.PROTOCOL_NAME
+    )
+    health_check_protocol.add_node(
+        node_info.node_id, node_info.name, node_info.version, websocket
+    )
     try:
         while True:
             data = await websocket.receive_text()
@@ -116,6 +125,7 @@ async def execute(
             node_repository,
             node_uid,
             ping_pong_protocol,
+            health_check_protocol,
             user,
             analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
             log_message=f"Node {node_uid} disconnected, because of invalid JSON",
@@ -128,6 +138,7 @@ async def execute(
             node_repository,
             node_uid,
             ping_pong_protocol,
+            health_check_protocol,
             user,
             analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
             log_message=f"Node {node_uid} disconnected, because of invalid JSON",
@@ -141,6 +152,7 @@ async def execute(
             node_repository,
             node_uid,
             ping_pong_protocol,
+            health_check_protocol,
             user,
             analytics_event=EventName.WS_NODE_DISCONNECTED,
             log_message=f"Node {node_uid} disconnected",
@@ -153,6 +165,7 @@ async def execute(
             node_repository,
             node_uid,
             ping_pong_protocol,
+            health_check_protocol,
             user,
             analytics_event=EventName.WS_NODE_DISCONNECTED_WITH_ERROR,
             log_message=f"Node {node_uid} disconnected, because of {e}",
@@ -167,11 +180,13 @@ async def _websocket_error(
     node_repository: NodeRepository,
     node_uid: UUID,
     ping_pong_protocol: PingPongProtocol,
+    health_check_protocol: HealthCheckProtocol,
     user: User,
     analytics_event: EventName,
     log_message: str,
 ):
     await ping_pong_protocol.remove_node(node_info.name)
+    await health_check_protocol.remove_node(node_info.name)
     await node_repository.update_node_connection_timestamp(node.uid, None)
     node_repository.deregister_node(node_uid)
     logger.info(log_message)
