@@ -29,7 +29,7 @@ def upgrade():
         sa.Column(
             "usage_tier_id",
             sa.UUID(),
-            server_default="06706644-2409-7efd-8000-3371c5d632d3",
+            server_default=FREE_TIER_UUID,
             nullable=False,
         ),
         sa.Column("model_name", sa.String(), nullable=False),

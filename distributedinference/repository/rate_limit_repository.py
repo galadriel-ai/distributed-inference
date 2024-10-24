@@ -17,10 +17,9 @@ SELECT
     max_tokens_per_day,
     max_requests_per_minute,
     max_requests_per_day
-FROM usage_tier ut
-LEFT JOIN usage_limit ul on ut.id = ul.usage_tier_id
+FROM usage_limit ul
 WHERE
-    ut.id = :id
+    ul.usage_tier_id = :id
     AND ul.model_name = :model;
 """
 
