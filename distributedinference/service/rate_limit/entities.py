@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 from pydantic import BaseModel
@@ -31,18 +32,23 @@ class SingleRateLimit(BaseModel):
     )
 
 
+class ModelUsage(BaseModel):
+    model: str = Field("Model name")
+    full_model: str = Field("Full model name")
+    max_requests_per_day: Optional[int] = Field("Max requests allowed per day")
+    max_requests_per_minute: Optional[int] = Field("Max requests allowed per minute")
+    max_tokens_per_day: Optional[int] = Field("Max tokens allowed per day")
+    max_tokens_per_minute: Optional[int] = Field("Max tokens allowed per minute")
+
+    requests_left_day: Optional[int] = Field("Requests left for the day")
+    requests_used_day: Optional[int] = Field("Requests used for the day")
+    tokens_left_day: Optional[int] = Field("Tokens left for the day")
+    tokens_used_day: Optional[int] = Field("Tokens used for the day")
+
+
 class RateLimitResponse(BaseModel):
     usage_tier_name: str = Field(description="Current API usage tier name")
     usage_tier_description: str = Field(
         description="Current API usage tier description"
     )
-    rate_limited: bool = Field(
-        description="Whether the request was rate limited.",
-        default=False,
-    )
-    retry_after: Optional[int] = Field(
-        description="The number of seconds to wait before retrying the request.",
-        default=None,
-    )
-    rate_limit_minute: SingleRateLimit = Field(description="Second based rate limits")
-    rate_limit_day: SingleRateLimit = Field(description="Day based rate limits")
+    usages: List[ModelUsage] = Field(description="Model max usage and usage stats")

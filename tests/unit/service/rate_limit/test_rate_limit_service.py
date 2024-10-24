@@ -1,16 +1,16 @@
-from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID
 
 from uuid_extensions import uuid7
 
-from distributedinference.domain.rate_limit.entities import RateLimit
+import settings
 from distributedinference.domain.rate_limit.entities import UsageTier
-from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
+from distributedinference.domain.rate_limit.entities import UserUsage
+from distributedinference.domain.rate_limit.entities import UserUsageLimitsResponse
 from distributedinference.domain.user.entities import User
 from distributedinference.service.rate_limit import rate_limit_service as service
+from distributedinference.service.rate_limit.entities import ModelUsage
 from distributedinference.service.rate_limit.entities import RateLimitResponse
-from distributedinference.service.rate_limit.entities import SingleRateLimit
 
 
 def _get_usage_tier():
@@ -18,37 +18,39 @@ def _get_usage_tier():
         id=uuid7(),
         name="usage tier",
         description="usage tier description",
-        max_tokens_per_minute=12,
-        max_tokens_per_day=12,
-        max_requests_per_minute=12,
-        max_requests_per_day=12,
-        created_at=datetime(2024, 1, 1),
-        last_updated_at=datetime(2024, 1, 1),
     )
 
 
 async def test_success():
-    service.rate_limit_use_case = AsyncMock()
-    service.rate_limit_use_case.execute.return_value = UserRateLimitResponse(
-        usage_tier=_get_usage_tier(),
-        rate_limited=False,
-        retry_after=None,
-        rate_limit_minute=RateLimit(
-            max_requests=12,
-            max_tokens=12,
-            remaining_requests=12,
-            remaining_tokens=12,
-            reset_requests=12,
-            reset_tokens=12,
-        ),
-        rate_limit_day=RateLimit(
-            max_requests=120,
-            max_tokens=120,
-            remaining_requests=120,
-            remaining_tokens=120,
-            reset_requests=120,
-            reset_tokens=120,
-        ),
+    mock_usage_tier = _get_usage_tier()
+    service.get_user_limits_use_case = AsyncMock()
+    service.get_user_limits_use_case.execute.return_value = UserUsageLimitsResponse(
+        name=mock_usage_tier.name,
+        description=mock_usage_tier.description,
+        usages=[
+            UserUsage(
+                model=next(iter(settings.MODEL_NAME_MAPPING.values())),
+                max_tokens_per_minute=2,
+                max_tokens_per_day=20,
+                max_requests_per_minute=1,
+                max_requests_per_day=10,
+                requests_left_day=9,
+                requests_usage_day=1,
+                tokens_left_day=18,
+                tokens_usage_day=2,
+            ),
+            UserUsage(
+                model="model_2",
+                max_tokens_per_minute=4,
+                max_tokens_per_day=40,
+                max_requests_per_minute=3,
+                max_requests_per_day=30,
+                requests_left_day=29,
+                requests_usage_day=1,
+                tokens_left_day=38,
+                tokens_usage_day=2,
+            ),
+        ],
     )
     response = await service.execute(
         User(
@@ -61,24 +63,32 @@ async def test_success():
         AsyncMock(),
     )
     assert response == RateLimitResponse(
-        rate_limited=False,
-        retry_after=None,
-        usage_tier_name=_get_usage_tier().name,
-        usage_tier_description=_get_usage_tier().description,
-        rate_limit_minute=SingleRateLimit(
-            max_requests=12,
-            max_tokens=12,
-            remaining_requests=12,
-            remaining_tokens=12,
-            reset_requests=12,
-            reset_tokens=12,
-        ),
-        rate_limit_day=SingleRateLimit(
-            max_requests=120,
-            max_tokens=120,
-            remaining_requests=120,
-            remaining_tokens=120,
-            reset_requests=120,
-            reset_tokens=120,
-        ),
+        usage_tier_name=mock_usage_tier.name,
+        usage_tier_description=mock_usage_tier.description,
+        usages=[
+            ModelUsage(
+                model=next(iter(settings.MODEL_NAME_MAPPING.keys())),
+                full_model=next(iter(settings.MODEL_NAME_MAPPING.values())),
+                max_requests_per_day=10,
+                max_requests_per_minute=1,
+                max_tokens_per_day=20,
+                max_tokens_per_minute=2,
+                requests_left_day=9,
+                requests_used_day=1,
+                tokens_left_day=18,
+                tokens_used_day=2,
+            ),
+            ModelUsage(
+                model="model_2",
+                full_model="model_2",
+                max_requests_per_day=30,
+                max_requests_per_minute=3,
+                max_tokens_per_day=40,
+                max_tokens_per_minute=4,
+                requests_left_day=29,
+                requests_used_day=1,
+                tokens_left_day=38,
+                tokens_used_day=2,
+            ),
+        ],
     )

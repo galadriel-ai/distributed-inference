@@ -41,13 +41,13 @@ async def execute(
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
 ) -> Union[StreamingResponse, ChatCompletion]:
+    request.model = _match_model_name(request.model)
     rate_limit_info = await rate_limit_use_case.execute(
-        user, tokens_repository, rate_limit_repository
+        request.model, user, tokens_repository, rate_limit_repository
     )
     rate_limit_headers = rate_limit_to_headers(rate_limit_info)
     if rate_limit_info.rate_limited:
         raise RateLimitError(rate_limit_headers)
-    request.model = _match_model_name(request.model)
     if request.stream:
         headers = {
             "X-Content-Type-Options": "nosniff",

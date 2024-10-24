@@ -1,32 +1,16 @@
-from datetime import datetime
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-
-from uuid_extensions import uuid7
 
 import distributedinference.service.completions.chat_completions_handler_service as service
 from distributedinference.domain.rate_limit.entities import RateLimit
-from distributedinference.domain.rate_limit.entities import UsageTier
+from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.service.completions.streaming_response import (
     StreamingResponseWithStatusCode,
 )
-from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.service.error_responses import RateLimitError
-
-
-def _get_usage_tier():
-    return UsageTier(
-        id=uuid7(),
-        name="usage tier",
-        description="usage tier description",
-        max_tokens_per_minute=12,
-        max_tokens_per_day=12,
-        max_requests_per_minute=12,
-        max_requests_per_day=12,
-        created_at=datetime(2024, 1, 1),
-        last_updated_at=datetime(2024, 1, 1),
-    )
 
 
 async def test_execute_no_rate_limit():
@@ -34,7 +18,6 @@ async def test_execute_no_rate_limit():
     rate_limit_result = UserRateLimitResponse(
         rate_limited=False,
         retry_after=None,
-        usage_tier=_get_usage_tier(),
         rate_limit_minute=RateLimit(
             max_requests=3,
             max_tokens=1000,
@@ -86,7 +69,6 @@ async def test_execute_no_rate_limit_stream():
     rate_limit_result = UserRateLimitResponse(
         rate_limited=False,
         retry_after=None,
-        usage_tier=_get_usage_tier(),
         rate_limit_minute=RateLimit(
             max_requests=3,
             max_tokens=1000,
@@ -139,7 +121,6 @@ async def test_execute_rate_limited():
     rate_limit_result = UserRateLimitResponse(
         rate_limited=True,
         retry_after=30,
-        usage_tier=_get_usage_tier(),
         rate_limit_minute=RateLimit(
             max_requests=3,
             max_tokens=1000,
