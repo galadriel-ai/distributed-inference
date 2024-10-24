@@ -92,7 +92,7 @@ def run_migrations_online():
 
 
 def get_urls():
-    url = "postgresql://{}:{}@{}:{}/{}"
+    url = "postgresql+psycopg://{}:{}@{}:{}/{}"
     return [
         url.format(
             settings.DB_USER,
