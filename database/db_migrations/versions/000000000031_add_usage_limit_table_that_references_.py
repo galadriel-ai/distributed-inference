@@ -1,7 +1,7 @@
 """Add usage_limit table that references usage_tier
 
-Revision ID: 000000000030
-Revises: 000000000029
+Revision ID: 000000000031
+Revises: 000000000030
 Create Date: 2024-10-23 11:35:54.849570
 
 """
@@ -15,8 +15,8 @@ from uuid_extensions import uuid7
 from database import FREE_TIER_UUID
 
 # revision identifiers, used by Alembic.
-revision = "000000000030"
-down_revision = "000000000029"
+revision = "000000000031"
+down_revision = "000000000030"
 branch_labels = None
 depends_on = None
 
