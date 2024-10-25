@@ -122,8 +122,8 @@ class InferenceExecutor:
         self._track_first_token_time()
         if response.chunk:
             # overwriting the usage each time
-            usage = response.chunk.usage if response.chunk else None
-            if usage and not response.chunk.choices:
+            self.usage = response.chunk.usage if response.chunk else None
+            if self.usage and not response.chunk.choices:
                 # last chunk only has usage, no choices - request is finished
                 self.request_successful = True
                 if self.is_include_usage:
