@@ -4,6 +4,7 @@ from uuid import UUID
 
 import openai
 
+import settings
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
@@ -13,7 +14,7 @@ from distributedinference.service.error_responses import InferenceError
 logger = api_logger.get()
 
 BASE_URL = "https://api.together.xyz/v1"
-API_KEY = "1945d0425839ea2aad5a8d9636bf71afab1be86b7653c328f121172755facb08"
+
 MODELS_MAP = {
     "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
@@ -24,11 +25,12 @@ MODELS_MAP = {
 async def execute(
     request: InferenceRequest, node_uid: UUID
 ) -> AsyncGenerator[InferenceResponse, None]:
-    client = openai.AsyncOpenAI(base_url=BASE_URL, api_key=API_KEY)
+    client = openai.AsyncOpenAI(base_url=BASE_URL, api_key=settings.TOGETHER_AI_API_KEY)
     # Force streaming and token usage inclusion
 
     model = _match_model(request.model)
     if not model:
+        yield None
         return
     request.model = model
     request.chat_request["model"] = model

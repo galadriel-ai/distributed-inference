@@ -26,7 +26,6 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
-from distributedinference.service import error_responses
 
 logger = api_logger.get()
 
@@ -69,6 +68,9 @@ class InferenceExecutor:
             node_uid = settings.GALADRIEL_NODE_INFO_ID
             usage = None
             async for response in llm_inference_proxy.execute(request, node_uid):
+                if not response:
+                    raise NoAvailableNodesError()
+
                 if response.chunk:
                     usage = response.chunk.usage if response.chunk else None
                 if response.error:
