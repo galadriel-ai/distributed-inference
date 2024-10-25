@@ -35,6 +35,8 @@ class SingleRateLimit(BaseModel):
 class ModelUsage(BaseModel):
     model: str = Field("Model name")
     full_model: str = Field("Full model name")
+    price_per_million_tokens: Optional[str] = Field("Price per one million tokens")
+
     max_requests_per_day: Optional[int] = Field("Max requests allowed per day")
     max_requests_per_minute: Optional[int] = Field("Max requests allowed per minute")
     max_tokens_per_day: Optional[int] = Field("Max tokens allowed per day")
