@@ -51,7 +51,6 @@ class InferenceExecutor:
         self.analytics = analytics
 
         self.metrics_increment = None
-        self.is_stream = False
         self.is_include_usage: bool = False
         self.usage: Optional[CompletionUsage] = None
         self.request_start_time = None
@@ -62,6 +61,14 @@ class InferenceExecutor:
     async def execute(
         self, user_uid: UUID, request: InferenceRequest
     ) -> AsyncGenerator[InferenceResponse, None]:
+
+        # TODO:
+        # Create one of these 2 executors:
+        # 1. proxy_llm_executor
+        # 2. node_llm_executor
+        # So the yield functionality is the same!
+        # when error with proxy return still 503
+
         node = self._select_node(user_uid=user_uid, request=request)
         if not node:
             logger.info("No node, calling a fallback proxy!")
@@ -86,7 +93,8 @@ class InferenceExecutor:
         try:
             while True:
                 response, is_finished = await self._get_chunk(node, request)
-                yield response
+                if response:
+                    yield response
                 if is_finished:
                     break
         finally:

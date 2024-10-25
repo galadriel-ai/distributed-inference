@@ -2,6 +2,7 @@ import orjson
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
+from unittest.mock import patch
 from uuid import UUID, uuid1
 
 from openai.types.chat import ChatCompletionChunk
@@ -29,8 +30,6 @@ MOCK_UUID = UUID("a2e3db51-7a7f-473c-8cd5-390e7ed1e1c7")
 def setup():
     service.uuid7 = MagicMock()
     service.uuid7.return_value = MOCK_UUID
-
-    service.run_inference_use_case = MagicMock()
 
 
 class MockInference:
@@ -83,29 +82,32 @@ class MockInference:
 async def test_success():
     mock_inference = MockInference(chunk_count=3)
 
-    service.run_inference_use_case.execute = mock_inference.mock_inference
-    res = service.execute(
-        USER,
-        ChatCompletionRequest(
-            model="llama3", messages=[Message(role="user", content="asd")]
-        ),
-        MagicMock(),
-        MagicMock(),
-        AsyncMock(),
-        MagicMock(),
-    )
+    with patch.object(
+        service, 'InferenceExecutor',
+        return_value=MagicMock(execute=mock_inference.mock_inference)
+    ):
+        res = service.execute(
+            USER,
+            ChatCompletionRequest(
+                model="llama3", messages=[Message(role="user", content="asd")]
+            ),
+            MagicMock(),
+            MagicMock(),
+            AsyncMock(),
+            MagicMock(),
+        )
 
-    chunks = []
-    content = ""
-    async for chunk in res:
-        chunks.append(chunk)
-        try:
-            parsed = orjson.loads(chunk.split("data: ")[1])
-            c = parsed["choices"][0]["delta"].get("content")
-            if c:
-                content += c
-        except:
-            pass
-    assert len(chunks) == 5
-    assert content == "012"
-    assert chunks[-1] == "data: [DONE]"
+        chunks = []
+        content = ""
+        async for chunk in res:
+            chunks.append(chunk)
+            try:
+                parsed = orjson.loads(chunk.split("data: ")[1])
+                c = parsed["choices"][0]["delta"].get("content")
+                if c:
+                    content += c
+            except:
+                pass
+        assert len(chunks) == 5
+        assert content == "012"
+        assert chunks[-1] == "data: [DONE]"
