@@ -102,9 +102,8 @@ class MockInferenceError:
             node_id=uuid1(),
             request_id=str(MOCK_UUID),
             error=InferenceError(
-                status_code=InferenceStatusCodes.BAD_REQUEST,
-                message="mock error"
-            )
+                status_code=InferenceStatusCodes.BAD_REQUEST, message="mock error"
+            ),
         )
 
 

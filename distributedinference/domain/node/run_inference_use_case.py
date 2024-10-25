@@ -127,7 +127,6 @@ class InferenceExecutor:
             return response, False
 
         # if we got an error or no chunk, we can mark node as unhealthy and break
-        # TODO: test this with galadriel node returning response.chunk == None
         await self._mark_node_as_unhealthy(node)
         return response, True
 
