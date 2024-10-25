@@ -97,7 +97,9 @@ class BillingRepository:
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read
 
-    async def add_credits(self, user_id: UUID, credits_amount: Decimal, currency: str = "usd"):
+    async def add_credits(
+        self, user_id: UUID, credits_amount: Decimal, currency: str = "usd"
+    ):
         """
         ONLY used for adding credits to users
         """

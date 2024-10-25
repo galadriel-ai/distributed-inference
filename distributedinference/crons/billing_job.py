@@ -58,7 +58,9 @@ async def _get_user_total_bill(
             if usage.max_created_at:
                 if not last_credit_calculation_at:
                     last_credit_calculation_at = usage.max_created_at
-                last_credit_calculation_at = max(last_credit_calculation_at, usage.max_created_at)
+                last_credit_calculation_at = max(
+                    last_credit_calculation_at, usage.max_created_at
+                )
     return TotalBill(
         credits_used=total_credits_used,
         last_credit_calculation_at=last_credit_calculation_at,
