@@ -7,9 +7,9 @@ from uuid_extensions import uuid7
 
 from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
-from distributedinference.domain.node import run_inference_use_case
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
+from distributedinference.domain.node.run_inference_use_case import InferenceExecutor
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -47,13 +47,15 @@ async def execute(
     try:
         response = ""
         usage = None
-        async for inference_response in run_inference_use_case.execute(
+        executor = InferenceExecutor(
+            node_repository=node_repository,
+            tokens_repository=tokens_repository,
+            metrics_queue_repository=metrics_queue_repository,
+            analytics=analytics,
+        )
+        async for inference_response in executor.execute(
             user.uid,
             inference_request,
-            node_repository,
-            tokens_repository,
-            metrics_queue_repository,
-            analytics,
         ):
             if inference_response.error:
                 raise error_responses.InferenceError(

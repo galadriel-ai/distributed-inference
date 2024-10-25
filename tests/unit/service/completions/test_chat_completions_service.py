@@ -1,6 +1,7 @@
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
+from unittest.mock import patch
 from uuid import UUID, uuid1
 
 from openai.types import CompletionUsage
@@ -9,7 +10,6 @@ from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice as CompletionChoice
 from openai.types.chat.chat_completion_chunk import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
-from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.user.entities import User
@@ -103,41 +103,45 @@ async def test_success():
     service.time.time = MagicMock()
     service.time.time.return_value = 1337
 
-    service.run_inference_use_case.execute = mock_inference.mock_inference
-    res = await service.execute(
-        USER,
-        ChatCompletionRequest(
-            model="llama3", messages=[Message(role="user", content="asd")]
-        ),
-        MagicMock(),
-        MagicMock(),
-        AsyncMock(),
-        MagicMock(),
-    )
-    assert res == ChatCompletion(
-        id="id",
-        choices=[
-            CompletionChoice(
-                finish_reason="stop",
-                index=0,
-                logprobs=None,
-                message=ChatCompletionMessage(
-                    content="012",
-                    refusal=None,
-                    role="assistant",
-                    function_call=None,
-                    tool_calls=None,
-                ),
-            )
-        ],
-        created=1337,
-        model="llama3",
-        object="chat.completion",
-        service_tier=None,
-        system_fingerprint=None,
-        usage=CompletionUsage(
-            completion_tokens=10,
-            prompt_tokens=20,
-            total_tokens=30,
-        ),
-    )
+    with patch.object(
+        service,
+        "InferenceExecutor",
+        return_value=MagicMock(execute=mock_inference.mock_inference),
+    ):
+        res = await service.execute(
+            USER,
+            ChatCompletionRequest(
+                model="llama3", messages=[Message(role="user", content="asd")]
+            ),
+            MagicMock(),
+            MagicMock(),
+            AsyncMock(),
+            MagicMock(),
+        )
+        assert res == ChatCompletion(
+            id="id",
+            choices=[
+                CompletionChoice(
+                    finish_reason="stop",
+                    index=0,
+                    logprobs=None,
+                    message=ChatCompletionMessage(
+                        content="012",
+                        refusal=None,
+                        role="assistant",
+                        function_call=None,
+                        tool_calls=None,
+                    ),
+                )
+            ],
+            created=1337,
+            model="llama3",
+            object="chat.completion",
+            service_tier=None,
+            system_fingerprint=None,
+            usage=CompletionUsage(
+                completion_tokens=10,
+                prompt_tokens=20,
+                total_tokens=30,
+            ),
+        )

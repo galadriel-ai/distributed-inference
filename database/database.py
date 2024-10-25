@@ -270,17 +270,5 @@ class NodeHealth(Base):
     )
 
 
-def init(user, password, db, host="localhost", port=5432):
-    global engine
-    global session_maker
-    if not engine:
-        url = "postgresql://{}:{}@{}:{}/{}"
-        url = url.format(user, password, host, port, db)
-
-        # The return value of create_engine() is our connection object
-        engine = sqlalchemy.create_engine(url, client_encoding="utf8", pool_size=1)
-        session_maker = sessionmaker(bind=engine)
-
-
 def get_connection() -> Session:
     return session_maker()
