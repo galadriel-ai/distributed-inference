@@ -67,6 +67,7 @@ async def test_success():
             max_tokens_per_day=200,
             max_requests_per_minute=10,
             max_requests_per_day=100,
+            price_per_million_tokens=Decimal("0.002"),
         )
     ]
 
@@ -91,6 +92,7 @@ async def test_success():
                 requests_usage_day=11,
                 tokens_left_day=22,
                 tokens_usage_day=11,
+                price_per_million_tokens=Decimal("0.002"),
             )
         ],
     )
