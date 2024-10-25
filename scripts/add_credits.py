@@ -47,8 +47,12 @@ async def main(
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", help="User email", required=False)
-    parser.add_argument("--user_id", help="User id (either user_id or email required)", required=False)
-    parser.add_argument("--credits", help="Amount of credits to add as a string eg \"1.2\"", required=True)
+    parser.add_argument(
+        "--user_id", help="User id (either user_id or email required)", required=False
+    )
+    parser.add_argument(
+        "--credits", help='Amount of credits to add as a string eg "1.2"', required=True
+    )
     args = parser.parse_args()
     if not args.email and not args.user_id:
         print("Either --email or --user-id is required")
