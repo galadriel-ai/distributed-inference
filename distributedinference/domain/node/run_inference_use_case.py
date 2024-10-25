@@ -3,6 +3,7 @@ from typing import AsyncGenerator
 from typing import Optional
 from uuid import UUID
 
+from prometheus_client import Gauge
 from prometheus_client import Histogram
 
 from openai.types import CompletionUsage
@@ -35,6 +36,11 @@ node_time_to_first_token_histogram = Histogram(
     ["model_name", "node_uid"],
     buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
 )
+llm_fallback_called_gauge = Gauge(
+    "llm_fallback_called_gauge",
+    "Indicates how many times the llm fallback is called",
+    ["model_name"],
+)
 
 
 class InferenceExecutor:
@@ -64,6 +70,7 @@ class InferenceExecutor:
     ) -> AsyncGenerator[InferenceResponse, None]:
         node = self._select_node(user_uid=user_uid, request=request)
         if not node:
+            llm_fallback_called_gauge.labels(request.model).inc()
             logger.info("No node, calling a fallback proxy!")
             node_uid = settings.GALADRIEL_NODE_INFO_ID
             usage = None
@@ -115,8 +122,8 @@ class InferenceExecutor:
         self._track_first_token_time()
         if response.chunk:
             # overwriting the usage each time
-            usage = response.chunk.usage if response.chunk else None
-            if usage and not response.chunk.choices:
+            self.usage = response.chunk.usage if response.chunk else None
+            if self.usage and not response.chunk.choices:
                 # last chunk only has usage, no choices - request is finished
                 self.request_successful = True
                 if self.is_include_usage:
