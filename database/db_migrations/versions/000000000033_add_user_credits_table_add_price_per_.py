@@ -1,7 +1,7 @@
 """Add user_credits table, add price_per_million_tokens column to usage_limit table
 
-Revision ID: 000000000032
-Revises: 000000000031
+Revision ID: 000000000033
+Revises: 000000000032
 Create Date: 2024-10-24 14:35:25.857309
 
 """
@@ -15,8 +15,8 @@ from uuid_extensions import uuid7
 from database import PAID_TIER_UUID
 
 # revision identifiers, used by Alembic.
-revision = "000000000032"
-down_revision = "000000000031"
+revision = "000000000033"
+down_revision = "000000000032"
 branch_labels = None
 depends_on = None
 
