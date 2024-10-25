@@ -16,7 +16,8 @@ SELECT
     max_tokens_per_minute,
     max_tokens_per_day,
     max_requests_per_minute,
-    max_requests_per_day
+    max_requests_per_day,
+    price_per_million_tokens
 FROM usage_limit ul
 WHERE
     ul.usage_tier_id = :id
@@ -29,7 +30,8 @@ SELECT
     max_tokens_per_minute,
     max_tokens_per_day,
     max_requests_per_minute,
-    max_requests_per_day
+    max_requests_per_day,
+    price_per_million_tokens
 FROM usage_limit
 WHERE usage_tier_id = :id;
 """
@@ -70,6 +72,7 @@ class RateLimitRepository:
                     max_tokens_per_day=row.max_tokens_per_day,
                     max_requests_per_minute=row.max_requests_per_minute,
                     max_requests_per_day=row.max_requests_per_day,
+                    price_per_million_tokens=row.price_per_million_tokens,
                 )
             return None
 
@@ -89,6 +92,7 @@ class RateLimitRepository:
                         max_tokens_per_day=row.max_tokens_per_day,
                         max_requests_per_minute=row.max_requests_per_minute,
                         max_requests_per_day=row.max_requests_per_day,
+                        price_per_million_tokens=row.price_per_million_tokens,
                     )
                 )
             return results

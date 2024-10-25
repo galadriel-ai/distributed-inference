@@ -19,6 +19,7 @@ class UsageLimits:
     max_tokens_per_day: Optional[int]
     max_requests_per_minute: Optional[int]
     max_requests_per_day: Optional[int]
+    price_per_million_tokens: Optional[Decimal]
 
 
 @dataclass
@@ -27,6 +28,7 @@ class UserUsage(UsageLimits):
     requests_usage_day: Optional[int]
     tokens_left_day: Optional[int]
     tokens_usage_day: Optional[int]
+    price_per_million_tokens: Optional[Decimal]
 
 
 @dataclass

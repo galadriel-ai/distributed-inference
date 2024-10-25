@@ -38,6 +38,11 @@ def _get_formatted_single_limit(usage: UserUsage) -> ModelUsage:
     return ModelUsage(
         model=_map_model_name(usage.model),
         full_model=usage.model,
+        price_per_million_tokens=(
+            f"{usage.price_per_million_tokens}"
+            if usage.price_per_million_tokens
+            else None
+        ),
         max_requests_per_day=usage.max_requests_per_day,
         max_requests_per_minute=usage.max_requests_per_minute,
         max_tokens_per_day=usage.max_tokens_per_day,
