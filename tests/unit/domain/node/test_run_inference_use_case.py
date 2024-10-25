@@ -94,6 +94,20 @@ class MockInference:
         )
 
 
+class MockInferenceError:
+    async def mock_inference(
+        self, *args, **kwargs
+    ) -> AsyncGenerator[InferenceResponse, None]:
+        yield InferenceResponse(
+            node_id=uuid1(),
+            request_id=str(MOCK_UUID),
+            error=InferenceError(
+                status_code=InferenceStatusCodes.BAD_REQUEST,
+                message="mock error"
+            )
+        )
+
+
 async def test_success(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
@@ -192,6 +206,35 @@ async def test_no_nodes_uses_proxy():
         result.append(request)
     assert len(result) == 4
     assert result[-1].chunk == LAST_CHUNK
+
+
+async def test_no_nodes_and_proxy_also_fails():
+    mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
+    mock_node_repository.select_node = MagicMock(return_value=None)
+
+    mock_inference = MockInferenceError()
+    use_case.llm_inference_proxy = MagicMock()
+    use_case.llm_inference_proxy.execute = mock_inference.mock_inference
+
+    chat_input = await ChatCompletionRequest(
+        model="llama3", messages=[Message(role="user", content="asd")]
+    ).to_openai_chat_completion()
+    request = InferenceRequest(
+        id="request_id",
+        model="model-1",
+        chat_request=chat_input,
+    )
+
+    executor = use_case.InferenceExecutor(
+        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+    )
+    with pytest.raises(NoAvailableNodesError):
+        async for _ in executor.execute(
+            USER_UUID,
+            request,
+        ):
+            pass
 
 
 async def test_streaming_no_usage(connected_node_factory):

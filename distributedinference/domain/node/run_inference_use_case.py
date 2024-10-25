@@ -19,12 +19,14 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
+from distributedinference.service import error_responses
 
 logger = api_logger.get()
 
@@ -69,6 +71,9 @@ class InferenceExecutor:
             async for response in llm_inference_proxy.execute(request, node_uid):
                 if response.chunk:
                     usage = response.chunk.usage if response.chunk else None
+                if response.error:
+                    logger.error(f"LLM Inference Proxy error: {response.error}")
+                    raise NoAvailableNodesError()
                 yield response
             if usage:
                 await self._save_usage(

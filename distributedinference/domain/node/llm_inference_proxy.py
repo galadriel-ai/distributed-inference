@@ -32,20 +32,17 @@ async def execute(
         return
     request.model = model
     request.chat_request["model"] = model
-
     request.chat_request["stream"] = True
     request.chat_request["stream_options"] = {"include_usage": True}
     try:
         completion = await client.chat.completions.create(**request.chat_request)
         async for chunk in completion:
-            print("\nCHUNK:", chunk)
             yield InferenceResponse(
                 node_id=node_uid,
                 request_id=request.id,
                 chunk=chunk,
             )
     except openai.APIStatusError as exc:
-        print("EXCEPTION:", exc)
         yield InferenceResponse(
             node_id=node_uid,
             request_id=request.id,
