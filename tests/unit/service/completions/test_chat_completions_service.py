@@ -104,8 +104,9 @@ async def test_success():
     service.time.time.return_value = 1337
 
     with patch.object(
-        service, 'InferenceExecutor',
-        return_value=MagicMock(execute=mock_inference.mock_inference)
+        service,
+        "InferenceExecutor",
+        return_value=MagicMock(execute=mock_inference.mock_inference),
     ):
         res = await service.execute(
             USER,
@@ -144,5 +145,3 @@ async def test_success():
                 total_tokens=30,
             ),
         )
-
-

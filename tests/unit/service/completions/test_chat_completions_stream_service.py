@@ -83,8 +83,9 @@ async def test_success():
     mock_inference = MockInference(chunk_count=3)
 
     with patch.object(
-        service, 'InferenceExecutor',
-        return_value=MagicMock(execute=mock_inference.mock_inference)
+        service,
+        "InferenceExecutor",
+        return_value=MagicMock(execute=mock_inference.mock_inference),
     ):
         res = service.execute(
             USER,

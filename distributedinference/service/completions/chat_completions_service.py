@@ -57,7 +57,6 @@ async def execute(
             user.uid,
             inference_request,
         ):
-            print("inference_response:", inference_response)
             if inference_response.error:
                 raise error_responses.InferenceError(
                     node_id=inference_response.node_id,

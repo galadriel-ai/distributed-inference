@@ -61,14 +61,6 @@ class InferenceExecutor:
     async def execute(
         self, user_uid: UUID, request: InferenceRequest
     ) -> AsyncGenerator[InferenceResponse, None]:
-
-        # TODO:
-        # Create one of these 2 executors:
-        # 1. proxy_llm_executor
-        # 2. node_llm_executor
-        # So the yield functionality is the same!
-        # when error with proxy return still 503
-
         node = self._select_node(user_uid=user_uid, request=request)
         if not node:
             logger.info("No node, calling a fallback proxy!")
@@ -76,7 +68,6 @@ class InferenceExecutor:
             usage = None
             async for response in llm_inference_proxy.execute(request, node_uid):
                 if response.chunk:
-                    # overwriting the usage each time
                     usage = response.chunk.usage if response.chunk else None
                 yield response
             if usage:
@@ -101,14 +92,20 @@ class InferenceExecutor:
             await self.node_repository.cleanup_request(node.uid, request.id)
             await self._log_metrics(user_uid, request, node)
 
-    async def _get_chunk(self, node: ConnectedNode, request: InferenceRequest):
+    async def _get_chunk(
+        self, node: ConnectedNode, request: InferenceRequest
+    ) -> (Optional[InferenceResponse], bool):
+        """
+        Returns
+        * InferenceResponse if there is one
+        * bool indicating if the streaming has been finished
+        """
         response = await self.node_repository.receive_for_request(node.uid, request.id)
         if not response:
             # Nothing to check, we can mark node as unhealthy and break
             await self._mark_node_as_unhealthy(node)
             return None, True
-        if not self.first_token_time:
-            self.first_token_time = time.time() - self.request_start_time
+        self._track_first_token_time()
         if response.chunk:
             # overwriting the usage each time
             usage = response.chunk.usage if response.chunk else None
@@ -117,34 +114,63 @@ class InferenceExecutor:
                 self.request_successful = True
                 if self.is_include_usage:
                     return response, True
-                # calculate the inference time starting from the first token arrival
-                if self.first_token_time:
-                    self.time_elapsed_after_first_token = (
-                        time.time() - self.request_start_time - self.first_token_time
-                    )
+                self._track_time_elapsed_after_first_token()
                 return None, True
             # if users doesn't need usage, we can remove it from the response
             if not self.is_include_usage:
                 response.chunk.usage = None
             return response, False
-        elif response.error:
-            # if we got an error, we can mark node as unhealthy and break
-            await self._mark_node_as_unhealthy(node)
-            return response, True
+
+        # if we got an error or no chunk, we can mark node as unhealthy and break
+        # TODO: test this with galadriel node returning response.chunk == None
+        await self._mark_node_as_unhealthy(node)
+        return response, True
 
     def _initialise_metrics(self, request: InferenceRequest, node: ConnectedNode):
         self.metrics_increment = NodeMetricsIncrement(
             node_id=node.uid, model=node.model
         )
         self.metrics_increment.requests_served_incerement += 1
-        self.is_stream = bool(request.chat_request.get("stream"))
-        self.is_include_usage: bool = (
-            bool(
-                (request.chat_request.get("stream_options") or {}).get("include_usage")
-            )
-            or not self.is_stream
-        )
+        self.is_include_usage: bool = bool(
+            (request.chat_request.get("stream_options") or {}).get("include_usage")
+        ) or not bool(request.chat_request.get("stream"))
         self.request_start_time = time.time()
+
+    def _track_first_token_time(self):
+        if not self.first_token_time:
+            self.first_token_time = time.time() - self.request_start_time
+
+    def _track_time_elapsed_after_first_token(self):
+        # calculate the inference time starting from the first token arrival
+        if self.first_token_time:
+            self.time_elapsed_after_first_token = (
+                time.time() - self.request_start_time - self.first_token_time
+            )
+
+    def _select_node(
+        self,
+        user_uid: UUID,
+        request: InferenceRequest,
+    ) -> Optional[ConnectedNode]:
+        node = self.node_repository.select_node(request.model)
+        if not node:
+            return None
+
+        self.analytics.track_event(
+            user_uid,
+            AnalyticsEvent(
+                EventName.USER_EXECUTED_INFERENCE_REQUEST,
+                {"node_id": node.uid, "model": request.model},
+            ),
+        )
+        self.analytics.track_event(
+            node.user_id,
+            AnalyticsEvent(
+                EventName.USER_NODE_SELECTED_FOR_INFERENCE,
+                {"node_id": node.uid, "model": request.model},
+            ),
+        )
+        return node
 
     async def _log_metrics(
         self, user_uid: UUID, request: InferenceRequest, node: ConnectedNode
@@ -173,31 +199,6 @@ class InferenceExecutor:
         else:
             self.metrics_increment.requests_failed_increment += 1
         await self.metrics_queue_repository.push(self.metrics_increment)
-
-    def _select_node(
-        self,
-        user_uid: UUID,
-        request: InferenceRequest,
-    ) -> Optional[ConnectedNode]:
-        node = self.node_repository.select_node(request.model)
-        if not node:
-            return None
-
-        self.analytics.track_event(
-            user_uid,
-            AnalyticsEvent(
-                EventName.USER_EXECUTED_INFERENCE_REQUEST,
-                {"node_id": node.uid, "model": request.model},
-            ),
-        )
-        self.analytics.track_event(
-            node.user_id,
-            AnalyticsEvent(
-                EventName.USER_NODE_SELECTED_FOR_INFERENCE,
-                {"node_id": node.uid, "model": request.model},
-            ),
-        )
-        return node
 
     async def _save_usage(
         self,
