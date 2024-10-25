@@ -119,6 +119,19 @@ WHERE
     AND ut.id > :start_id;
 """
 
+SQL_GET_USER_GROUPED_USAGES_BY_MODEL = """
+SELECT
+    model_name,
+    SUM(total_tokens) AS tokens_count,
+    MAX(created_at) AS max_created_at
+FROM
+    usage_tokens
+WHERE
+    consumer_user_profile_id = :consumer_user_profile_id
+    AND created_at > :start_time
+GROUP BY model_name;
+"""
+
 logger = api_logger.get()
 
 
@@ -145,6 +158,13 @@ class UsageInformation:
     count: int
     oldest_usage_id: UUID
     oldest_usage_created_at: datetime
+
+
+@dataclass
+class ModelUsageInformation:
+    model_name: str
+    tokens_count: int
+    max_created_at: datetime
 
 
 class TokensRepository:
@@ -315,3 +335,27 @@ class TokensRepository:
         return UsageInformation(
             count=0, oldest_usage_id=uuid7(), oldest_usage_created_at=utcnow()
         )
+
+    @async_timer("tokens_repository.get_grouped_usages_by_time", logger=logger)
+    async def get_grouped_usages_by_time(
+        self, consumer_user_profile_id: UUID, start_time: datetime
+    ) -> List[ModelUsageInformation]:
+        data = {
+            "consumer_user_profile_id": consumer_user_profile_id,
+            "start_time": start_time,
+        }
+        results = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_USER_GROUPED_USAGES_BY_MODEL),
+                data,
+            )
+            for row in rows:
+                results.append(
+                    ModelUsageInformation(
+                        model_name=row.model_name,
+                        tokens_count=row.tokens_count,
+                        max_created_at=row.max_created_at,
+                    )
+                )
+        return results

@@ -3,6 +3,7 @@ from distributedinference import api_logger
 from distributedinference.domain.rate_limit import get_user_limits_use_case
 from distributedinference.domain.rate_limit.entities import UserUsage
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.billing_repository import BillingRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.rate_limit.entities import ModelUsage
@@ -17,15 +18,18 @@ async def execute(
     user: User,
     tokens_repository: TokensRepository,
     rate_limit_repository: RateLimitRepository,
+    billing_repository: BillingRepository,
 ) -> RateLimitResponse:
     limits = await get_user_limits_use_case.execute(
         user,
         tokens_repository,
         rate_limit_repository,
+        billing_repository,
     )
     return RateLimitResponse(
         usage_tier_name=limits.name,
         usage_tier_description=limits.description,
+        credits_balance=f"{limits.credits}" if limits.credits is not None else None,
         usages=[_get_formatted_single_limit(l) for l in limits.usages],
     )
 

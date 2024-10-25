@@ -1,3 +1,4 @@
+from decimal import Decimal
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -27,6 +28,7 @@ async def test_success():
     service.get_user_limits_use_case.execute.return_value = UserUsageLimitsResponse(
         name=mock_usage_tier.name,
         description=mock_usage_tier.description,
+        credits=Decimal("0.1"),
         usages=[
             UserUsage(
                 model=next(iter(settings.MODEL_NAME_MAPPING.values())),
@@ -61,10 +63,12 @@ async def test_success():
         ),
         AsyncMock(),
         AsyncMock(),
+        AsyncMock(),
     )
     assert response == RateLimitResponse(
         usage_tier_name=mock_usage_tier.name,
         usage_tier_description=mock_usage_tier.description,
+        credits_balance="0.1",
         usages=[
             ModelUsage(
                 model=next(iter(settings.MODEL_NAME_MAPPING.keys())),
