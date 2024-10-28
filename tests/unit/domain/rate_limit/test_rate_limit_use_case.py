@@ -1,3 +1,4 @@
+from decimal import Decimal
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -62,6 +63,7 @@ def usage_limits():
         max_requests_per_day=100,
         max_tokens_per_minute=1000,
         max_tokens_per_day=10000,
+        price_per_million_tokens=None,
     )
 
 
@@ -281,6 +283,7 @@ async def test_no_rate_limit_on_unlimited_tier(
         max_tokens_per_day=None,
         max_requests_per_minute=None,
         max_requests_per_day=None,
+        price_per_million_tokens=Decimal("1"),
     )
     mock_rate_limit_repository.get_usage_limits_for_model.return_value = usage_tier
 

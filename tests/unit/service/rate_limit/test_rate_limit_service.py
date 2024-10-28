@@ -40,6 +40,7 @@ async def test_success():
                 requests_usage_day=1,
                 tokens_left_day=18,
                 tokens_usage_day=2,
+                price_per_million_tokens=Decimal("1.23"),
             ),
             UserUsage(
                 model="model_2",
@@ -51,6 +52,7 @@ async def test_success():
                 requests_usage_day=1,
                 tokens_left_day=38,
                 tokens_usage_day=2,
+                price_per_million_tokens=None,
             ),
         ],
     )
@@ -81,6 +83,7 @@ async def test_success():
                 requests_used_day=1,
                 tokens_left_day=18,
                 tokens_used_day=2,
+                price_per_million_tokens="1.23",
             ),
             ModelUsage(
                 model="model_2",
@@ -93,6 +96,7 @@ async def test_success():
                 requests_used_day=1,
                 tokens_left_day=38,
                 tokens_used_day=2,
+                price_per_million_tokens=None,
             ),
         ],
     )

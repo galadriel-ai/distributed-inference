@@ -55,6 +55,7 @@ async def execute(
                 requests_usage_day=request_day_result.usage_count,
                 tokens_left_day=tokens_day_result.remaining,
                 tokens_usage_day=tokens_day_result.usage_count,
+                price_per_million_tokens=limit.price_per_million_tokens,
             )
         )
 
