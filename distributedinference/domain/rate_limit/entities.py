@@ -1,3 +1,4 @@
+from decimal import Decimal
 from dataclasses import dataclass
 from typing import List
 from typing import Optional
@@ -32,6 +33,7 @@ class UserUsage(UsageLimits):
 class UserUsageLimitsResponse:
     name: str
     description: Optional[str]
+    credits: Optional[Decimal]
     usages: List[UserUsage]
 
 

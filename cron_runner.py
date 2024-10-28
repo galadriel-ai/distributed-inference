@@ -5,14 +5,21 @@ from typing import Callable
 
 import settings
 from distributedinference import api_logger
+from distributedinference import dependencies
 from distributedinference.crons import api_usage_job
+from distributedinference.crons import billing_job
+from distributedinference.repository import connection
 
 logger = api_logger.get()
 
 
 async def start_cron_jobs():
+    connection.init_defaults()
+    dependencies.init_globals()
+
     tasks = [
         (_run_api_usage_job, "API usage noise", 300),
+        (_run_billing_job, "User billing job", 100),
     ]
 
     await asyncio.gather(*[_cron_runner(*t) for t in tasks])
@@ -35,6 +42,12 @@ async def _cron_runner(
 
 async def _run_api_usage_job():
     await api_usage_job.execute()
+
+
+async def _run_billing_job():
+    billing_repository = dependencies.get_billing_repository()
+    tokens_repository = dependencies.get_tokens_repository()
+    await billing_job.execute(billing_repository, tokens_repository)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.billing_repository import BillingRepository
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -264,7 +265,10 @@ async def get_rate_limits(
     rate_limit_repository: RateLimitRepository = Depends(
         dependencies.get_rate_limit_repository
     ),
+    billing_repository: BillingRepository = Depends(
+        dependencies.get_billing_repository
+    ),
 ):
     return await rate_limit_service.execute(
-        user, tokens_repository, rate_limit_repository
+        user, tokens_repository, rate_limit_repository, billing_repository
     )

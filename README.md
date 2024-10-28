@@ -112,3 +112,17 @@ source venv/bin/activate
 cd database
 alembic upgrade head
 ```
+
+
+**Adding credits**
+```
+source venv/bin/activate
+
+PYTHONPATH=. python scripts/add_credits.py --help
+
+# By email
+PYTHONPATH=. python scripts/add_credits.py --email kristjan@galadriel.com --credits "0.2"
+# Or user_profile.id
+PYTHONPATH=. python scripts/add_credits.py --user_id 06710e92-acb3-784f-8000-aa9e8972ba51 --credits "0.2"
+```
+

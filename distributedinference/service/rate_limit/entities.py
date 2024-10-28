@@ -51,4 +51,7 @@ class RateLimitResponse(BaseModel):
     usage_tier_description: str = Field(
         description="Current API usage tier description"
     )
+    credits_balance: Optional[str] = Field(
+        description="User credits balance if user has or ever had a balance"
+    )
     usages: List[ModelUsage] = Field(description="Model max usage and usage stats")

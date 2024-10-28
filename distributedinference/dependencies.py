@@ -5,6 +5,7 @@ from distributedinference.analytics.posthog import init_posthog
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
+from distributedinference.repository.billing_repository import BillingRepository
 
 from distributedinference.repository.connection import get_session_provider
 from distributedinference.repository.connection import get_session_provider_read
@@ -25,6 +26,7 @@ _node_stats_repository_instance: NodeStatsRepository
 _benchmark_repository_instance: BenchmarkRepository
 _metrics_queue_repository: MetricsQueueRepository
 _rate_limit_repository: RateLimitRepository
+_billing_repository: BillingRepository
 
 _authentication_api_repository: AuthenticationApiRepository
 _analytics: Analytics
@@ -41,6 +43,7 @@ def init_globals():
     global _benchmark_repository_instance
     global _metrics_queue_repository
     global _rate_limit_repository
+    global _billing_repository
     global _authentication_api_repository
     global _analytics
     global _protocol_handler
@@ -59,6 +62,9 @@ def init_globals():
     )
     _metrics_queue_repository = MetricsQueueRepository()
     _rate_limit_repository = RateLimitRepository(
+        get_session_provider(), get_session_provider_read()
+    )
+    _billing_repository = BillingRepository(
         get_session_provider(), get_session_provider_read()
     )
 
@@ -124,3 +130,7 @@ def get_grafana_repository() -> GrafanaApiRepository:
 
 def get_rate_limit_repository() -> RateLimitRepository:
     return _rate_limit_repository
+
+
+def get_billing_repository() -> BillingRepository:
+    return _billing_repository
