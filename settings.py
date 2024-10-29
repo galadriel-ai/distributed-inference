@@ -104,6 +104,9 @@ TOGETHER_AI_API_KEY = os.getenv("TOGETHER_AI_API_KEY", None)
 SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID")
 SLACK_OAUTH_TOKEN = os.getenv("SLACK_OAUTH_TOKEN")
 
+_peer_nodes = os.getenv("PEER_NODES_LIST", "").split(";")
+# Remove duplicated nodes
+PEER_NODES_LIST = list(set(_peer_nodes))
 
 def is_production():
     return ENVIRONMENT == "production"

@@ -15,7 +15,7 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
-from distributedinference.domain.node import llm_inference_proxy
+from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
@@ -66,12 +66,29 @@ class InferenceExecutor:
         self.request_successful = False
 
     async def execute(
-        self, user_uid: UUID, request: InferenceRequest
+        self, user_uid: UUID, api_key: str, request: InferenceRequest
     ) -> AsyncGenerator[InferenceResponse, None]:
         node = self._select_node(user_uid=user_uid, request=request)
         if not node:
+            # Forward requests to peer nodes
+            logger.info("No node for the requested model available, forwarding to peer nodes!")
+            async for response in peer_nodes_forwarding.execute(api_key, request):
+                if not response:
+                    # Peer nodes also don't support this model, break and call the fallback solution
+                    break
+                if response.chunk and not response.chunk.choices:
+                    # Last chunk only has usage, no choices - request is finished
+                    yield response
+                    logger.debug(f"Peer nodes completed this inference!")
+                    return
+                if response.error:
+                    # Peer nodes did the inference but there are errors in the response, raise error and return
+                    logger.error(f"Peer nodes inference error: {response.error}")
+                    raise NoAvailableNodesError()
+                yield response
+
             llm_fallback_called_gauge.labels(request.model).inc()
-            logger.info("No node, calling a fallback proxy!")
+            logger.info("Peer nodes don't support this model, calling a fallback proxy!")
             node_uid = settings.GALADRIEL_NODE_INFO_ID
             usage = None
             async for response in llm_inference_proxy.execute(request, node_uid):
@@ -108,7 +125,7 @@ class InferenceExecutor:
 
     async def _get_chunk(
         self, node: ConnectedNode, request: InferenceRequest
-    ) -> (Optional[InferenceResponse], bool):
+    ) -> (Optional[InferenceResponse], bool):  # type: ignore
         """
         Returns
         * InferenceResponse if there is one

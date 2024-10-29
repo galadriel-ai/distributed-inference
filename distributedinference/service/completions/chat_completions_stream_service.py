@@ -44,8 +44,9 @@ async def execute(
             analytics=analytics,
         )
         async for inference_response in executor.execute(
-            user.uid,
-            inference_request,
+            user_uid=user.uid,
+            api_key=user.currently_using_api_key,
+            request=inference_request,
         ):
             if inference_response.error:
                 raise error_responses.InferenceError(
