@@ -25,7 +25,7 @@ async def test_no_updates():
             is_archived=None,
         ),
         _get_node_info(),
-        repo
+        repo,
     )
     assert response == UpdateNodeResponse(
         is_name_updated=False,
@@ -42,7 +42,7 @@ async def test_update_name():
             is_archived=None,
         ),
         _get_node_info(),
-        repo
+        repo,
     )
     assert response == UpdateNodeResponse(
         is_name_updated=True,
@@ -59,7 +59,7 @@ async def test_update_archival():
             is_archived=True,
         ),
         _get_node_info(),
-        repo
+        repo,
     )
     assert response == UpdateNodeResponse(
         is_name_updated=False,
@@ -76,7 +76,7 @@ async def test_update_name_and_archival():
             is_archived=True,
         ),
         _get_node_info(),
-        repo
+        repo,
     )
     assert response == UpdateNodeResponse(
         is_name_updated=True,
