@@ -18,3 +18,12 @@ class BillableUser:
 class TotalBill:
     credits_used: Decimal
     last_credit_calculation_at: Optional[datetime]
+
+
+@dataclass
+class CreditsReport:
+    user_profile_id: UUID
+    email: str
+    credits: Decimal
+    latest_credits_addition: Decimal
+    percentage_left: Optional[Decimal] = None
