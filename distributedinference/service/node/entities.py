@@ -18,15 +18,23 @@ class CreateNodeResponse(ApiResponse):
 
 class UpdateNodeRequest(BaseModel):
     node_id: str = Field(description="Unique ID of the Node")
-    node_name: str = Field(
+    node_name: Optional[str] = Field(
         description="User defined node name to use as the new value",
         min_length=3,
         max_length=40,
+        default=None,
+    )
+    is_archived: Optional[bool] = Field(
+        description="New node archival status",
+        default=None,
     )
 
 
-class UpdateNodeResponse(ApiResponse):
-    pass
+class UpdateNodeResponse(BaseModel):
+    is_name_updated: bool = Field(description="Shows if the name was updated")
+    is_archival_status_updated: bool = Field(
+        description="Shows if the archival status was updated"
+    )
 
 
 class NodeInfoRequest(BaseModel):
@@ -66,6 +74,7 @@ class ListNodeRequestNode(NodeInfoRequest):
     benchmark_tokens_per_second: Optional[float] = Field(
         description="Theoretical max tokens per second for the node"
     )
+    is_archived: bool = Field(description="true if a node is archived")
     node_created_at: int = Field(
         description="UNIX timestamp of node first registration"
     )
