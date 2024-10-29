@@ -71,7 +71,9 @@ class InferenceExecutor:
         node = self._select_node(user_uid=user_uid, request=request)
         if not node:
             # Forward requests to peer nodes
-            logger.info("No node for the requested model available, forwarding to peer nodes!")
+            logger.info(
+                "No node for the requested model available, forwarding to peer nodes!"
+            )
             async for response in peer_nodes_forwarding.execute(api_key, request):
                 if not response:
                     # Peer nodes also don't support this model, break and call the fallback solution
@@ -88,7 +90,9 @@ class InferenceExecutor:
                 yield response
 
             llm_fallback_called_gauge.labels(request.model).inc()
-            logger.info("Peer nodes don't support this model, calling a fallback proxy!")
+            logger.info(
+                "Peer nodes don't support this model, calling a fallback proxy!"
+            )
             node_uid = settings.GALADRIEL_NODE_INFO_ID
             usage = None
             async for response in llm_inference_proxy.execute(request, node_uid):

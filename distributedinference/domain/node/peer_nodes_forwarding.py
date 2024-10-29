@@ -11,6 +11,7 @@ from distributedinference.domain.node.entities import InferenceResponse
 
 logger = api_logger.get()
 
+
 # pylint: disable=R0801
 async def execute(
     api_key: str, request: InferenceRequest
@@ -40,7 +41,9 @@ async def execute(
             logger.debug(f"Inference completed by the peer node {node_ip}")
             return
         except Exception as e:
-            logger.debug(f"Exception occurred by the peer node {node_ip}, continue: {e}")
+            logger.debug(
+                f"Exception occurred by the peer node {node_ip}, continue: {e}"
+            )
             continue
     yield None
 
