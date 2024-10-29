@@ -79,7 +79,7 @@ class InferenceExecutor:
                 if response.chunk and not response.chunk.choices:
                     # Last chunk only has usage, no choices - request is finished
                     yield response
-                    logger.debug(f"Peer nodes completed this inference!")
+                    logger.debug("Peer nodes completed this inference!")
                     return
                 if response.error:
                     # Peer nodes did the inference but there are errors in the response, raise error and return

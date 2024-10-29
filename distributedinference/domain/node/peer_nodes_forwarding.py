@@ -1,7 +1,6 @@
 import ipaddress
 from typing import AsyncGenerator
 from typing import Optional
-from uuid import UUID
 
 import openai
 
@@ -9,12 +8,10 @@ import settings
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
-from distributedinference.domain.node.entities import InferenceStatusCodes
-from distributedinference.service.error_responses import InferenceError
 
 logger = api_logger.get()
 
-
+# pylint: disable=R0801
 async def execute(
     api_key: str, request: InferenceRequest
 ) -> AsyncGenerator[InferenceResponse, None]:

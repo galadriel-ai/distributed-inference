@@ -91,7 +91,9 @@ class MockInference:
 
 
 class MockInferenceNoneResponse:
-    async def mock_inference(self, *args, **kwargs) -> AsyncGenerator[InferenceResponse, None]:
+    async def mock_inference(
+        self, *args, **kwargs
+    ) -> AsyncGenerator[InferenceResponse, None]:
         yield None
 
 

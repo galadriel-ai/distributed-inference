@@ -108,6 +108,7 @@ _peer_nodes = os.getenv("PEER_NODES_LIST", "").split(";")
 # Remove duplicated nodes
 PEER_NODES_LIST = list(set(_peer_nodes))
 
+
 def is_production():
     return ENVIRONMENT == "production"
 
