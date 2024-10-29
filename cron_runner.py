@@ -24,7 +24,7 @@ async def start_cron_jobs():
     ]
     if settings.SLACK_CHANNEL_ID and settings.SLACK_OAUTH_TOKEN:
         tasks.append(
-            (_run_credits_notification_job, "Credits notification job", 3600 * 23)
+            (_run_credits_notification_job, "Credits notification job", 3600 * 6)
         )
     else:
         logger.info(

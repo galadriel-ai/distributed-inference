@@ -1,27 +1,17 @@
-import asyncio
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 from decimal import Decimal
 from typing import List
 
-from slack_sdk.web.async_client import AsyncWebClient
+import aiohttp
 
 import settings
 from distributedinference import api_logger
 from distributedinference.domain.billing.entities import CreditsReport
 from distributedinference.repository.billing_repository import BillingRepository
 
-# in UTC timezone!
-NOTIFICATION_TIME_HOUR = 5
-NOTIFICATION_TIME_MINUTE = 0
-
 logger = api_logger.get()
 
 
 async def execute(billing_repository: BillingRepository) -> None:
-    # await _sleep()
-
     reports = await _get_reports(billing_repository)
 
     formatted_message = (
@@ -30,25 +20,7 @@ async def execute(billing_repository: BillingRepository) -> None:
     for report in reports:
         formatted_message += f"| {_format_percentage(report.percentage_left)} | {_format_credits(report.credits)} | {_format_credits(report.latest_credits_addition)} | {report.email} |\n"
 
-    client = AsyncWebClient(token=settings.SLACK_OAUTH_TOKEN)
-    await client.chat_postMessage(
-        channel=settings.SLACK_CHANNEL_ID,
-        text=formatted_message,
-    )
-
-
-async def _sleep():
-    now = datetime.now(UTC)
-    target_time = now.replace(
-        hour=NOTIFICATION_TIME_HOUR, minute=NOTIFICATION_TIME_MINUTE
-    )
-    if target_time <= now:
-        target_time += timedelta(days=1)
-    seconds_until_target = (target_time - now).total_seconds()
-    logger.debug(
-        f"credits_notification_job sleeping for {seconds_until_target} seconds"
-    )
-    await asyncio.sleep(seconds_until_target)
+    await _send_slack_message(formatted_message)
 
 
 async def _get_reports(billing_repository: BillingRepository) -> List[CreditsReport]:
@@ -79,3 +51,18 @@ def _format_percentage(percentage: Decimal) -> str:
     if percentage < 50:
         return f"🟡 {round(percentage, 2)}%"
     return f"🟢 {round(percentage, 2)}%"
+
+
+async def _send_slack_message(formatted_message: str):
+    timeout = aiohttp.ClientTimeout(total=30)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        response = await session.post(
+            "https://slack.com/api/chat.postMessage",
+            headers={"Authorization": f"Bearer {settings.SLACK_OAUTH_TOKEN}"},
+            data={"channel": settings.SLACK_CHANNEL_ID, "text": formatted_message},
+        )
+        response_json = await response.json()
+        if response_json.get("error"):
+            logger.error(
+                f"credits_notification_job failed: {response_json.get('error')}"
+            )
