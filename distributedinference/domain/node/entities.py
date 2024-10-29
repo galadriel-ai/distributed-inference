@@ -64,6 +64,7 @@ class UserNodeInfo(NodeInfo):
     requests_served: Optional[int] = None
     uptime: Optional[int] = None
     benchmark_tokens_per_second: Optional[float] = None
+    is_archived: bool = False
 
 
 @dataclass

@@ -38,6 +38,7 @@ INSERT INTO node_info (
     name,
     name_alias,
     user_profile_id,
+    is_archived,
     created_at,
     last_updated_at
 ) VALUES (
@@ -45,6 +46,7 @@ INSERT INTO node_info (
     :name,
     :name_alias,
     :user_profile_id,
+    :is_archived,
     :created_at,
     :last_updated_at
 )
@@ -65,6 +67,7 @@ SELECT
     ni.network_upload_speed,
     ni.operating_system,
     ni.version,
+    ni.is_archived,
     ni.created_at,
     ni.last_updated_at,
     nm.requests_served,
@@ -242,6 +245,14 @@ SET
 WHERE id = :id;
 """
 
+SQL_UPDATE_NODE_ARCHIVAL_STATUS = """
+UPDATE node_info 
+SET 
+    is_archived = :is_archived,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
+"""
+
 SQL_UPDATE_NODE_CONNECTION_TIMESTAMP = """
 UPDATE node_metrics
 SET
@@ -386,6 +397,7 @@ class NodeRepository:
             "name": name,
             "name_alias": name_alias,
             "user_profile_id": user_profile_id,
+            "is_archived": False,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -419,6 +431,7 @@ class NodeRepository:
                         uptime=row.uptime,
                         connected=bool(row.connected_at),
                         benchmark_tokens_per_second=row.benchmark_tokens_per_second,
+                        is_archived=row.is_archived,
                         created_at=row.created_at,
                     )
                 )
@@ -751,6 +764,23 @@ class NodeRepository:
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_NAME_ALIAS), data)
+            await session.commit()
+
+    @async_timer("node_repository.update_node_archival_status", logger=logger)
+    async def update_node_archival_status(
+        self,
+        node_id: UUID,
+        is_archived: bool,
+    ):
+        data = {
+            "id": node_id,
+            "is_archived": is_archived,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(
+                sqlalchemy.text(SQL_UPDATE_NODE_ARCHIVAL_STATUS), data
+            )
             await session.commit()
 
     @async_timer("node_repository.set_all_nodes_inactive", logger=logger)
