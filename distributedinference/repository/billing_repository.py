@@ -8,6 +8,7 @@ import sqlalchemy
 from uuid_extensions import uuid7
 
 from distributedinference.domain.billing.entities import BillableUser
+from distributedinference.domain.billing.entities import CreditsReport
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
@@ -30,7 +31,26 @@ INSERT INTO user_credits (
     :last_updated_at
 ) ON CONFLICT (user_profile_id, currency) DO UPDATE SET
     credits = user_credits.credits + EXCLUDED.credits,
-    last_updated_at = EXCLUDED.last_updated_at;
+    last_updated_at = EXCLUDED.last_updated_at
+RETURNING id;
+"""
+
+SQL_ADD_CREDITS_ADDITION = """
+INSERT INTO user_credits_addition (
+    id, 
+    user_credits_id, 
+    credits_change, 
+    currency, 
+    created_at, 
+    last_updated_at
+) VALUES (
+    :id, 
+    :user_credits_id, 
+    :credits_change, 
+    :currency, 
+    :created_at, 
+    :last_updated_at
+); 
 """
 
 SQL_UPDATE_CREDITS = """
@@ -88,6 +108,21 @@ WHERE
     AND model_name = :model_name;
 """
 
+SQL_GET_CREDITS_REPORTS = """
+SELECT
+    up.id AS user_profile_id,
+    up.email,
+    uc.credits,
+    (SELECT credits_change
+     FROM user_credits_addition uca
+     WHERE uca.user_credits_id = uc.id
+     ORDER BY id DESC LIMIT 1
+    ) AS latest_credits_addition
+FROM user_credits uc
+LEFT JOIN user_profile up on uc.user_profile_id = up.id
+ORDER BY credits;
+"""
+
 
 class BillingRepository:
 
@@ -98,7 +133,7 @@ class BillingRepository:
         self._session_provider_read = session_provider_read
 
     async def add_credits(
-        self, user_id: UUID, credits_amount: Decimal, currency: str = "usd"
+        self, user_id: UUID, credits_addition: Decimal, currency: str = "usd"
     ):
         """
         ONLY used for adding credits to users
@@ -106,14 +141,26 @@ class BillingRepository:
         data = {
             "id": uuid7(),
             "user_profile_id": user_id,
-            "credits": credits_amount,
+            "credits": credits_addition,
             "currency": currency,
             "last_credit_calculation_at": utcnow(),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            await session.execute(sqlalchemy.text(SQL_ADD_CREDITS), data)
+            row = await session.execute(sqlalchemy.text(SQL_ADD_CREDITS), data)
+            credits_id = row.first().id
+            credits_addition_data = {
+                "id": uuid7(),
+                "user_credits_id": credits_id,
+                "credits_change": credits_addition,
+                "currency": currency,
+                "created_at": utcnow(),
+                "last_updated_at": utcnow(),
+            }
+            await session.execute(
+                sqlalchemy.text(SQL_ADD_CREDITS_ADDITION), credits_addition_data
+            )
             await session.commit()
 
     async def update_user_credits(
@@ -187,3 +234,19 @@ class BillingRepository:
             if row:
                 return row.price_per_million_tokens
         return None
+
+    async def get_credits_reports(self) -> List[CreditsReport]:
+        data = {}
+        results = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_CREDITS_REPORTS), data)
+            for row in rows:
+                results.append(
+                    CreditsReport(
+                        user_profile_id=row.user_profile_id,
+                        email=row.email,
+                        credits=row.credits,
+                        latest_credits_addition=row.latest_credits_addition,
+                    )
+                )
+        return results
