@@ -173,14 +173,14 @@ class ChatCompletionRequest(BaseModel):
         description="An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.",
         default=1,
     )
-    # tools: Optional[List[Tool]] = Field(
-    #     description="A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.",
-    #     default=None,
-    # )
-    # tool_choice: Union[str, ToolChoice, None] = Field(
-    #     description='Controls which (if any) tool is called by the model. none means the model will not call any tool and instead generates a message. auto means the model can pick between generating a message or calling one or more tools. required means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.',
-    #     default=None,
-    # )
+    tools: Optional[List[Tool]] = Field(
+        description="A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.",
+        default=None,
+    )
+    tool_choice: Union[str, ToolChoice, None] = Field(
+        description='Controls which (if any) tool is called by the model. none means the model will not call any tool and instead generates a message. auto means the model can pick between generating a message or calling one or more tools. required means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.',
+        default=None,
+    )
     # parallel_tool_calls: Optional[bool] = Field(
     #     description="Whether to enable parallel function calling during tool use.",
     #     default=None,
@@ -233,8 +233,9 @@ class ChatCompletionRequest(BaseModel):
                     "stream": self.stream,
                     "stream_options": self.stream_options,
                     "temperature": self.temperature,
+                    # llama3.1 does not support the "tool_choice" field apparently
                     # "tool_choice": self.tool_choice,
-                    # "tools": self.tools,
+                    "tools": self.tools,
                     "top_logprobs": self.top_logprobs,
                     "top_p": self.top_p,
                     "user": self.user,
