@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from typing import Union
 
 from fastapi import Response
@@ -35,6 +35,7 @@ async def execute(
     request: ChatCompletionRequest,
     response: Response,
     user: User,
+    forwarding_from: Optional[str],
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
     rate_limit_repository: RateLimitRepository,
@@ -57,6 +58,7 @@ async def execute(
         return StreamingResponseWithStatusCode(
             chat_completions_stream_service.execute(
                 user,
+                forwarding_from,
                 request,
                 node_repository=node_repository,
                 tokens_repository=tokens_repository,
@@ -69,6 +71,7 @@ async def execute(
     response.headers.update(rate_limit_headers)
     return await chat_completions_service.execute(
         user,
+        forwarding_from,
         request,
         node_repository=node_repository,
         tokens_repository=tokens_repository,

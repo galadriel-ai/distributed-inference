@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat import CompletionCreateParams
@@ -28,6 +29,7 @@ logger = api_logger.get()
 @async_timer("chat_completions_service.execute", logger=logger)
 async def execute(
     user: User,
+    forwarding_from: Optional[str],
     request: ChatCompletionRequest,
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
@@ -56,6 +58,7 @@ async def execute(
         async for inference_response in executor.execute(
             user_uid=user.uid,
             api_key=user.currently_using_api_key,
+            forwarding_from=forwarding_from,
             request=inference_request,
         ):
             if inference_response.error:

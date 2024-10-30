@@ -22,14 +22,19 @@ async def execute(
         base_url = _concatenate_base_url(node_ip)
         if not base_url:
             continue
+        logger.debug(f"Forwarding request to peer node: {base_url}")
+
         client = openai.AsyncOpenAI(base_url=base_url, api_key=api_key)
 
         # Use Galadriel node id to for a place holder, and the response won't be inserted into database
         node_uid = settings.GALADRIEL_NODE_INFO_ID
+        hostname = settings.HOSTNAME
 
         # Force streaming and token usage inclusion
         request.chat_request["stream"] = True
         request.chat_request["stream_options"] = {"include_usage": True}
+        # Add forwarding flag indicating this is a peer forwarding call
+        request.chat_request["extra_headers"] = {"peer_forwarding_from": hostname}
         try:
             completion = await client.chat.completions.create(**request.chat_request)
             async for chunk in completion:

@@ -66,10 +66,20 @@ class InferenceExecutor:
         self.request_successful = False
 
     async def execute(
-        self, user_uid: UUID, api_key: str, request: InferenceRequest
+        self,
+        user_uid: UUID,
+        api_key: str,
+        forwarding_from: Optional[str],
+        request: InferenceRequest,
     ) -> AsyncGenerator[InferenceResponse, None]:
         node = self._select_node(user_uid=user_uid, request=request)
+        if forwarding_from:
+            logger.debug(f"Received forwarding call from peer node {forwarding_from}")
         if not node:
+            if forwarding_from:
+                # Fail early if this is a forwarding request from peers
+                logger.error(f"No resources to server the forwarding call, respond with error!")
+                raise NoAvailableNodesError()
             # Forward requests to peer nodes
             logger.info(
                 "No node for the requested model available, forwarding to peer nodes!"

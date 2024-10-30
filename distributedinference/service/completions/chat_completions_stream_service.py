@@ -1,4 +1,4 @@
-from typing import AsyncIterable
+from typing import AsyncIterable, Optional
 
 from openai.types.chat import CompletionCreateParams
 from uuid_extensions import uuid7
@@ -20,6 +20,7 @@ from distributedinference.service.completions.entities import ChatCompletionRequ
 # pylint: disable=R0801, R0913
 async def execute(
     user: User,
+    forwarding_from: Optional[str],
     request: ChatCompletionRequest,
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
@@ -46,6 +47,7 @@ async def execute(
         async for inference_response in executor.execute(
             user_uid=user.uid,
             api_key=user.currently_using_api_key,
+            forwarding_from=forwarding_from,
             request=inference_request,
         ):
             if inference_response.error:
