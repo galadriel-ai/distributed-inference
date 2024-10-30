@@ -89,6 +89,7 @@ async def test_success():
     ):
         res = service.execute(
             USER,
+            MagicMock(),
             ChatCompletionRequest(
                 model="llama3", messages=[Message(role="user", content="asd")]
             ),

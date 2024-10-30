@@ -42,7 +42,9 @@ async def completions(
     forwarding_from: Optional[str] = Depends(authentication.get_forwarding_origin),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
-    rate_limit_repository: RateLimitRepository = Depends(dependencies.get_rate_limit_repository),
+    rate_limit_repository: RateLimitRepository = Depends(
+        dependencies.get_rate_limit_repository
+    ),
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),

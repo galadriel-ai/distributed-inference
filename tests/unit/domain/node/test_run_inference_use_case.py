@@ -162,6 +162,7 @@ async def test_success(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
         API_KEY,
         request,
     ):
@@ -204,6 +205,7 @@ async def test_no_nodes_forward_to_peers():
     async for response in executor.execute(
         USER_UUID,
         API_KEY,
+        None,
         request,
     ):
         result.append(response)
@@ -237,6 +239,38 @@ async def test_no_nodes_forward_to_peers_failed():
         async for response in executor.execute(
             USER_UUID,
             API_KEY,
+            None,
+            request,
+        ):
+            pass
+
+
+async def test_no_nodes_no_forward_for_forwarding_request():
+    mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
+    mock_node_repository.select_node = MagicMock(return_value=None)
+
+    mock_inference = MockInference()
+    use_case.peer_nodes_forwarding = MagicMock()
+    use_case.peer_nodes_forwarding.execute = mock_inference.mock_inference
+
+    chat_input = await ChatCompletionRequest(
+        model="llama3", messages=[Message(role="user", content="asd")]
+    ).to_openai_chat_completion()
+    request = InferenceRequest(
+        id="request_id",
+        model="model-1",
+        chat_request=chat_input,
+    )
+
+    executor = use_case.InferenceExecutor(
+        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+    )
+    with pytest.raises(NoAvailableNodesError):
+        async for response in executor.execute(
+            USER_UUID,
+            API_KEY,
+            "distributed-inference-us",
             request,
         ):
             pass
@@ -272,6 +306,7 @@ async def test_no_nodes_uses_proxy():
     async for request in executor.execute(
         USER_UUID,
         API_KEY,
+        None,
         request,
     ):
         result.append(request)
@@ -308,6 +343,7 @@ async def test_no_nodes_and_proxy_also_fails():
         async for _ in executor.execute(
             USER_UUID,
             API_KEY,
+            None,
             request,
         ):
             pass
@@ -369,6 +405,7 @@ async def test_streaming_no_usage(connected_node_factory):
     async for response in executor.execute(
         USER_UUID,
         API_KEY,
+        None,
         request,
     ):
         responses.append(response)
@@ -439,6 +476,7 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
         API_KEY,
         request,
     ):
@@ -496,6 +534,7 @@ async def test_inference_error_stops_loop(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
         API_KEY,
         request,
     ):
@@ -555,6 +594,7 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
         API_KEY,
         request,
     ):

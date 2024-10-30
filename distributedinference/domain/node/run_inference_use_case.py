@@ -65,6 +65,7 @@ class InferenceExecutor:
         self.time_elapsed_after_first_token = None
         self.request_successful = False
 
+    # pylint: disable=too-many-branches, R0912
     async def execute(
         self,
         user_uid: UUID,
@@ -78,7 +79,9 @@ class InferenceExecutor:
         if not node:
             if forwarding_from:
                 # Fail early if this is a forwarding request from peers
-                logger.error(f"No resources to server the forwarding call, respond with error!")
+                logger.error(
+                    "No resources to server the forwarding call, respond with error!"
+                )
                 raise NoAvailableNodesError()
             # Forward requests to peer nodes
             logger.info(

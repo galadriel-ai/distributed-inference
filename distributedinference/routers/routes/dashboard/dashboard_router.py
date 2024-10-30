@@ -207,6 +207,7 @@ async def completions(
     request: ChatCompletionRequest,
     response: Response,
     user: User = Depends(authentication.validate_session_token),
+    forwarding_from: Optional[str] = Depends(authentication.get_forwarding_origin),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     rate_limit_repository: RateLimitRepository = Depends(
@@ -226,6 +227,7 @@ async def completions(
         request,
         response,
         user,
+        forwarding_from,
         node_repository,
         tokens_repository,
         rate_limit_repository,
