@@ -80,7 +80,7 @@ class InferenceExecutor:
             if forwarding_from:
                 # Fail early if this is a forwarding request from peers
                 logger.error(
-                    "No resources to server the forwarding call, respond with error!"
+                    "No resources to serve the forwarding call, respond with error!"
                 )
                 raise NoAvailableNodesError()
             # Forward requests to peer nodes
