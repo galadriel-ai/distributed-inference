@@ -83,6 +83,10 @@ class InferenceExecutor:
                     "No resources to serve the forwarding call, respond with error!"
                 )
                 raise NoAvailableNodesError()
+            # Check if usage is requested
+            is_include_usage: bool = bool(
+                (request.chat_request.get("stream_options") or {}).get("include_usage")
+            ) or not bool(request.chat_request.get("stream"))
             # Forward requests to peer nodes
             logger.info(
                 "No node for the requested model available, forwarding to peer nodes!"
@@ -93,7 +97,8 @@ class InferenceExecutor:
                     break
                 if response.chunk and not response.chunk.choices:
                     # Last chunk only has usage, no choices - request is finished
-                    yield response
+                    if is_include_usage:
+                        yield response
                     logger.debug("Peer nodes completed this inference!")
                     return
                 if response.error:
@@ -114,6 +119,9 @@ class InferenceExecutor:
 
                 if response.chunk:
                     usage = response.chunk.usage if response.chunk else None
+                    if usage and not response.chunk.choices and not is_include_usage:
+                        # Last chunk but usage is not requested - skip the last chunk
+                        break
                 if response.error:
                     logger.error(f"LLM Inference Proxy error: {response.error}")
                     raise NoAvailableNodesError()
