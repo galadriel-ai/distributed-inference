@@ -83,3 +83,18 @@ def test_success_multiple_calls():
             ),
         ),
     ]
+
+
+def test_malformed():
+    chunks = [
+        ChoiceDeltaToolCall(
+            index=2,
+            id="asd",
+        ),
+    ]
+    response = service.execute(chunks)
+    assert response == [
+        ChatCompletionMessageToolCall.construct(
+            None, **{"id": "asd", "function": {"name": None, "arguments": ""}}
+        )
+    ]

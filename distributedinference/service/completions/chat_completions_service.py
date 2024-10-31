@@ -113,6 +113,4 @@ def _get_formatted_tool_calls_response(
 ) -> Optional[List[ChatCompletionMessageToolCall]]:
     if not tool_response_chunks:
         return None
-    return convert_tool_call_chunks_to_non_streaming.execute(
-        tool_response_chunks
-    )
+    return convert_tool_call_chunks_to_non_streaming.execute(tool_response_chunks)
