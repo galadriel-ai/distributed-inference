@@ -65,7 +65,7 @@ class InferenceExecutor:
         self.time_elapsed_after_first_token = None
         self.request_successful = False
 
-    # pylint: disable=too-many-branches, R0912
+    # pylint: disable=too-many-branches, R0912, R0915
     async def execute(
         self,
         user_uid: UUID,
