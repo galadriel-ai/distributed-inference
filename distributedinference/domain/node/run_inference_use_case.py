@@ -20,6 +20,7 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -234,7 +235,7 @@ class InferenceExecutor:
 
     async def _mark_node_as_unhealthy(self, node: ConnectedNode) -> None:
         await self.node_repository.update_node_health_status(
-            node.uid, False, "STOPPED_DEGRADED"
+            node.uid, False, NodeStatus.RUNNING_DEGRADED
         )
         self.analytics.track_event(
             node.user_id,

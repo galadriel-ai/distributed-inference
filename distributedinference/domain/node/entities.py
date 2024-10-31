@@ -13,6 +13,15 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
 
+class NodeStatus(Enum):
+    RUNNING = "RUNNING"
+    RUNNING_BENCHMARKING = "RUNNING_BENCHMARKING"
+    RUNNING_DEGRADED = "RUNNING_DEGRADED"
+    STOPPED = "STOPPED"
+    STOPPED_BENCHMARK_FAILED = "STOPPED_BENCHMARK_FAILED"
+    STOPPED_DEGRADED = "STOPPED_DEGRADED"
+
+
 @dataclass
 class NodeMetricsIncrement:
     node_id: UUID
@@ -24,7 +33,7 @@ class NodeMetricsIncrement:
     inference_tokens_per_second: Optional[float] = None
     rtt: Optional[int] = None
     uptime_increment: int = 0
-    status: str = "RUNNING"
+    status: str = NodeStatus.RUNNING
 
 
 @dataclass

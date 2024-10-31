@@ -19,6 +19,7 @@ from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
@@ -612,7 +613,7 @@ class NodeRepository:
     # Insert if it doesn't exist
     @async_timer("node_repository.set_node_connection_timestamp", logger=logger)
     async def set_node_connection_timestamp(
-        self, node_id: UUID, model_name: str, connected_at: datetime
+        self, node_id: UUID, model_name: str, connected_at: datetime, status: NodeStatus
     ):
         data = {
             "id": str(uuid7()),
@@ -626,7 +627,7 @@ class NodeRepository:
             "uptime_increment": 0,
             "connected_at": connected_at,
             "model_name": model_name,
-            "status": "RUNNING",
+            "status": status.value,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -639,7 +640,7 @@ class NodeRepository:
         data = {
             "id": node_id,
             "connected_at": None,
-            "status": "STOPPED",
+            "status": NodeStatus.STOPPED.value,
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
@@ -648,12 +649,12 @@ class NodeRepository:
 
     @async_timer("node_repository.update_node_health_status", logger=logger)
     async def update_node_health_status(
-        self, node_id: UUID, is_healthy: bool, status: str
+        self, node_id: UUID, is_healthy: bool, status: NodeStatus
     ):
         data = {
             "id": node_id,
             "is_healthy": is_healthy,
-            "status": status,
+            "status": status.value,
             "last_updated_at": utcnow(),
         }
         if node_id in self._connected_nodes:

@@ -16,6 +16,7 @@ from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import CheckHealthResponse
+from distributedinference.domain.node.entities import NodeStatus
 
 from distributedinference.repository.node_repository import ConnectedNode
 from distributedinference.repository.node_repository import NodeRepository
@@ -54,9 +55,9 @@ async def _check_node_health(
             f"Node health check result, node_id={node.uid}, is_healthy={response.is_healthy}"
         )
         is_healthy = response.is_healthy
-        status = "RUNNING"
+        status = NodeStatus.RUNNING
         if not is_healthy:
-            status = "RUNNING_DEGRADED"
+            status = NodeStatus.RUNNING_DEGRADED
         await node_repository.update_node_health_status(node.uid, is_healthy, status)
 
     except Exception:

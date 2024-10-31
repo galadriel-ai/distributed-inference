@@ -13,6 +13,7 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.domain.node import health_check_job
 
@@ -48,7 +49,7 @@ async def test_check_node_health_healthy(
     )
 
     mock_node_repository.update_node_health_status.assert_called_once_with(
-        mock_node.uid, True, "RUNNING"
+        mock_node.uid, True, NodeStatus.RUNNING
     )
     mock_analytics.track_event.assert_called_once_with(
         mock_node.user_id,
@@ -77,7 +78,7 @@ async def test_check_node_health_unhealthy(
     )
 
     mock_node_repository.update_node_health_status.assert_called_once_with(
-        mock_node.uid, False, "RUNNING_DEGRADED"
+        mock_node.uid, False, NodeStatus.RUNNING_DEGRADED
     )
     mock_analytics.track_event.assert_called_once_with(
         mock_node.user_id,

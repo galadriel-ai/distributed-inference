@@ -19,6 +19,7 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
@@ -74,8 +75,9 @@ async def execute(
     )
 
     connect_time = time.time()
+    # TODO: set NodeStatus to RUNNING_BENCHMARKING at first!
     await node_repository.set_node_connection_timestamp(
-        node.uid, model_name, datetime.fromtimestamp(connect_time)
+        node.uid, model_name, datetime.fromtimestamp(connect_time), NodeStatus.RUNNING
     )
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
@@ -187,6 +189,7 @@ async def _websocket_error(
 ):
     await ping_pong_protocol.remove_node(node_info.name)
     await health_check_protocol.remove_node(node_info.name)
+    # TODO: understand correctly what status to set node into
     await node_repository.update_node_to_disconnected(node.uid)
     node_repository.deregister_node(node_uid)
     logger.info(log_message)
