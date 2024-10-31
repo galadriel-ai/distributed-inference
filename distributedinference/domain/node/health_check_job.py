@@ -54,7 +54,10 @@ async def _check_node_health(
             f"Node health check result, node_id={node.uid}, is_healthy={response.is_healthy}"
         )
         is_healthy = response.is_healthy
-        await node_repository.update_node_health_status(node.uid, response.is_healthy)
+        status = "RUNNING"
+        if not is_healthy:
+            status = "RUNNING_DEGRADED"
+        await node_repository.update_node_health_status(node.uid, is_healthy, status)
 
     except Exception:
         logger.error(

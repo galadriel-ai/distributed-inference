@@ -120,6 +120,7 @@ SQL_UPDATE_CONNECTED_AT = """
 UPDATE node_metrics
 SET
     connected_at = :connected_at,
+    status = :status,
     last_updated_at = :last_updated_at
 WHERE node_info_id = :id;
 """
@@ -128,6 +129,7 @@ SQL_UPDATE_IS_HEALTHY = """
 UPDATE node_metrics
 SET
     is_healthy = :is_healthy,
+    status = :status,
     last_updated_at = :last_updated_at
 WHERE node_info_id = :id;
 """
@@ -145,6 +147,7 @@ INSERT INTO node_metrics (
     uptime,
     connected_at,
     model_name,
+    status,
     created_at,
     last_updated_at
 ) VALUES (
@@ -159,6 +162,7 @@ INSERT INTO node_metrics (
     :uptime_increment,
     :connected_at,
     :model_name,
+    :status,
     :created_at,
     :last_updated_at
 )
@@ -172,6 +176,7 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     uptime = node_metrics.uptime + EXCLUDED.uptime,
     connected_at = COALESCE(EXCLUDED.connected_at, node_metrics.connected_at),
     model_name = COALESCE(EXCLUDED.model_name, node_metrics.model_name),
+    status = COALESCE(EXCLUDED.status, node_metrics.status),
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
@@ -398,6 +403,7 @@ class NodeRepository:
             "name_alias": name_alias,
             "user_profile_id": user_profile_id,
             "is_archived": False,
+            "status": "CREATED",
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -620,6 +626,7 @@ class NodeRepository:
             "uptime_increment": 0,
             "connected_at": connected_at,
             "model_name": model_name,
+            "status": "RUNNING",
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -628,12 +635,13 @@ class NodeRepository:
             await session.commit()
 
     @async_timer("node_repository.update_node_connection_timestamp", logger=logger)
-    async def update_node_connection_timestamp(
-        self, node_id: UUID, connected_at: Optional[datetime]
+    async def update_node_to_disconnected(
+        self, node_id: UUID
     ):
         data = {
             "id": node_id,
-            "connected_at": connected_at,
+            "connected_at": None,
+            "status": "STOPPED",
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
@@ -641,10 +649,14 @@ class NodeRepository:
             await session.commit()
 
     @async_timer("node_repository.update_node_health_status", logger=logger)
-    async def update_node_health_status(self, node_id: UUID, is_healthy: bool):
+    async def update_node_health_status(
+        self, node_id: UUID, is_healthy: bool,
+        status: str
+    ):
         data = {
             "id": node_id,
             "is_healthy": is_healthy,
+            "status": status,
             "last_updated_at": utcnow(),
         }
         if node_id in self._connected_nodes:
@@ -667,6 +679,7 @@ class NodeRepository:
             "uptime_increment": metrics.uptime_increment,
             "connected_at": None,
             "model_name": metrics.model,
+            "status": metrics.status,
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }

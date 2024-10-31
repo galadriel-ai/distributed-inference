@@ -233,7 +233,7 @@ class InferenceExecutor:
         )
 
     async def _mark_node_as_unhealthy(self, node: ConnectedNode) -> None:
-        await self.node_repository.update_node_health_status(node.uid, False)
+        await self.node_repository.update_node_health_status(node.uid, False, "STOPPED_DEGRADED")
         self.analytics.track_event(
             node.user_id,
             AnalyticsEvent(
