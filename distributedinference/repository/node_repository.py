@@ -338,6 +338,12 @@ GROUP BY nb.model_name
 ORDER BY benchmark_total_tokens_per_second DESC;
 """
 
+SQL_GET_NODE_STATUS = """
+SELECT status
+FROM node_metrics
+WHERE node_info_id = :node_id
+"""
+
 SQL_INSERT_NODE_HEALTH = """
 INSERT INTO node_health (
     id,
@@ -636,11 +642,11 @@ class NodeRepository:
             await session.commit()
 
     @async_timer("node_repository.update_node_connection_timestamp", logger=logger)
-    async def update_node_to_disconnected(self, node_id: UUID):
+    async def update_node_to_disconnected(self, node_id: UUID, status: NodeStatus):
         data = {
             "id": node_id,
             "connected_at": None,
-            "status": NodeStatus.STOPPED.value,
+            "status": status.value,
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
@@ -861,6 +867,13 @@ class NodeRepository:
                 )
                 for row in rows
             ]
+
+    @async_timer("node_repository.save_node_health", logger=logger)
+    async def get_node_status(self, node_id: UUID) -> NodeStatus:
+        data = {"node_id": node_id}
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATUS), data)
+            return NodeStatus(rows.first().status)
 
     @async_timer("node_repository.save_node_health", logger=logger)
     async def save_node_health(self, node_id: UUID, health: NodeHealth):

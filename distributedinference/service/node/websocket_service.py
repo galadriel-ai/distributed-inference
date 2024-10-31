@@ -189,14 +189,24 @@ async def _websocket_error(
 ):
     await ping_pong_protocol.remove_node(node_info.name)
     await health_check_protocol.remove_node(node_info.name)
-    # TODO: understand correctly what status to set node into
-    await node_repository.update_node_to_disconnected(node.uid)
+    node_status = await _get_new_node_status(node.uid, node_repository)
+    await node_repository.update_node_to_disconnected(node.uid, node_status)
+
     node_repository.deregister_node(node_uid)
     logger.info(log_message)
     analytics.track_event(
         user.uid,
         AnalyticsEvent(analytics_event, {"node_id": node_uid}),
     )
+
+
+async def _get_new_node_status(
+    node_id: UUID, node_repository: NodeRepository
+) -> NodeStatus:
+    node_status = await node_repository.get_node_status(node_id)
+    if node_status == NodeStatus.RUNNING_DEGRADED:
+        return NodeStatus.STOPPED_DEGRADED
+    return NodeStatus.STOPPED
 
 
 async def _check_before_connecting(

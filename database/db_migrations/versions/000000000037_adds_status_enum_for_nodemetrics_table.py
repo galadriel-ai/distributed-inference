@@ -24,7 +24,6 @@ def upgrade():
     op.add_column(
         "node_metrics",
         sa.Column(
-
             "status",
             sa.Enum(
                 "RUNNING",
