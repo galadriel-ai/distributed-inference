@@ -15,7 +15,7 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
-from distributedinference.domain.node import llm_inference_proxy
+from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
@@ -65,13 +65,54 @@ class InferenceExecutor:
         self.time_elapsed_after_first_token = None
         self.request_successful = False
 
+    # pylint: disable=too-many-branches, R0912, R0915
     async def execute(
-        self, user_uid: UUID, request: InferenceRequest
+        self,
+        user_uid: UUID,
+        api_key: str,
+        forwarding_from: Optional[str],
+        request: InferenceRequest,
     ) -> AsyncGenerator[InferenceResponse, None]:
         node = self._select_node(user_uid=user_uid, request=request)
+        if forwarding_from:
+            logger.debug(f"Received forwarding call from peer node {forwarding_from}")
         if not node:
+            if forwarding_from:
+                # Fail early if this is a forwarding request from peers
+                logger.error(
+                    "No resources to serve the forwarding call, respond with error!"
+                )
+                raise NoAvailableNodesError()
+            # Check if usage is requested
+            is_include_usage: bool = bool(
+                (request.chat_request.get("stream_options") or {}).get("include_usage")
+            ) or not bool(request.chat_request.get("stream"))
+            # Forward requests to peer nodes
+            logger.info(
+                "No node for the requested model available, forwarding to peer nodes!"
+            )
+            async for response in peer_nodes_forwarding.execute(api_key, request):
+                if not response:
+                    # Peer nodes also don't support this model, break and call the fallback solution
+                    break
+                if response.chunk and not response.chunk.choices:
+                    # Last chunk only has usage, no choices - request is finished
+                    if is_include_usage:
+                        yield response
+                    logger.debug("Peer nodes completed this inference!")
+                    return
+                if response.error:
+                    # Peer nodes did the inference but there are errors in the response, raise error and return
+                    logger.error(f"Peer nodes inference error: {response.error}")
+                    raise NoAvailableNodesError()
+                if not is_include_usage:
+                    response.chunk.usage = None
+                yield response
+
             llm_fallback_called_gauge.labels(request.model).inc()
-            logger.info("No node, calling a fallback proxy!")
+            logger.info(
+                "Peer nodes don't support this model, calling a fallback proxy!"
+            )
             node_uid = settings.GALADRIEL_NODE_INFO_ID
             usage = None
             async for response in llm_inference_proxy.execute(request, node_uid):
@@ -80,9 +121,14 @@ class InferenceExecutor:
 
                 if response.chunk:
                     usage = response.chunk.usage if response.chunk else None
+                    if usage and not response.chunk.choices and not is_include_usage:
+                        # Last chunk but usage is not requested - skip the last chunk
+                        break
                 if response.error:
                     logger.error(f"LLM Inference Proxy error: {response.error}")
                     raise NoAvailableNodesError()
+                if not is_include_usage:
+                    response.chunk.usage = None
                 yield response
             if usage:
                 await self._save_usage(
@@ -108,7 +154,7 @@ class InferenceExecutor:
 
     async def _get_chunk(
         self, node: ConnectedNode, request: InferenceRequest
-    ) -> (Optional[InferenceResponse], bool):
+    ) -> (Optional[InferenceResponse], bool):  # type: ignore
         """
         Returns
         * InferenceResponse if there is one
