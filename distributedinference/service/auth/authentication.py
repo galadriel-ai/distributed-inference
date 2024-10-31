@@ -22,7 +22,7 @@ from distributedinference.service.middleware.entitites import RequestStateKey
 API_KEY_NAME = "Authorization"
 API_KEY_HEADER = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-FORWARDING_NAME = "peer_forwarding_from"
+FORWARDING_NAME = "Peer-Forwarding-From"
 FORWARDING_HEADER = APIKeyHeader(name=FORWARDING_NAME, auto_error=False)
 
 logger = api_logger.get()

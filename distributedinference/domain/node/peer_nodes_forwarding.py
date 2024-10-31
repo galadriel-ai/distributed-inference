@@ -34,7 +34,7 @@ async def execute(
         request.chat_request["stream"] = True
         request.chat_request["stream_options"] = {"include_usage": True}
         # Add forwarding flag indicating this is a peer forwarding call
-        request.chat_request["extra_headers"] = {"peer_forwarding_from": hostname}
+        request.chat_request["extra_headers"] = {"Peer-Forwarding-From": hostname}
         try:
             completion = await client.chat.completions.create(**request.chat_request)
             async for chunk in completion:
