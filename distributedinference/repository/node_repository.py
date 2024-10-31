@@ -635,9 +635,7 @@ class NodeRepository:
             await session.commit()
 
     @async_timer("node_repository.update_node_connection_timestamp", logger=logger)
-    async def update_node_to_disconnected(
-        self, node_id: UUID
-    ):
+    async def update_node_to_disconnected(self, node_id: UUID):
         data = {
             "id": node_id,
             "connected_at": None,
@@ -650,8 +648,7 @@ class NodeRepository:
 
     @async_timer("node_repository.update_node_health_status", logger=logger)
     async def update_node_health_status(
-        self, node_id: UUID, is_healthy: bool,
-        status: str
+        self, node_id: UUID, is_healthy: bool, status: str
     ):
         data = {
             "id": node_id,
