@@ -492,5 +492,5 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
         TEST_NODE_ID, "request_id"
     )
     mock_node_repository.update_node_health_status.assert_awaited_once_with(
-        TEST_NODE_ID, False
+        TEST_NODE_ID, False, "STOPPED_DEGRADED"
     )

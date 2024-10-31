@@ -349,9 +349,7 @@ async def test_execute_websocket_disconnect():
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
     node_repository.set_node_connection_timestamp.assert_called_once()
-    node_repository.update_node_connection_timestamp.assert_called_once_with(
-        NODE_UUID, None
-    )
+    node_repository.update_node_to_disconnected.assert_called_once_with(NODE_UUID)
 
 
 @pytest.mark.asyncio
@@ -429,6 +427,4 @@ async def test_execute_protocols():
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
     node_repository.set_node_connection_timestamp.assert_called_once()
-    node_repository.update_node_connection_timestamp.assert_called_once_with(
-        NODE_UUID, None
-    )
+    node_repository.update_node_to_disconnected.assert_called_once_with(NODE_UUID)
