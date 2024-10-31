@@ -105,6 +105,8 @@ class InferenceExecutor:
                     # Peer nodes did the inference but there are errors in the response, raise error and return
                     logger.error(f"Peer nodes inference error: {response.error}")
                     raise NoAvailableNodesError()
+                if not is_include_usage:
+                    response.chunk.usage = None
                 yield response
 
             llm_fallback_called_gauge.labels(request.model).inc()
@@ -125,6 +127,8 @@ class InferenceExecutor:
                 if response.error:
                     logger.error(f"LLM Inference Proxy error: {response.error}")
                     raise NoAvailableNodesError()
+                if not is_include_usage:
+                    response.chunk.usage = None
                 yield response
             if usage:
                 await self._save_usage(
