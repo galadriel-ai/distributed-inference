@@ -15,6 +15,7 @@ import settings
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
@@ -349,8 +350,8 @@ async def test_execute_websocket_disconnect():
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
     node_repository.set_node_connection_timestamp.assert_called_once()
-    node_repository.update_node_connection_timestamp.assert_called_once_with(
-        NODE_UUID, None
+    node_repository.update_node_to_disconnected.assert_called_once_with(
+        NODE_UUID, NodeStatus.STOPPED
     )
 
 
@@ -429,6 +430,6 @@ async def test_execute_protocols():
     node_repository.register_node.assert_called_once()
     node_repository.deregister_node.assert_called_once_with(NODE_UUID)
     node_repository.set_node_connection_timestamp.assert_called_once()
-    node_repository.update_node_connection_timestamp.assert_called_once_with(
-        NODE_UUID, None
+    node_repository.update_node_to_disconnected.assert_called_once_with(
+        NODE_UUID, NodeStatus.STOPPED
     )

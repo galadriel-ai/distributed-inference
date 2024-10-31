@@ -19,6 +19,7 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
@@ -74,8 +75,9 @@ async def execute(
     )
 
     connect_time = time.time()
+    # TODO: set NodeStatus to RUNNING_BENCHMARKING at first!
     await node_repository.set_node_connection_timestamp(
-        node.uid, model_name, datetime.fromtimestamp(connect_time)
+        node.uid, model_name, datetime.fromtimestamp(connect_time), NodeStatus.RUNNING
     )
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
@@ -187,13 +189,24 @@ async def _websocket_error(
 ):
     await ping_pong_protocol.remove_node(node_info.name)
     await health_check_protocol.remove_node(node_info.name)
-    await node_repository.update_node_connection_timestamp(node.uid, None)
+    node_status = await _get_new_node_status(node.uid, node_repository)
+    await node_repository.update_node_to_disconnected(node.uid, node_status)
+
     node_repository.deregister_node(node_uid)
     logger.info(log_message)
     analytics.track_event(
         user.uid,
         AnalyticsEvent(analytics_event, {"node_id": node_uid}),
     )
+
+
+async def _get_new_node_status(
+    node_id: UUID, node_repository: NodeRepository
+) -> NodeStatus:
+    node_status = await node_repository.get_node_status(node_id)
+    if node_status == NodeStatus.RUNNING_DEGRADED:
+        return NodeStatus.STOPPED_DEGRADED
+    return NodeStatus.STOPPED
 
 
 async def _check_before_connecting(
