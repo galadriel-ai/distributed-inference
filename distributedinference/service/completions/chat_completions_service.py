@@ -1,8 +1,12 @@
 import time
+from typing import List
+from typing import Optional
 
 from openai.types.chat import ChatCompletionMessage
+from openai.types.chat import ChatCompletionMessageToolCall
 from openai.types.chat import CompletionCreateParams
 from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from uuid_extensions import uuid7
 
 from distributedinference import api_logger
@@ -17,6 +21,9 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
+from distributedinference.service.completions import (
+    convert_tool_call_chunks_to_non_streaming,
+)
 from distributedinference.service.completions.entities import ChatCompletion
 from distributedinference.service.completions.entities import ChatCompletionRequest
 from distributedinference.utils.timer import async_timer
@@ -46,6 +53,7 @@ async def execute(
     )
     try:
         response = ""
+        tool_response_chunks = []
         usage = None
         executor = InferenceExecutor(
             node_repository=node_repository,
@@ -63,21 +71,31 @@ async def execute(
                     status_code=inference_response.error.status_code,
                     message_extra=inference_response.error.message,
                 )
-            if (
-                inference_response.chunk
-                and inference_response.chunk.choices
-                and inference_response.chunk.choices[0].delta.content
-            ):
-                response += inference_response.chunk.choices[0].delta.content
+            if inference_response.chunk and inference_response.chunk.choices:
+                if inference_response.chunk.choices[0].delta.content:
+                    response += inference_response.chunk.choices[0].delta.content
+                if inference_response.chunk.choices[0].delta.tool_calls:
+                    # tool_calls is a list, need to extend!
+                    tool_response_chunks.extend(
+                        inference_response.chunk.choices[0].delta.tool_calls
+                    )
             if inference_response.chunk and inference_response.chunk.usage:
                 usage = inference_response.chunk.usage
+
+        # TODO: we dont return all the fields, eg refusal
+        response_message = ChatCompletionMessage(role="assistant")
+        if response:
+            response_message.content = response
+        response_message.tool_calls = _get_formatted_tool_calls_response(
+            tool_response_chunks
+        )
         chat_completion = ChatCompletion(
             id="id",
             choices=[
                 Choice(
                     finish_reason="stop",
                     index=0,
-                    message=ChatCompletionMessage(content=response, role="assistant"),
+                    message=response_message,
                 )
             ],
             created=int(time.time()),
@@ -88,3 +106,13 @@ async def execute(
         return chat_completion
     except NoAvailableNodesError:
         raise error_responses.NoAvailableInferenceNodesError()
+
+
+def _get_formatted_tool_calls_response(
+    tool_response_chunks: List[ChoiceDeltaToolCall],
+) -> Optional[List[ChatCompletionMessageToolCall]]:
+    if not tool_response_chunks:
+        return None
+    return convert_tool_call_chunks_to_non_streaming.execute(
+        tool_response_chunks
+    )
