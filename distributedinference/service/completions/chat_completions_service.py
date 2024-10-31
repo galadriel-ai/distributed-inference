@@ -92,7 +92,7 @@ async def execute(
         response_message.tool_calls = _get_formatted_tool_calls_response(
             tool_response_chunks
         )
-        chat_completion = ChatCompletion(
+        return ChatCompletion(
             id="id",
             choices=[
                 Choice(
@@ -106,7 +106,6 @@ async def execute(
             object="chat.completion",
             usage=usage,
         )
-        return chat_completion
     except NoAvailableNodesError:
         raise error_responses.NoAvailableInferenceNodesError()
 
