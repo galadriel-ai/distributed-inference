@@ -198,6 +198,7 @@ class UserRepository:
                     usage_tier_id=row.usage_tier_id,
                     profile_data=row.profile_data,
                     authentication_id=row.authentication_id,
+                    currently_using_api_key=api_key,
                 )
         return None
 

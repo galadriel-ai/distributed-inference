@@ -14,6 +14,7 @@ class User:
     username: str = None
     profile_data: dict = None
     authentication_id: str = None
+    currently_using_api_key: str = None
 
     def is_self_hosted_nodes_provider(self) -> bool:
         return self.email.endswith(GALADRIEL_DOMAIN)

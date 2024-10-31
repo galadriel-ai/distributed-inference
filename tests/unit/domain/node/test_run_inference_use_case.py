@@ -1,6 +1,7 @@
+import os
 import time
 from typing import AsyncGenerator
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 from unittest.mock import MagicMock
 from uuid import UUID, uuid1
 
@@ -17,6 +18,7 @@ from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -25,6 +27,7 @@ from distributedinference.service.completions.entities import Message
 from distributedinference.service.completions.entities import StreamOptions
 
 USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
+API_KEY = "consumer-api-key"
 
 
 @pytest.fixture
@@ -48,13 +51,7 @@ MOCK_UUID = uuid1()
 CHUNK_COUNT = 3
 LAST_CHUNK = ChatCompletionChunk(
     id=f"mock-{CHUNK_COUNT}",
-    choices=[
-        Choice(
-            delta=ChoiceDelta(),
-            index=0,
-            finish_reason="stop",
-        )
-    ],
+    choices=[],
     created=123,
     model="llama3",
     object="chat.completion.chunk",
@@ -92,6 +89,13 @@ class MockInference:
             request_id=str(MOCK_UUID),
             chunk=LAST_CHUNK,
         )
+
+
+class MockInferenceNoneResponse:
+    async def mock_inference(
+        self, *args, **kwargs
+    ) -> AsyncGenerator[InferenceResponse, None]:
+        yield None
 
 
 class MockInferenceError:
@@ -159,6 +163,8 @@ async def test_success(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
+        API_KEY,
         request,
     ):
         responses.append(response)
@@ -175,11 +181,111 @@ async def test_success(connected_node_factory):
     )
 
 
+async def test_no_nodes_forward_to_peers():
+    mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
+    mock_node_repository.select_node = MagicMock(return_value=None)
+
+    mock_inference = MockInference()
+    use_case.peer_nodes_forwarding = MagicMock()
+    use_case.peer_nodes_forwarding.execute = mock_inference.mock_inference
+
+    chat_input = await ChatCompletionRequest(
+        model="llama3", messages=[Message(role="user", content="asd")]
+    ).to_openai_chat_completion()
+    request = InferenceRequest(
+        id="request_id",
+        model="model-1",
+        chat_request=chat_input,
+    )
+
+    executor = use_case.InferenceExecutor(
+        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+    )
+    result = []
+    async for response in executor.execute(
+        USER_UUID,
+        API_KEY,
+        None,
+        request,
+    ):
+        result.append(response)
+
+    assert len(result) == 4
+    assert result[-1].chunk == LAST_CHUNK
+
+
+async def test_no_nodes_forward_to_peers_failed():
+    mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
+    mock_node_repository.select_node = MagicMock(return_value=None)
+
+    mock_inference = MockInferenceError()
+    use_case.peer_nodes_forwarding = MagicMock()
+    use_case.peer_nodes_forwarding.execute = mock_inference.mock_inference
+
+    chat_input = await ChatCompletionRequest(
+        model="llama3", messages=[Message(role="user", content="asd")]
+    ).to_openai_chat_completion()
+    request = InferenceRequest(
+        id="request_id",
+        model="model-1",
+        chat_request=chat_input,
+    )
+
+    executor = use_case.InferenceExecutor(
+        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+    )
+    with pytest.raises(NoAvailableNodesError):
+        async for response in executor.execute(
+            USER_UUID,
+            API_KEY,
+            None,
+            request,
+        ):
+            pass
+
+
+async def test_no_nodes_no_forward_for_forwarding_request():
+    mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
+    mock_node_repository.select_node = MagicMock(return_value=None)
+
+    mock_inference = MockInference()
+    use_case.peer_nodes_forwarding = MagicMock()
+    use_case.peer_nodes_forwarding.execute = mock_inference.mock_inference
+
+    chat_input = await ChatCompletionRequest(
+        model="llama3", messages=[Message(role="user", content="asd")]
+    ).to_openai_chat_completion()
+    request = InferenceRequest(
+        id="request_id",
+        model="model-1",
+        chat_request=chat_input,
+    )
+
+    executor = use_case.InferenceExecutor(
+        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+    )
+    with pytest.raises(NoAvailableNodesError):
+        async for response in executor.execute(
+            USER_UUID,
+            API_KEY,
+            "distributed-inference-us",
+            request,
+        ):
+            pass
+
+
 # TODO: new test when no nodes and proxy also fails
 async def test_no_nodes_uses_proxy():
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(return_value=None)
+
+    mock_inference_none_response = MockInferenceNoneResponse()
+    use_case.peer_nodes_forwarding = MagicMock()
+    use_case.peer_nodes_forwarding.execute = mock_inference_none_response.mock_inference
 
     mock_inference = MockInference()
     use_case.llm_inference_proxy = MagicMock()
@@ -200,6 +306,8 @@ async def test_no_nodes_uses_proxy():
     result = []
     async for request in executor.execute(
         USER_UUID,
+        API_KEY,
+        None,
         request,
     ):
         result.append(request)
@@ -211,6 +319,10 @@ async def test_no_nodes_and_proxy_also_fails():
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(return_value=None)
+
+    mock_inference_none_response = MockInferenceNoneResponse()
+    use_case.peer_nodes_forwarding = MagicMock()
+    use_case.peer_nodes_forwarding.execute = mock_inference_none_response.mock_inference
 
     mock_inference = MockInferenceError()
     use_case.llm_inference_proxy = MagicMock()
@@ -231,6 +343,8 @@ async def test_no_nodes_and_proxy_also_fails():
     with pytest.raises(NoAvailableNodesError):
         async for _ in executor.execute(
             USER_UUID,
+            API_KEY,
+            None,
             request,
         ):
             pass
@@ -291,6 +405,8 @@ async def test_streaming_no_usage(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        API_KEY,
+        None,
         request,
     ):
         responses.append(response)
@@ -361,6 +477,8 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
+        API_KEY,
         request,
     ):
         responses.append(response)
@@ -417,6 +535,8 @@ async def test_inference_error_stops_loop(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
+        API_KEY,
         request,
     ):
         responses.append(response)
@@ -475,6 +595,8 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
+        None,
+        API_KEY,
         request,
     ):
         responses.append(response)
@@ -492,5 +614,5 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
         TEST_NODE_ID, "request_id"
     )
     mock_node_repository.update_node_health_status.assert_awaited_once_with(
-        TEST_NODE_ID, False
+        TEST_NODE_ID, False, NodeStatus.RUNNING_DEGRADED
     )
