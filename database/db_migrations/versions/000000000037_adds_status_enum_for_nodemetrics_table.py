@@ -19,14 +19,14 @@ depends_on = None
 
 def upgrade():
     op.execute(
-        "CREATE TYPE nodestatus AS ENUM ('CREATED', 'RUNNING', 'RUNNING_BENCHMARKING', 'RUNNING_DEGRADED', 'STOPPED', 'STOPPED_BENCHMARK_FAILED', 'STOPPED_DEGRADED')"
+        "CREATE TYPE nodestatus AS ENUM ('RUNNING', 'RUNNING_BENCHMARKING', 'RUNNING_DEGRADED', 'STOPPED', 'STOPPED_BENCHMARK_FAILED', 'STOPPED_DEGRADED')"
     )
     op.add_column(
         "node_metrics",
         sa.Column(
+
             "status",
             sa.Enum(
-                "CREATED",
                 "RUNNING",
                 "RUNNING_BENCHMARKING",
                 "RUNNING_DEGRADED",
