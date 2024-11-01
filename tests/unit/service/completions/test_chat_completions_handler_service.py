@@ -5,8 +5,14 @@ from unittest.mock import patch
 import pytest
 
 import distributedinference.service.completions.chat_completions_handler_service as service
+import settings
 from distributedinference.domain.rate_limit.entities import RateLimit
 from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
+from distributedinference.service import error_responses
+from distributedinference.service.completions.entities import ChatCompletionRequest
+from distributedinference.service.completions.entities import Function
+from distributedinference.service.completions.entities import Message
+from distributedinference.service.completions.entities import Tool
 from distributedinference.service.completions.streaming_response import (
     StreamingResponseWithStatusCode,
 )
@@ -45,7 +51,7 @@ async def test_execute_no_rate_limit():
     ) as mock_service:
         response = MagicMock(headers={})
         await service.execute(
-            request=MagicMock(stream=False),
+            request=MagicMock(stream=False, tools=None),
             response=response,
             user=MagicMock(),
             forwarding_from=MagicMock(),
@@ -97,7 +103,7 @@ async def test_execute_no_rate_limit_stream():
     ) as mock_stream_service:
         response = MagicMock()
         result = await service.execute(
-            request=MagicMock(stream=True),
+            request=MagicMock(stream=True, tools=None),
             response=response,
             user=MagicMock(),
             forwarding_from=MagicMock(),
@@ -148,7 +154,7 @@ async def test_execute_rate_limited():
         response = MagicMock()
         with pytest.raises(RateLimitError) as exc_info:
             await service.execute(
-                request=MagicMock(),
+                request=MagicMock(tools=None),
                 response=response,
                 user=MagicMock(),
                 forwarding_from=MagicMock(),
@@ -167,6 +173,73 @@ async def test_execute_rate_limited():
         assert exc_info.value.headers["x-ratelimit-remaining-tokens"] == "0"
         assert exc_info.value.headers["x-ratelimit-reset-requests"] == "60s"
         assert exc_info.value.headers["x-ratelimit-reset-tokens"] == "60s"
+
+
+async def test_tools_not_supported_for_model():
+    request = ChatCompletionRequest(
+        messages=[Message(content="content", role="role")],
+        model="mock_model",
+        stream=False,
+        tools=[
+            Tool(
+                type="function", function=Function(name="function_name", parameters={})
+            )
+        ],
+    )
+
+    service.chat_completions_service = AsyncMock()
+    with pytest.raises(error_responses.ValidationTypeError) as e:
+        await service.execute(
+            request=request,
+            response=MagicMock(),
+            user=MagicMock(),
+            forwarding_from=MagicMock(),
+            node_repository=MagicMock(),
+            tokens_repository=AsyncMock(),
+            rate_limit_repository=AsyncMock(),
+            metrics_queue_repository=MagicMock(),
+            analytics=AsyncMock(),
+        )
+        assert e is not None
+
+
+async def test_keeps_tools_from_input():
+    input_model = "llama3.1:70b"
+    request = ChatCompletionRequest(
+        messages=[Message(content="content", role="role")],
+        model=input_model,
+        stream=False,
+        tools=[
+            Tool(
+                type="function", function=Function(name="function_name", parameters={})
+            )
+        ],
+    )
+
+    service.chat_completions_service = AsyncMock()
+    await service.execute(
+        request=request,
+        response=MagicMock(),
+        user=MagicMock(),
+        forwarding_from=MagicMock(),
+        node_repository=MagicMock(),
+        tokens_repository=AsyncMock(),
+        rate_limit_repository=AsyncMock(),
+        metrics_queue_repository=MagicMock(),
+        analytics=AsyncMock(),
+    )
+    call_args = service.chat_completions_service.execute.call_args.args
+    assert call_args[2] == ChatCompletionRequest(
+        messages=[Message(content="content", role="role")],
+        model=settings.MODEL_NAME_MAPPING[input_model],
+        stream=False,
+        tools=[
+            Tool(
+                type="function", function=Function(name="function_name", parameters={})
+            )
+        ],
+        tool_choice=None,
+    )
 
 
 def test_model_name_translation_no_suffix():

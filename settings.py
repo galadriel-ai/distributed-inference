@@ -36,6 +36,10 @@ MODEL_NAME_MAPPING = {
     "llama3.1:405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
     "llama3.1-405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
 }
+MODELS_SUPPORTING_TOOLS = [
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+]
 
 # Rough estimate for 70% of lowest 3090 GPU node benchmark test
 MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = int(
@@ -85,7 +89,6 @@ GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", None)
 
 RUN_CRON_JOBS = os.getenv("RUN_CRON_JOBS", False)
 TESTING_API_KEY = os.getenv("TESTING_API_KEY", "")
-
 
 # Rate limit
 DEFAULT_USAGE_TIER_UUID = "06706644-2409-7efd-8000-3371c5d632d3"
