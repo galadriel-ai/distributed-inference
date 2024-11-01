@@ -189,6 +189,7 @@ class ChatCompletionRequest(BaseModel):
         description="A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.",
         default=None,
     )
+
     # function_call: Union[str, Dict, None] = Field(
     #     description='Controls how the model calls functions. "none" means the model will not call a function and instead generates a message. "auto" means the model can pick between generating a message or calling a function. Specifying a particular function via {"name": "my_function"} forces the model to call that function. "none" is the default when no functions are present. "auto" is the default if functions are present.',
     #     default=None,
@@ -213,33 +214,37 @@ class ChatCompletionRequest(BaseModel):
 
     async def to_openai_chat_completion(self) -> CompletionCreateParams:
         try:
+            dict_input = {
+                "messages": self.messages,
+                "model": self.model,
+                "frequency_penalty": self.frequency_penalty,
+                # "function_call": self.function_call,
+                # "functions": self.functions,
+                "logit_bias": self.logit_bias,
+                "logprobs": self.logprobs,
+                "max_tokens": self.max_tokens,
+                "n": self.n,
+                # "parallel_tool_calls": self.parallel_tool_calls,
+                "presence_penalty": self.presence_penalty,
+                "response_format": self.response_format,
+                "seed": self.seed,
+                # "service_tier": self.service_tier,
+                "stop": self.stop,
+                "stream": self.stream,
+                "stream_options": self.stream_options,
+                "temperature": self.temperature,
+                "top_logprobs": self.top_logprobs,
+                "top_p": self.top_p,
+                "user": self.user,
+            }
+            # vllm (at least <=0.6.3.post1) does not support the "tool_choice" field
+            # even if the dict has it as "None" then vllm will return an error
+            if self.tool_choice:
+                dict_input["tool_choice"] = self.tool_choice
+            if self.tools:
+                dict_input["tools"] = self.tools
             return await async_maybe_transform(
-                {
-                    "messages": self.messages,
-                    "model": self.model,
-                    "frequency_penalty": self.frequency_penalty,
-                    # "function_call": self.function_call,
-                    # "functions": self.functions,
-                    "logit_bias": self.logit_bias,
-                    "logprobs": self.logprobs,
-                    "max_tokens": self.max_tokens,
-                    "n": self.n,
-                    # "parallel_tool_calls": self.parallel_tool_calls,
-                    "presence_penalty": self.presence_penalty,
-                    "response_format": self.response_format,
-                    "seed": self.seed,
-                    # "service_tier": self.service_tier,
-                    "stop": self.stop,
-                    "stream": self.stream,
-                    "stream_options": self.stream_options,
-                    "temperature": self.temperature,
-                    # vllm (at least <=0.6.3.post1) does not support the "tool_choice" field
-                    # "tool_choice": self.tool_choice,
-                    "tools": self.tools,
-                    "top_logprobs": self.top_logprobs,
-                    "top_p": self.top_p,
-                    "user": self.user,
-                },
+                dict_input,
                 completion_create_params.CompletionCreateParams,
             )
         except Exception as e:
