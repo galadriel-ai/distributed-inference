@@ -22,6 +22,7 @@ from distributedinference.repository.node_stats_repository import NodeStatsRepos
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
+from distributedinference.service import error_responses
 from distributedinference.service.api_key import create_api_key_service
 from distributedinference.service.api_key import delete_api_key_service
 from distributedinference.service.api_key import get_api_keys_service
@@ -216,17 +217,31 @@ async def completions(
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),
+    user_repository: UserRepository = Depends(dependencies.get_user_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.DASHBOARD_CHAT_COMPLETIONS, {})
+    )
+    example_api_key = await get_example_api_key_service.execute(user, user_repository)
+    if not example_api_key.api_key:
+        raise error_responses.InternalServerAPIError()
+    updated_user = User(
+        uid=user.uid,
+        name=user.name,
+        email=user.email,
+        usage_tier_id=user.usage_tier_id,
+        username=user.username,
+        profile_data=user.profile_data,
+        authentication_id=user.authentication_id,
+        currently_using_api_key=example_api_key.api_key,
     )
     # Force streaming
     request.stream = True
     return await chat_completions_handler_service.execute(
         request,
         response,
-        user,
+        updated_user,
         forwarding_from,
         node_repository,
         tokens_repository,
