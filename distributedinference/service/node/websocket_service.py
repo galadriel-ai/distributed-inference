@@ -17,9 +17,11 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
+from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeStatus
+from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
@@ -203,10 +205,9 @@ async def _websocket_error(
 async def _get_new_node_status(
     node_id: UUID, node_repository: NodeRepository
 ) -> NodeStatus:
-    node_status = await node_repository.get_node_status(node_id)
-    if node_status == NodeStatus.RUNNING_DEGRADED:
-        return NodeStatus.STOPPED_DEGRADED
-    return NodeStatus.STOPPED
+    return await node_status_transition.execute(
+        node_repository, node_id, NodeStatusEvent.STOP
+    )
 
 
 async def _check_before_connecting(
