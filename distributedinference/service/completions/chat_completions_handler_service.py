@@ -16,6 +16,7 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.service import error_responses
 from distributedinference.service.completions import chat_completions_service
 from distributedinference.service.completions import chat_completions_stream_service
 from distributedinference.service.completions.entities import ChatCompletion
@@ -44,8 +45,10 @@ async def execute(
 ) -> Union[StreamingResponse, ChatCompletion]:
     request.model = _match_model_name(request.model)
 
-    if request.model not in settings.MODELS_SUPPORTING_TOOLS:
-        request.tools = None
+    if request.tools and request.model not in settings.MODELS_SUPPORTING_TOOLS:
+        raise error_responses.ValidationTypeError(
+            "The given model does not support tools"
+        )
 
     rate_limit_info = await rate_limit_use_case.execute(
         request.model, user, tokens_repository, rate_limit_repository
