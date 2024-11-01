@@ -233,7 +233,7 @@ class ChatCompletionRequest(BaseModel):
                     "stream": self.stream,
                     "stream_options": self.stream_options,
                     "temperature": self.temperature,
-                    # llama3.1 does not support the "tool_choice" field apparently
+                    # vllm (at least <=0.6.3.post1) does not support the "tool_choice" field
                     # "tool_choice": self.tool_choice,
                     "tools": self.tools,
                     "top_logprobs": self.top_logprobs,

@@ -184,7 +184,6 @@ async def test_removes_tools_from_input():
                 type="function", function=Function(name="function_name", parameters={})
             )
         ],
-        tool_choice="auto",
     )
 
     service.chat_completions_service = AsyncMock()
@@ -220,7 +219,6 @@ async def test_keeps_tools_from_input():
                 type="function", function=Function(name="function_name", parameters={})
             )
         ],
-        tool_choice="auto",
     )
 
     service.chat_completions_service = AsyncMock()

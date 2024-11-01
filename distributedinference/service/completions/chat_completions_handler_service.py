@@ -46,8 +46,6 @@ async def execute(
 
     if request.model not in settings.MODELS_SUPPORTING_TOOLS:
         request.tools = None
-    # vllm does not support this parameter..
-    request.tool_choice = None
 
     rate_limit_info = await rate_limit_use_case.execute(
         request.model, user, tokens_repository, rate_limit_repository
