@@ -87,6 +87,7 @@ NODE_HEALTH_CHECK_INTERVAL_SECONDS = int(os.getenv("NODE_HEALTH_CHECK_INTERVAL",
 GRAFANA_API_BASE_URL = os.getenv("GRAFANA_API_BASE_URL", None)
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", None)
 
+# If it is False, it will still run the noise job
 RUN_CRON_JOBS = os.getenv("RUN_CRON_JOBS", False)
 TESTING_API_KEY = os.getenv("TESTING_API_KEY", "")
 
