@@ -6,7 +6,7 @@ import openai
 import settings
 from distributedinference import api_logger
 
-MAX_REQUESTS = 45
+MAX_REQUESTS = 22
 
 logger = api_logger.get()
 

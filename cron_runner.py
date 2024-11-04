@@ -20,16 +20,20 @@ async def start_cron_jobs():
 
     tasks = [
         (_run_api_usage_job, "API usage noise", 300),
-        (_run_billing_job, "User billing job", 100),
     ]
-    if settings.SLACK_CHANNEL_ID and settings.SLACK_OAUTH_TOKEN:
-        tasks.append(
-            (_run_credits_notification_job, "Credits notification job", 3600 * 6)
-        )
-    else:
-        logger.info(
-            "Not running slack credits notification job because of missing env values"
-        )
+    if settings.RUN_CRON_JOBS:
+        tasks = [
+            (_run_api_usage_job, "API usage noise", 300),
+            (_run_billing_job, "User billing job", 100),
+        ]
+        if settings.SLACK_CHANNEL_ID and settings.SLACK_OAUTH_TOKEN:
+            tasks.append(
+                (_run_credits_notification_job, "Credits notification job", 3600 * 6)
+            )
+        else:
+            logger.info(
+                "Not running slack credits notification job because of missing env values"
+            )
 
     await asyncio.gather(*[_cron_runner(*t) for t in tasks])
     logger.info("Cron jobs done")
