@@ -1,5 +1,4 @@
 import asyncio
-import time
 from typing import Awaitable
 from typing import Callable
 
@@ -66,8 +65,4 @@ async def _run_credits_notification_job():
 
 
 if __name__ == "__main__":
-    if settings.RUN_CRON_JOBS:
-        asyncio.run(start_cron_jobs())
-    else:
-        while True:
-            time.sleep(100000)
+    asyncio.run(start_cron_jobs())
