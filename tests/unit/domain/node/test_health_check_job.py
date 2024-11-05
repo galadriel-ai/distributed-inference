@@ -16,6 +16,7 @@ from distributedinference.analytics.analytics import (
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.domain.node import health_check_job
+from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 
 @pytest.fixture
@@ -27,7 +28,9 @@ def mock_node():
 
 @pytest.fixture
 def mock_node_repository():
-    return AsyncMock(spec=NodeRepository)
+    repository = AsyncMock(spec=NodeRepository)
+    repository.get_node_status = AsyncMock(return_value=NodeStatus.RUNNING)
+    return repository
 
 
 @pytest.fixture
@@ -35,9 +38,18 @@ def mock_analytics():
     return MagicMock(spec=Analytics)
 
 
+@pytest.fixture
+def mock_protocol_handler():
+    return MagicMock(spec=ProtocolHandler)
+
+
 @patch("distributedinference.domain.node.health_check_job._send_health_check_inference")
 async def test_check_node_health_healthy(
-    mock_send_health_check_inference, mock_node, mock_node_repository, mock_analytics
+    mock_send_health_check_inference,
+    mock_node,
+    mock_node_repository,
+    mock_analytics,
+    mock_protocol_handler,
 ):
     healthy_response = CheckHealthResponse(
         node_id=mock_node.uid, is_healthy=True, error=None
@@ -45,10 +57,10 @@ async def test_check_node_health_healthy(
     mock_send_health_check_inference.return_value = healthy_response
 
     await health_check_job._check_node_health(
-        mock_node, mock_node_repository, mock_analytics
+        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
     )
 
-    mock_node_repository.update_node_health_status.assert_called_once_with(
+    mock_node_repository.update_node_status.assert_called_once_with(
         mock_node.uid, True, NodeStatus.RUNNING
     )
     mock_analytics.track_event.assert_called_once_with(
@@ -61,7 +73,11 @@ async def test_check_node_health_healthy(
 
 @patch("distributedinference.domain.node.health_check_job._send_health_check_inference")
 async def test_check_node_health_unhealthy(
-    mock_send_health_check_inference, mock_node, mock_node_repository, mock_analytics
+    mock_send_health_check_inference,
+    mock_node,
+    mock_node_repository,
+    mock_analytics,
+    mock_protocol_handler,
 ):
     unhealthy_response = CheckHealthResponse(
         node_id=mock_node.uid,
@@ -74,10 +90,10 @@ async def test_check_node_health_unhealthy(
     mock_send_health_check_inference.return_value = unhealthy_response
 
     await health_check_job._check_node_health(
-        mock_node, mock_node_repository, mock_analytics
+        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
     )
 
-    mock_node_repository.update_node_health_status.assert_called_once_with(
+    mock_node_repository.update_node_status.assert_called_once_with(
         mock_node.uid, False, NodeStatus.RUNNING_DEGRADED
     )
     mock_analytics.track_event.assert_called_once_with(
@@ -89,15 +105,15 @@ async def test_check_node_health_unhealthy(
 
 
 async def test_check_node_health_exception(
-    mock_node, mock_node_repository, mock_analytics
+    mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
 ):
     mock_node_repository.receive_for_request.side_effect = Exception("Ooops")
 
     await health_check_job._check_node_health(
-        mock_node, mock_node_repository, mock_analytics
+        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
     )
 
-    mock_node_repository.update_node_health_status.assert_not_called()  # Since exception occurs
+    mock_node_repository.update_node_status.assert_not_called()  # Since exception occurs
     mock_analytics.track_event.assert_called_once_with(
         mock_node.user_id,
         AnalyticsEvent(

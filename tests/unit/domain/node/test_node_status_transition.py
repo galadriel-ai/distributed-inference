@@ -17,10 +17,21 @@ def _get_node_repository(return_status: Optional[NodeStatus]) -> NodeRepository:
 
 
 async def test_transitions():
+    # Event, Current Status, Expected Status after transition
     transitions = [
         # Start
-        (NodeStatusEvent.START, NodeStatus.RUNNING, None),
         (NodeStatusEvent.START, None, NodeStatus.RUNNING_BENCHMARKING),
+        (NodeStatusEvent.START, NodeStatus.RUNNING, NodeStatus.RUNNING),
+        (
+            NodeStatusEvent.START,
+            NodeStatus.RUNNING_BENCHMARKING,
+            NodeStatus.RUNNING_BENCHMARKING,
+        ),
+        (
+            NodeStatusEvent.START,
+            NodeStatus.RUNNING_DEGRADED,
+            NodeStatus.RUNNING_DEGRADED,
+        ),
         (NodeStatusEvent.START, NodeStatus.STOPPED, NodeStatus.RUNNING),
         (
             NodeStatusEvent.START,
@@ -44,20 +55,18 @@ async def test_transitions():
             NodeStatus.RUNNING_DEGRADED,
             NodeStatus.STOPPED_DEGRADED,
         ),
-        # Benchmark Succeed
-        (
-            NodeStatusEvent.BENCHMARK_SUCCEED,
-            NodeStatus.RUNNING_BENCHMARKING,
-            NodeStatus.RUNNING,
-        ),
-        # Benchmark Failed
-        (
-            NodeStatusEvent.BENCHMARK_FAIL,
-            NodeStatus.RUNNING_BENCHMARKING,
-            NodeStatus.STOPPED_BENCHMARK_FAILED,
-        ),
         # Degraded
         (NodeStatusEvent.DEGRADED, NodeStatus.RUNNING, NodeStatus.RUNNING_DEGRADED),
+        (
+            NodeStatusEvent.DEGRADED,
+            NodeStatus.RUNNING_BENCHMARKING,
+            NodeStatus.STOPPED_BENCHMARK_FAILED,  # STOP EVENT!
+        ),
+        (
+            NodeStatusEvent.DEGRADED,
+            NodeStatus.RUNNING_DEGRADED,
+            NodeStatus.RUNNING_DEGRADED,
+        ),
     ]
 
     for event, status, expected in transitions:

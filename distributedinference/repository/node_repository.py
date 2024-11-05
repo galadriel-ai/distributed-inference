@@ -12,6 +12,7 @@ from uuid import UUID
 from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionChunk
 import sqlalchemy
+from fastapi import status as http_status
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
@@ -115,6 +116,13 @@ SELECT
 FROM node_metrics
 LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
 WHERE node_metrics.node_info_id = ANY(:node_ids);
+"""
+
+SQL_GET_NODES_FOR_BENCHMARKING = """
+SELECT
+    node_metrics.node_info_id
+FROM node_metrics
+WHERE node_metrics.node_info_id = ANY(:node_ids) AND node_metrics.status = :status;
 """
 
 SQL_UPDATE_CONNECTED_AT = """
@@ -501,6 +509,13 @@ class NodeRepository:
                 )
             del self._connected_nodes[node_id]
 
+    async def close_node_connection(self, node_id: UUID):
+        if node_id in self._connected_nodes:
+            await self._connected_nodes[node_id].websocket.close(
+                code=http_status.WS_1008_POLICY_VIOLATION,
+                reason="No Inference result",
+            )
+
     # pylint: disable=W0613
     def select_node(self, model: str) -> Optional[ConnectedNode]:
         if not self._connected_nodes:
@@ -518,7 +533,7 @@ class NodeRepository:
         return random.choice(eligible_nodes)
 
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
-        if not node.is_self_hosted and not node.is_healthy:
+        if not node.is_self_hosted and not node.is_node_healthy():
             return False
         if node.is_datacenter_gpu():
             return (
@@ -616,6 +631,22 @@ class NodeRepository:
         # returns only in-memory unhealthy nodes
         return [node for node in self._connected_nodes.values() if not node.is_healthy]
 
+    @async_timer("node_repository.get_nodes_for_benchmarking", logger=logger)
+    async def get_nodes_for_benchmarking(self) -> List[ConnectedNode]:
+        connected_node_ids = list(self._connected_nodes.keys())
+        data = {
+            "node_ids": connected_node_ids,
+            "status": NodeStatus.RUNNING_BENCHMARKING.value,
+        }
+        node_ids = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_NODES_FOR_BENCHMARKING), data
+            )
+            for row in rows:
+                node_ids.append(row.node_info_id)
+        return [node for node in self._connected_nodes.values() if node.uid in node_ids]
+
     # Insert if it doesn't exist
     @async_timer("node_repository.set_node_connection_timestamp", logger=logger)
     async def set_node_connection_timestamp(
@@ -653,8 +684,8 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_CONNECTED_AT), data)
             await session.commit()
 
-    @async_timer("node_repository.update_node_health_status", logger=logger)
-    async def update_node_health_status(
+    @async_timer("node_repository.update_node_status", logger=logger)
+    async def update_node_status(
         self, node_id: UUID, is_healthy: bool, status: NodeStatus
     ):
         data = {
@@ -665,6 +696,7 @@ class NodeRepository:
         }
         if node_id in self._connected_nodes:
             self._connected_nodes[node_id].is_healthy = is_healthy
+            self._connected_nodes[node_id].node_status = status
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_IS_HEALTHY), data)
             await session.commit()
@@ -923,6 +955,7 @@ class NodeRepository:
                 )
             except Exception:
                 logger.warning(f"Failed to parse chunk, request_id={request_id}")
+                return None
         return None
 
     async def cleanup_request(self, node_id: UUID, request_id: str):

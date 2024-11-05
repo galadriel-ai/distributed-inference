@@ -31,6 +31,15 @@ NODE_INFO = NodeInfo(
 )
 
 
+@pytest.fixture
+def node_repository() -> NodeRepository:
+    node_repository = AsyncMock(spec=NodeRepository)
+    node_repository.register_node = Mock(return_value=True)
+    node_repository.get_node_metrics_by_ids = AsyncMock(return_value={})
+    node_repository.get_node_status = AsyncMock(return_value=NodeStatus.RUNNING)
+    return node_repository
+
+
 async def test_execute_node_no_model_header():
     websocket = AsyncMock(spec=WebSocket)
     user = User(
@@ -303,7 +312,7 @@ async def test_execute_node_already_connected():
     node_repository.register_node.assert_called_once()
 
 
-async def test_execute_websocket_disconnect():
+async def test_execute_websocket_disconnect(node_repository: NodeRepository):
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
@@ -319,10 +328,6 @@ async def test_execute_websocket_disconnect():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
-
-    node_repository.register_node = Mock(return_value=True)
-    node_repository.get_node_metrics_by_ids = AsyncMock(return_value={})
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
@@ -355,8 +360,7 @@ async def test_execute_websocket_disconnect():
     )
 
 
-@pytest.mark.asyncio
-async def test_execute_protocols():
+async def test_execute_protocols(node_repository: NodeRepository):
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
@@ -366,9 +370,6 @@ async def test_execute_protocols():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
-    node_repository.get_node_benchmark = AsyncMock(return_value=None)
-    node_repository.get_node_metrics_by_ids = AsyncMock(return_value={})
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
     ping_pong_protocol.add_node = Mock()
     ping_pong_protocol.remove_node = AsyncMock()

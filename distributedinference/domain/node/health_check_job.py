@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from uuid_extensions import uuid7
 from openai._utils import async_maybe_transform
@@ -12,15 +13,24 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
+from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import CheckHealthResponse
 from distributedinference.domain.node.entities import NodeStatus
+from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 
 from distributedinference.repository.node_repository import ConnectedNode
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.completions.entities import Message
+from distributedinference.service.node.protocol.health_check.protocol import (
+    HealthCheckProtocol,
+)
+from distributedinference.service.node.protocol.ping_pong_protocol import (
+    PingPongProtocol,
+)
+from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 logger = api_logger.get()
 
@@ -28,54 +38,47 @@ logger = api_logger.get()
 async def execute(
     node_repository: NodeRepository,
     analytics: Analytics,
+    protocol_handler: ProtocolHandler,
 ) -> None:
+    """
+    Checks for unhealthy nodes and nodes that are marked as RUNNING_BENCHMARKING.
+
+    Sends actual inference request and checks for the result. If result arrives on time
+    and is valid the Node will be marked back again as RUNNING
+    """
     timeout = settings.HEALTH_CHECK_JOB_TIMEOUT_BETWEEN_RUNS_SECONDS
     while True:
         await asyncio.sleep(timeout)
         logger.debug("Running health check job!")
-        try:
-            nodes = node_repository.get_unhealthy_nodes()
-        except Exception:
-            logger.error(
-                f"Failed to get unhealthy nodes, restarting in {timeout} seconds",
-                exc_info=True,
-            )
-            continue
+        nodes = await _get_nodes_for_check(node_repository)
         for node in nodes:
-            await _check_node_health(node, node_repository, analytics)
+            await _check_node_health(node, node_repository, analytics, protocol_handler)
 
 
-async def _check_node_health(
-    node: ConnectedNode, node_repository: NodeRepository, analytics: Analytics
-) -> None:
-    is_healthy = False
+async def _get_nodes_for_check(
+    node_repository: NodeRepository,
+) -> List[ConnectedNode]:
+    result = []
     try:
-        response = await _send_health_check_inference(node, node_repository)
-        logger.debug(
-            f"Node health check result, node_id={node.uid}, is_healthy={response.is_healthy}"
-        )
-        is_healthy = response.is_healthy
-        status = NodeStatus.RUNNING
-        if not is_healthy:
-            status = NodeStatus.RUNNING_DEGRADED
-        await node_repository.update_node_health_status(node.uid, is_healthy, status)
-
+        nodes = node_repository.get_unhealthy_nodes()
+        result += nodes
     except Exception:
         logger.error(
-            f"Failed to check node health, node_id={node.uid}",
+            "Failed to get unhealthy nodes, restarting...",
             exc_info=True,
         )
-    finally:
-        analytics.track_event(
-            node.user_id,
-            AnalyticsEvent(
-                EventName.NODE_HEALTH,
-                {"node_id": node.uid, "is_healthy": is_healthy},
-            ),
+
+    try:
+        nodes = await node_repository.get_nodes_for_benchmarking()
+        result += nodes
+    except Exception:
+        logger.error(
+            "Failed to get nodes for benchmarking, restarting...", exc_info=True
         )
 
+    return result
 
-# pylint: disable=R0912, R0913
+
 async def _send_health_check_inference(
     node: ConnectedNode,
     node_repository: NodeRepository,
@@ -110,8 +113,54 @@ async def _send_health_check_inference(
                     is_healthy=False,
                     error=response.error,
                 )
+            # TODO: what if node returns empty chunks? We should still return something?
+            if not response.chunk:
+                return CheckHealthResponse(
+                    node_id=node.uid,
+                    is_healthy=False,
+                    error=None,
+                )
     finally:
         await node_repository.cleanup_request(node.uid, request.id)
+
+
+# pylint: disable=R0912, R0913
+async def _check_node_health(
+    node: ConnectedNode,
+    node_repository: NodeRepository,
+    analytics: Analytics,
+    protocol_handler: ProtocolHandler,
+) -> None:
+    is_healthy = False
+    try:
+        response = await _send_health_check_inference(node, node_repository)
+        logger.debug(
+            f"Node health check result, node_id={node.uid}, is_healthy={response.is_healthy}"
+        )
+        is_healthy = response.is_healthy
+        status = NodeStatus.RUNNING
+        if not is_healthy:
+            status = await node_status_transition.execute(
+                node_repository, node.uid, NodeStatusEvent.DEGRADED
+            )
+        if status == NodeStatus.STOPPED_BENCHMARK_FAILED:
+            await _disconnect_node(node, node_repository, protocol_handler, status)
+
+        await node_repository.update_node_status(node.uid, is_healthy, status)
+
+    except Exception:
+        logger.error(
+            f"Failed to check node health, node_id={node.uid}",
+            exc_info=True,
+        )
+    finally:
+        analytics.track_event(
+            node.user_id,
+            AnalyticsEvent(
+                EventName.NODE_HEALTH,
+                {"node_id": node.uid, "is_healthy": is_healthy},
+            ),
+        )
 
 
 async def _get_health_check_request(node: ConnectedNode) -> CompletionCreateParams:
@@ -128,3 +177,22 @@ async def _get_health_check_request(node: ConnectedNode) -> CompletionCreatePara
     except Exception as e:
         logger.warning("Failed to create health check request", exc_info=True)
         raise e
+
+
+async def _disconnect_node(
+    node: ConnectedNode,
+    node_repository: NodeRepository,
+    protocol_handler: ProtocolHandler,
+    node_status: NodeStatus,
+):
+    await node_repository.close_node_connection(node.uid)
+    node_repository.deregister_node(node.uid)
+    await node_repository.update_node_to_disconnected(node.uid, node_status)
+    ping_pong_protocol: PingPongProtocol = protocol_handler.get(
+        settings.PING_PONG_PROTOCOL_NAME
+    )
+    health_check_protocol: HealthCheckProtocol = protocol_handler.get(
+        HealthCheckProtocol.PROTOCOL_NAME
+    )
+    await ping_pong_protocol.remove_node_by_uid(node.uid)
+    await health_check_protocol.remove_node_by_uid(node.uid)

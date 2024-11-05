@@ -11,7 +11,6 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
 
-import settings
 from distributedinference.domain.node import run_inference_use_case as use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceError
@@ -39,7 +38,14 @@ def mock_websocket():
 def connected_node_factory(mock_websocket):
     def _create_node(uid, model="model"):
         return ConnectedNode(
-            uid, uuid1(), model, 16000, int(time.time()), mock_websocket, {}
+            uid,
+            uuid1(),
+            model,
+            16000,
+            int(time.time()),
+            mock_websocket,
+            {},
+            NodeStatus.RUNNING,
         )
 
     return _create_node
@@ -575,7 +581,8 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
         ]
     )
     mock_node_repository.cleanup_request = AsyncMock()
-    mock_node_repository.update_node_health_status = AsyncMock()
+    mock_node_repository.update_node_status = AsyncMock()
+    mock_node_repository.get_node_status = AsyncMock(return_value=NodeStatus.RUNNING)
 
     chat_input = await ChatCompletionRequest(
         model="llama3",
@@ -613,6 +620,6 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     mock_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
-    mock_node_repository.update_node_health_status.assert_awaited_once_with(
+    mock_node_repository.update_node_status.assert_awaited_once_with(
         TEST_NODE_ID, False, NodeStatus.RUNNING_DEGRADED
     )

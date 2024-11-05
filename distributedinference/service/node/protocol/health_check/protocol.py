@@ -23,7 +23,6 @@ from distributedinference.service.node.protocol.health_check.entities import (
 
 logger = api_logger.get()
 
-
 SUPPORTED_NODE_VERSION = "0.0.15"
 
 
@@ -38,7 +37,6 @@ class NodeHealthCheckInfo:
 
 
 class HealthCheckProtocol:
-
     PROTOCOL_NAME = "health-check"
     PROTOCOL_VERSION = "1.0"
 
@@ -120,6 +118,12 @@ class HealthCheckProtocol:
             f"{self.PROTOCOL_NAME}: Node {node_id} has been deleted from the active nodes"
         )
         return True
+
+    async def remove_node_by_uid(self, node_uid: UUID) -> bool:
+        for node_id, node in self.active_nodes.items():
+            if node.node_uuid == node_uid:
+                return await self.remove_node(node_id)
+        return False
 
     async def _send_health_check_requests(self):
         current_time = _current_milli_time()

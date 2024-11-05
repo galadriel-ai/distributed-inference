@@ -16,12 +16,13 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference import api_logger
 from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
+from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import NodeMetricsIncrement
-from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
+from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -280,9 +281,10 @@ class InferenceExecutor:
         )
 
     async def _mark_node_as_unhealthy(self, node: ConnectedNode) -> None:
-        await self.node_repository.update_node_health_status(
-            node.uid, False, NodeStatus.RUNNING_DEGRADED
+        status = await node_status_transition.execute(
+            self.node_repository, node.uid, NodeStatusEvent.DEGRADED
         )
+        await self.node_repository.update_node_status(node.uid, False, status)
         self.analytics.track_event(
             node.user_id,
             AnalyticsEvent(

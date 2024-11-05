@@ -51,6 +51,7 @@ async def lifespan(_: FastAPI):
         health_check_job.execute(
             dependencies.get_node_repository(),
             dependencies.get_analytics(),
+            dependencies.get_protocol_handler(),
         )
     )
     yield
