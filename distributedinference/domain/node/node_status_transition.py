@@ -41,14 +41,32 @@ logger = api_logger.get()
 
 async def execute(
     node_repository: NodeRepository, node_id: UUID, event: NodeStatusEvent
-) -> Optional[NodeStatus]:
+) -> NodeStatus:
     status = await node_repository.get_node_status(node_id=node_id)
-    logger.debug(f"Node Status Transition, status: {status}, event: {event}")
 
     # TODO: what if status in incorrect state?
     if event == event.START:
-        return START_TRANSITIONS.get(status)
+        status = START_TRANSITIONS.get(status)
+        if not status:
+            _print_error(status, event)
+            status = NodeStatus.RUNNING
+        return status
     if event == event.STOP:
-        return STOP_TRANSITIONS.get(status)
+        status = STOP_TRANSITIONS.get(status)
+        if not status:
+            _print_error(status, event)
+            status = NodeStatus.STOPPED_DEGRADED
+        return status
     if event == event.DEGRADED:
-        return DEGRADED_TRANSITIONS.get(status)
+        status = DEGRADED_TRANSITIONS.get(status)
+        if not status:
+            _print_error(status, event)
+            status = NodeStatus.STOPPED_DEGRADED
+        return status
+
+
+def _print_error(status, event):
+    logger.error(
+        f"Failed to do a valid Node Status Transition, current status: {status}"
+        f", event: {event}"
+    )

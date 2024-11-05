@@ -118,7 +118,7 @@ LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
 WHERE node_metrics.node_info_id = ANY(:node_ids);
 """
 
-SQL_GET_NODES_FOR_BENCHMARKING = """
+SQL_GET_CONNECTED_NODES_BY_STATUS = """
 SELECT
     node_metrics.node_info_id
 FROM node_metrics
@@ -641,7 +641,7 @@ class NodeRepository:
         node_ids = []
         async with self._session_provider_read.get() as session:
             rows = await session.execute(
-                sqlalchemy.text(SQL_GET_NODES_FOR_BENCHMARKING), data
+                sqlalchemy.text(SQL_GET_CONNECTED_NODES_BY_STATUS), data
             )
             for row in rows:
                 node_ids.append(row.node_info_id)

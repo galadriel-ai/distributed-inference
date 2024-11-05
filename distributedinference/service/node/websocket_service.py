@@ -58,8 +58,6 @@ async def execute(
 
     node_uid = node_info.node_id
     connect_time = time.time()
-    # TODO: set NodeStatus to RUNNING_BENCHMARKING at first!
-    # TODO: what if invalid status transition?
     node_status = await node_status_transition.execute(
         node_repository, node_uid, NodeStatusEvent.START
     )
