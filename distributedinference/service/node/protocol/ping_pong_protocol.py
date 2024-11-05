@@ -179,6 +179,12 @@ class PingPongProtocol:
         )
         return True
 
+    async def remove_node_by_uid(self, node_uid: UUID) -> bool:
+        for node_id, node in self.active_nodes.items():
+            if node.node_uuid == node_uid:
+                return await self.remove_node(node_id)
+        return False
+
     async def send_pings(self):
         current_time = _current_milli_time()
         for node_id, node_info in self.active_nodes.items():

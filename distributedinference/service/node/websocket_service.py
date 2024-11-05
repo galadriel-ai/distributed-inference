@@ -17,9 +17,11 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
+from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeStatus
+from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.node_repository import NodeRepository
@@ -55,6 +57,13 @@ async def execute(
     )
 
     node_uid = node_info.node_id
+    connect_time = time.time()
+    node_status = await node_status_transition.execute(
+        node_repository, node_uid, NodeStatusEvent.START
+    )
+    await node_repository.set_node_connection_timestamp(
+        node_uid, model_name, datetime.fromtimestamp(connect_time), node_status
+    )
     node = ConnectedNode(
         uid=node_uid,
         user_id=user.uid,
@@ -64,6 +73,7 @@ async def execute(
         websocket=websocket,
         request_incoming_queues={},
         is_self_hosted=user.is_self_hosted_nodes_provider(),
+        node_status=node_status,
     )
     logger.info(f"Node {node_uid} connected")
     analytics.track_event(
@@ -74,11 +84,6 @@ async def execute(
         ),
     )
 
-    connect_time = time.time()
-    # TODO: set NodeStatus to RUNNING_BENCHMARKING at first!
-    await node_repository.set_node_connection_timestamp(
-        node.uid, model_name, datetime.fromtimestamp(connect_time), NodeStatus.RUNNING
-    )
     if not node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
         raise WebSocketException(
@@ -203,10 +208,9 @@ async def _websocket_error(
 async def _get_new_node_status(
     node_id: UUID, node_repository: NodeRepository
 ) -> NodeStatus:
-    node_status = await node_repository.get_node_status(node_id)
-    if node_status == NodeStatus.RUNNING_DEGRADED:
-        return NodeStatus.STOPPED_DEGRADED
-    return NodeStatus.STOPPED
+    return await node_status_transition.execute(
+        node_repository, node_id, NodeStatusEvent.STOP
+    )
 
 
 async def _check_before_connecting(

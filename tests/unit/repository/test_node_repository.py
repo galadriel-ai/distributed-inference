@@ -12,6 +12,7 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
     SQL_INCREMENT_NODE_METRICS,
@@ -55,6 +56,7 @@ def connected_node_factory(mock_websocket):
         small_node=False,
         datacenter_node=False,
         is_self_hosted=False,
+        node_status=NodeStatus.RUNNING,
         is_healthy=True,
     ):
         vram = 8000 if small_node else 16000
@@ -68,6 +70,7 @@ def connected_node_factory(mock_websocket):
             int(time.time()),
             mock_websocket,
             {},
+            node_status,
             is_self_hosted,
             is_healthy,
         )

@@ -110,6 +110,7 @@ class ConnectedNode:
     connected_at: int  # in seconds
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
+    node_status: NodeStatus
     is_self_hosted: bool = False
     is_healthy: bool = True
 
@@ -121,6 +122,9 @@ class ConnectedNode:
 
     def can_handle_parallel_requests(self) -> bool:
         return self.vram > 8000  # 8GB vram is needed to handle parallel requests
+
+    def is_node_healthy(self) -> bool:
+        return self.is_healthy and self.node_status == NodeStatus.RUNNING
 
     @property
     def current_uptime(self) -> int:
