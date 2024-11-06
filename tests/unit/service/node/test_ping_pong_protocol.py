@@ -117,7 +117,7 @@ async def test_handler_invalid_api_ping_time(ping_pong_protocol):
 async def test_handler_send_reconnect_request(ping_pong_protocol):
     # Setup
     ping_pong_protocol._send_node_reconnect_request = AsyncMock()
-    current_time = round(time.time() * 1000)
+    current_time = time.time_ns() // 1_000_000
     ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
@@ -147,7 +147,7 @@ async def test_handler_not_sent_reconnect_request_because_api_ping_too_many_none
 ):
     # Setup
     ping_pong_protocol._send_node_reconnect_request = AsyncMock()
-    current_time = round(time.time() * 1000)
+    current_time = time.time_ns() // 1_000_000
     ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
@@ -177,7 +177,7 @@ async def test_handler_not_sent_reconnect_request_because_api_ping_too_high(
 ):
     # Setup
     ping_pong_protocol._send_node_reconnect_request = AsyncMock()
-    current_time = round(time.time() * 1000)
+    current_time = time.time_ns() // 1000000
     ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
@@ -208,7 +208,7 @@ async def test_handler_not_sent_reconnect_request_because_api_ping_too_high(
 @pytest.mark.asyncio
 async def test_job_check_for_pongs(ping_pong_protocol):
     # Setup
-    current_time = round(time.time() * 1000)
+    current_time = time.time_ns() // 1_000_000
     ping_pong_protocol.active_nodes = {
         "node1": NodePingInfo(
             websocket=AsyncMock(spec=WebSocket),
@@ -279,7 +279,7 @@ async def test_remove_node(ping_pong_protocol):
 async def test_got_pong_on_time(ping_pong_protocol):
     # Setup
     node_id = "test_node"
-    current_time = round(time.time() * 1000)
+    current_time = time.time_ns() // 1_000_000
     ping_pong_protocol.active_nodes[node_id] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
