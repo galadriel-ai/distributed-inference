@@ -20,7 +20,6 @@ from distributedinference.domain.metrics import sql_engine_metrics
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
-from distributedinference.repository.tokens_repository import TokensRepository
 
 TAG = "Metrics"
 router = APIRouter(prefix="/metrics")
@@ -75,7 +74,6 @@ node_costs_gauge = Gauge(
 @router.get("", include_in_schema=False)
 async def get_metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     metrics_repository: MetricsRepository = Depends(
         dependencies.get_metrics_repository
     ),
@@ -83,7 +81,7 @@ async def get_metrics(
     registry = _get_registry()
     _clear()
 
-    nodes = await node_repository.get_connected_node_benchmarks()
+    nodes = await metrics_repository.get_connected_node_benchmarks()
     node_model_names = {node.node_id: node.model_name for node in nodes}
     for node in nodes:
         network_nodes_gauge.labels(node.model_name).inc()
@@ -111,7 +109,7 @@ async def get_metrics(
         if metrics.rtt:
             node_rtt_gauge.labels(node_uid).set(metrics.rtt)
 
-    await _set_node_tokens(tokens_repository, connected_node_ids)
+    await _set_node_tokens(metrics_repository, connected_node_ids)
     await _set_node_costs(nodes)
     await sql_engine_metrics.execute()
     await node_status_metrics.execute(metrics_repository)
@@ -141,10 +139,10 @@ def _clear():
 
 
 async def _set_node_tokens(
-    tokens_repository: TokensRepository,
+    metrics_repository: MetricsRepository,
     connected_node_ids: List[UUID],
 ):
-    node_usage_total_tokens = await tokens_repository.get_total_tokens_by_node_ids(
+    node_usage_total_tokens = await metrics_repository.get_total_tokens_by_node_ids(
         connected_node_ids
     )
 

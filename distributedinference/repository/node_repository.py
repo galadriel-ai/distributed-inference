@@ -16,7 +16,6 @@ from fastapi import status as http_status
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.domain.node.entities import NodeMetrics
@@ -282,20 +281,6 @@ SET
     last_updated_at = :last_updated_at;
 """
 
-SQL_GET_CONNECTED_NODES = """
-SELECT
-    ni.id,
-    ni.name,
-    ni.gpu_model,
-    ni.gpu_count,
-    nb.model_name,
-    nb.tokens_per_second AS benchmark_tokens_per_second
-FROM node_info ni
-LEFT JOIN node_metrics nm on ni.id = nm.node_info_id
-LEFT JOIN node_benchmark nb on ni.id = nb.node_id AND nm.model_name = nb.model_name
-WHERE nm.connected_at IS NOT NULL;
-"""
-
 SQL_GET_CONNECTED_NODE_COUNT = """
 SELECT COUNT(id) AS node_count
 FROM node_metrics
@@ -545,21 +530,6 @@ class NodeRepository:
 
         return node.active_requests_count() == 1
 
-    @async_timer("node_repository.get_connected_node_benchmarks", logger=logger)
-    async def get_connected_node_benchmarks(self) -> List[NodeBenchmark]:
-        async with self._session_provider_read.get() as session:
-            rows = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODES))
-            return [
-                NodeBenchmark(
-                    node_id=row.id,
-                    model_name=row.model_name,
-                    benchmark_tokens_per_second=row.benchmark_tokens_per_second,
-                    gpu_model=row.gpu_model,
-                    gpu_count=row.gpu_count,
-                )
-                for row in rows
-            ]
-
     @async_timer("node_repository.get_connected_nodes_count", logger=logger)
     async def get_connected_nodes_count(self) -> int:
         async with self._session_provider_read.get() as session:
@@ -723,31 +693,6 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
             await session.commit()
 
-    @async_timer("node_repository.get_node_info", logger=logger)
-    async def get_node_info(self, user_id: UUID, node_id: UUID) -> Optional[NodeInfo]:
-        data = {"id": node_id, "user_profile_id": user_id}
-        async with self._session_provider_read.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_NODE_INFO), data)
-            row = result.first()
-            if row:
-                return NodeInfo(
-                    node_id=row.id,
-                    name=row.name,
-                    name_alias=row.name_alias,
-                    gpu_model=row.gpu_model,
-                    vram=row.vram,
-                    gpu_count=row.gpu_count,
-                    cpu_model=row.cpu_model,
-                    cpu_count=row.cpu_count,
-                    ram=row.ram,
-                    network_download_speed=row.network_download_speed,
-                    network_upload_speed=row.network_upload_speed,
-                    operating_system=row.operating_system,
-                    version=row.version,
-                    created_at=row.created_at,
-                )
-        return None
-
     @async_timer("node_repository.get_node_info_by_name", logger=logger)
     async def get_node_info_by_name(
         self, user_id: UUID, node_name: str
@@ -829,18 +774,6 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             await session.execute(
                 sqlalchemy.text(SQL_UPDATE_NODE_ARCHIVAL_STATUS), data
-            )
-            await session.commit()
-
-    @async_timer("node_repository.set_all_nodes_inactive", logger=logger)
-    async def set_all_nodes_inactive(self):
-        data = {
-            "connected_at": None,
-            "last_updated_at": utcnow(),
-        }
-        async with self._session_provider.get() as session:
-            await session.execute(
-                sqlalchemy.text(SQL_UPDATE_ALL_NODE_CONNECTION_TIMESTAMP), data
             )
             await session.commit()
 
