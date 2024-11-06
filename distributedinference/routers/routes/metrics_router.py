@@ -15,8 +15,10 @@ import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.metrics import calculate_node_costs
+from distributedinference.domain.metrics import node_status_metrics
 from distributedinference.domain.metrics import sql_engine_metrics
 from distributedinference.domain.node.entities import NodeBenchmark
+from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 
@@ -74,6 +76,9 @@ node_costs_gauge = Gauge(
 async def get_metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
+    metrics_repository: MetricsRepository = Depends(
+        dependencies.get_metrics_repository
+    ),
 ):
     registry = _get_registry()
     _clear()
@@ -109,6 +114,7 @@ async def get_metrics(
     await _set_node_tokens(tokens_repository, connected_node_ids)
     await _set_node_costs(nodes)
     await sql_engine_metrics.execute()
+    await node_status_metrics.execute(metrics_repository)
     metrics_data = generate_latest(registry)
     return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)
 
