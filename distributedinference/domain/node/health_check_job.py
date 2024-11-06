@@ -13,6 +13,7 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
+from distributedinference.domain.node import is_node_healthy
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceStatusCodes
@@ -20,6 +21,7 @@ from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import CheckHealthResponse
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
+from distributedinference.domain.node.time_tracker import TimeTracker
 
 from distributedinference.repository.node_repository import ConnectedNode
 from distributedinference.repository.node_repository import NodeRepository
@@ -88,29 +90,43 @@ async def _send_health_check_inference(
         model=node.model,
         chat_request=await _get_health_check_request(node),
     )
+    time_tracker = TimeTracker()
+    time_tracker.start()
     await node_repository.send_inference_request(node.uid, request)
     try:
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
+            time_tracker.chunk_received()
             if not response:
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=False,
+                    time_to_first_token=0.0,
+                    tokens_per_second=0.0,
                     error=InferenceError(
                         status_code=InferenceStatusCodes.INTERNAL_SERVER_ERROR,
                         message="Node did not respond to health check request",
                     ),
                 )
             if response.chunk and response.chunk.usage and not response.chunk.choices:
+                time_tracker.track_usage(response.chunk.usage)
+                is_healthy = is_node_healthy.execute(
+                    time_tracker.get_time_to_first_token(),
+                    time_tracker.get_throughput()
+                )
                 return CheckHealthResponse(
                     node_id=node.uid,
-                    is_healthy=True,
+                    is_healthy=is_healthy,
+                    time_to_first_token=time_tracker.get_time_to_first_token(),
+                    tokens_per_second=time_tracker.get_throughput(),
                     error=None,
                 )
             if response.error:
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=False,
+                    time_to_first_token=0.0,
+                    tokens_per_second=0.0,
                     error=response.error,
                 )
             # TODO: what if node returns empty chunks? We should still return something?
@@ -118,6 +134,8 @@ async def _send_health_check_inference(
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=False,
+                    time_to_first_token=0.0,
+                    tokens_per_second=0.0,
                     error=None,
                 )
     finally:
