@@ -4,8 +4,6 @@ from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from uuid import UUID
 
-from uuid_extensions import uuid7
-
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node import get_node_info_service as service
@@ -51,7 +49,6 @@ async def test_execute_success():
     )
 
     mock_repository = AsyncMock(spec=NodeRepository)
-    mock_repository.get_node_info.return_value = node_info
     mock_repository.get_connected_node_metrics.return_value = MagicMock(
         requests_served=1,
         requests_successful=1,
@@ -102,7 +99,6 @@ async def test_execute_success_node_offline():
     service.time.time.return_value = 1338
 
     mock_repository = AsyncMock(spec=NodeRepository)
-    mock_repository.get_node_info.return_value = node_info
     mock_repository.get_connected_node_metrics.return_value = None
 
     response = await service.execute(node_info, mock_repository)

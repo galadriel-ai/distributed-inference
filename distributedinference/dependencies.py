@@ -14,6 +14,7 @@ from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
+from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -25,6 +26,7 @@ _node_repository_instance: NodeRepository
 _node_stats_repository_instance: NodeStatsRepository
 _benchmark_repository_instance: BenchmarkRepository
 _metrics_queue_repository: MetricsQueueRepository
+_metrics_repository: MetricsRepository
 _rate_limit_repository: RateLimitRepository
 _billing_repository: BillingRepository
 
@@ -42,6 +44,7 @@ def init_globals():
     global _node_stats_repository_instance
     global _benchmark_repository_instance
     global _metrics_queue_repository
+    global _metrics_repository
     global _rate_limit_repository
     global _billing_repository
     global _authentication_api_repository
@@ -61,6 +64,9 @@ def init_globals():
         get_session_provider(), get_session_provider_read()
     )
     _metrics_queue_repository = MetricsQueueRepository()
+    _metrics_repository = MetricsRepository(
+        get_session_provider(), get_session_provider_read()
+    )
     _rate_limit_repository = RateLimitRepository(
         get_session_provider(), get_session_provider_read()
     )
@@ -110,6 +116,10 @@ def get_tokens_repository() -> TokensRepository:
 
 def get_metrics_queue_repository() -> MetricsQueueRepository:
     return _metrics_queue_repository
+
+
+def get_metrics_repository() -> MetricsRepository:
+    return _metrics_repository
 
 
 def get_authentication_api_repository() -> AuthenticationApiRepository:
