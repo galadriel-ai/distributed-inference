@@ -115,15 +115,12 @@ class PingPongProtocol:
             pong_response.node_id, node_info, pong_received_time
         )
 
-        if not self._check_latency(
+        if self._is_node_reconnect_needed(
             pong_response.node_id,
             pong_response.api_ping_time,
             node_info.rtt,
         ):
             await self._send_node_reconnect_request(pong_response.node_id)
-            logger.info(
-                f"{self.config.name}: Send Reconnect request to node {pong_response.node_id} "
-            )
             return
 
     # Regularly check if we have received the pong responses and to send ping messages
@@ -317,28 +314,31 @@ class PingPongProtocol:
                 logger.debug(f"{self.config.name}: Range {bin_str} mSec -> {count}")
 
     # Check if the API ping time is significantly less than the RTT
-    # True means the node is already connected to the closest backend server
-    # False means the node is not connected to the closest backend server and should reconnect
-    def _check_latency(self, node_id: str, api_ping_time: list, rtt: int) -> bool:
+    # True means the node is not connected to the closest backend server and should reconnect
+    # False means the node is already connected to the closest backend server
+    def _is_node_reconnect_needed(
+        self, node_id: str, api_ping_time: list, rtt: int
+    ) -> bool:
+        # RTT is good enough, no need to reconnect
         if rtt < settings.BACKEND_NODE_LATENCY_MILLISECONDS:
-            return True
+            return False
         # calculate the ping time latency threshold, aiming to find out if there is a geographically closer backend server for this node
         ping_latency_threshold = rtt - settings.BACKEND_NODE_LATENCY_MILLISECONDS
         none_count = 0
+        # return false if any ping time is more than the threshold
         for ping_time in api_ping_time:
             if ping_time:
                 if ping_time > ping_latency_threshold:
-                    return True
+                    return False
             else:
                 none_count += 1
-        # return false iff every ping time is significantly less than the threshold
+        # make sure that at least half of the ping times are not None
         if none_count < len(api_ping_time) / 2:
-            # make sure that at least half of the ping times are not None
             logger.info(
                 f"{self.config.name}: Node {node_id} has significantly lower API ping time than RTT, rtt = {rtt}, api_ping_time = {api_ping_time}"
             )
-            return False
-        return True
+            return True
+        return False
 
     async def _send_node_reconnect_request(self, node_id: str):
         node_info = self.active_nodes[node_id]
@@ -353,12 +353,19 @@ class PingPongProtocol:
             "protocol": self.config.name,
             "data": jsonable_encoder(reconnect_request),
         }
-        await node_info.websocket.send_json(message)
-        logger.info(f"{self.config.name}: Sent reconnection request to node {node_id}")
+        if node_info and node_info.websocket:
+            await node_info.websocket.send_json(message)
+            logger.info(
+                f"{self.config.name}: Sent reconnection request to node {node_id}"
+            )
+        else:
+            logger.error(
+                f"{self.config.name}: Node {node_id} websocket is not available to send reconnect request, node_info = {node_info}"
+            )
 
 
 def _current_milli_time():
-    return round(time.time() * 1000)
+    return time.time_ns() // 1_000_000
 
 
 def _extract_and_validate(data: Any) -> PongResponse | None:
@@ -414,12 +421,6 @@ def _pong_protocol_validations(
     ):  # check the nonce matches the one sent in Ping
         logger.warning(
             f"{protocol_name}: Received pong with invalid nonce from node {pong_response.node_id}, expected {node_info.ping_nonce}, got {pong_response.nonce}"
-        )
-        return False
-
-    if not pong_response.api_ping_time:
-        logger.warning(
-            f"{protocol_name}: Received pong with empty api_ping_time from node {pong_response.node_id}"
         )
         return False
 
