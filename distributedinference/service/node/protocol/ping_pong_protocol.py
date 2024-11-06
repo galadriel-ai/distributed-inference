@@ -6,7 +6,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationError
 from starlette.websockets import WebSocket
 
 import settings
@@ -370,24 +370,22 @@ def _current_milli_time():
 
 def _extract_and_validate(data: Any) -> PongResponse | None:
     try:
-        message_type = PingPongMessageType(data.get("message_type"))
-    except KeyError:
+        pong_response = PongResponse(
+            protocol_version=data.get("protocol_version"),
+            message_type=data.get("message_type"),
+            node_id=data.get("node_id"),
+            nonce=data.get("nonce"),
+            api_ping_time=data.get("api_ping_time", []),
+        )
+        if (
+            pong_response.protocol_version is None
+            or pong_response.node_id is None
+            or pong_response.nonce is None
+        ):
+            return None
+        return pong_response
+    except ValidationError:
         return None
-
-    pong_response = PongResponse(
-        protocol_version=data.get("protocol_version"),
-        message_type=message_type,
-        node_id=data.get("node_id"),
-        nonce=data.get("nonce"),
-        api_ping_time=data.get("api_ping_time"),
-    )
-    if (
-        pong_response.protocol_version is None
-        or pong_response.node_id is None
-        or pong_response.nonce is None
-    ):
-        return None
-    return pong_response
 
 
 def _pong_protocol_validations(
