@@ -152,7 +152,6 @@ class InferenceExecutor:
         finally:
             await self.node_repository.cleanup_request(node.uid, request.id)
             await self._log_metrics(user_uid, request, node)
-            self.time_tracker.kaspar_debug()
 
     async def _get_chunk(
         self, node: ConnectedNode, request: InferenceRequest
@@ -163,15 +162,14 @@ class InferenceExecutor:
         * bool indicating if the streaming has been finished
         """
         response = await self.node_repository.receive_for_request(node.uid, request.id)
+        self.time_tracker.chunk_received()
         if not response:
             # Nothing to check, we can mark node as unhealthy and break
             await self._mark_node_as_unhealthy(node)
             return None, True
-        self.time_tracker.first_token_received()
         if response.chunk:
             # overwriting the usage each time
             self.usage = response.chunk.usage if response.chunk else None
-            self.time_tracker.next_token_received()
             self.time_tracker.track_usage(self.usage)
             if self.usage and not response.chunk.choices:
                 # last chunk only has usage, no choices - request is finished

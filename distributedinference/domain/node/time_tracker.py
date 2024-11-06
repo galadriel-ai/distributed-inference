@@ -16,12 +16,11 @@ class TimeTracker:
     def start(self):
         self.start_time = time.time()
 
-    def first_token_received(self):
-        if not self.first_token_time:
+    def chunk_received(self):
+        if self.first_token_time:
+            self.next_token_time = time.time()
+        else:
             self.first_token_time = time.time()
-
-    def next_token_received(self):
-        self.next_token_time = time.time()
 
     def track_usage(self, usage: Optional[CompletionUsage]):
         self.usage = usage
