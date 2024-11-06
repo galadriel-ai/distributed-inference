@@ -40,8 +40,12 @@ class PongResponse(BaseModel):
 
 
 class NodeReconnectRequest(BaseModel):
-    protocol_version: str = Field(description="Protocol version of the ping-pong protocol")
+    protocol_version: str = Field(
+        description="Protocol version of the ping-pong protocol"
+    )
     message_type: PingPongMessageType = Field(description="Message type")
     node_id: str = Field(description="Node ID")
     nonce: str = Field(description="A random number to prevent replay attacks")
-    reconnect_request: bool = Field(description="True if the node is requested to reconnect")
+    reconnect_request: bool = Field(
+        description="True if the node is requested to reconnect"
+    )

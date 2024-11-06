@@ -82,7 +82,9 @@ GALADRIEL_PROTOCOL_CONFIG = {
     },
 }
 # Estimated latency (in ms) between different backend servers (e.g. EU west to US east)
-BACKEND_NODE_LATENCY_MILLISECONDS = int(os.getenv("BACKEND_NODE_LATENCY_MILLISECONDS", 80))
+BACKEND_NODE_LATENCY_MILLISECONDS = int(
+    os.getenv("BACKEND_NODE_LATENCY_MILLISECONDS", 80)
+)
 NODE_HEALTH_CHECK_INTERVAL_SECONDS = int(os.getenv("NODE_HEALTH_CHECK_INTERVAL", "563"))
 
 # Grafana API

@@ -191,7 +191,11 @@ async def test_handler_not_sent_reconnect_request_because_api_ping_too_high(
         "message_type": 2,  # Pong message type
         "node_id": NODE_NAME,
         "nonce": NODE_NONCE,
-        "api_ping_time": [10, 125, 20],  # at least one ping time is higher than the threshold
+        "api_ping_time": [
+            10,
+            125,
+            20,
+        ],  # at least one ping time is higher than the threshold
     }
 
     # Execute
