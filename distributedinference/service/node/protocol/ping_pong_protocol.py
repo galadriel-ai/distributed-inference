@@ -326,8 +326,9 @@ class PingPongProtocol:
         ping_latency_threshold = rtt - settings.BACKEND_NODE_LATENCY_MILLISECONDS
         none_count = 0
         for ping_time in api_ping_time:
-            if ping_time or 0 > ping_latency_threshold:
-                return True
+            if ping_time:
+                if ping_time > ping_latency_threshold:
+                    return True
             else:
                 none_count += 1
         # return false iff every ping time is significantly less than the threshold
