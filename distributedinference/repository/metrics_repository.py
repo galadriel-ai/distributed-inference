@@ -43,6 +43,15 @@ WHERE producer_node_info_id = ANY(:node_ids)
 GROUP BY producer_node_info_id, model_name;
 """
 
+SQL_GET_ALL_NODE_TOTAL_TOKENS = """
+SELECT
+    producer_node_info_id,
+    model_name,
+    SUM(total_tokens) AS total_tokens
+FROM usage_tokens
+GROUP BY producer_node_info_id, model_name;
+"""
+
 
 @dataclass
 class NodeStatusesByModel:
@@ -99,6 +108,21 @@ class MetricsRepository:
             rows = await session.execute(
                 sqlalchemy.text(SQL_GET_TOTAL_TOKENS_BY_NODE_IDS), data
             )
+            for row in rows:
+                tokens.append(
+                    UsageNodeModelTotalTokens(
+                        node_uid=row.producer_node_info_id,
+                        model_name=row.model_name,
+                        total_tokens=row.total_tokens,
+                    )
+                )
+        return tokens
+
+    @async_timer("metrics_repository.get_all_nodes_total_tokens", logger=logger)
+    async def get_all_nodes_total_tokens(self) -> List[UsageNodeModelTotalTokens]:
+        tokens = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_ALL_NODE_TOTAL_TOKENS))
             for row in rows:
                 tokens.append(
                     UsageNodeModelTotalTokens(
