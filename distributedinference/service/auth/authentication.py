@@ -66,6 +66,7 @@ async def validate_api_key(
 
 
 async def validate_session_token(
+    request: Request,
     session_token_header: str = Security(API_KEY_HEADER),
     auth_repository: AuthenticationApiRepository = Depends(
         get_authentication_api_repository
@@ -89,6 +90,7 @@ async def validate_session_token(
         authenticated_user.provider_user_id
     )
     if user:
+        util.set_state(request, RequestStateKey.USER_ID, user.uid)
         return user
     raise error_responses.InvalidCredentialsAPIError(message_extra="User not found.")
 
