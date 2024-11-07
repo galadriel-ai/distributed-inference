@@ -109,12 +109,33 @@ SELECT
     node_metrics.rtt,
     node_metrics.uptime,
     node_info.gpu_model,
+    node_metrics.model_name,
     node_metrics.connected_at,
     node_metrics.created_at,
     node_metrics.last_updated_at
 FROM node_metrics
 LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
 WHERE node_metrics.node_info_id = ANY(:node_ids);
+"""
+
+SQL_GET_ALL_NODE_METRICS = """
+SELECT
+    node_metrics.id,
+    node_metrics.node_info_id,
+    node_metrics.requests_served,
+    node_metrics.requests_successful,
+    node_metrics.requests_failed,
+    node_metrics.time_to_first_token,
+    node_metrics.inference_tokens_per_second,
+    node_metrics.rtt,
+    node_metrics.uptime,
+    node_info.gpu_model,
+    node_metrics.model_name,
+    node_metrics.connected_at,
+    node_metrics.created_at,
+    node_metrics.last_updated_at
+FROM node_metrics
+LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
 """
 
 SQL_GET_CONNECTED_NODES_BY_STATUS = """
@@ -594,6 +615,32 @@ class NodeRepository:
                         else int(time.time() - row.connected_at.timestamp())
                     ),
                     gpu_model=row.gpu_model,
+                    model_name=row.model_name,
+                )
+            return result
+
+    @async_timer("node_repository.get_all_node_metrics", logger=logger)
+    async def get_all_node_metrics(self) -> Dict[UUID, NodeMetrics]:
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_ALL_NODE_METRICS))
+            result = {}
+            for row in rows:
+                result[row.node_info_id] = NodeMetrics(
+                    requests_served=row.requests_served,
+                    requests_successful=row.requests_successful,
+                    requests_failed=row.requests_failed,
+                    time_to_first_token=row.time_to_first_token,
+                    inference_tokens_per_second=row.inference_tokens_per_second,
+                    rtt=row.rtt,
+                    is_active=bool(row.connected_at),
+                    total_uptime=row.uptime,
+                    current_uptime=(
+                        0
+                        if not row.connected_at
+                        else int(time.time() - row.connected_at.timestamp())
+                    ),
+                    gpu_model=row.gpu_model,
+                    model_name=row.model_name,
                 )
             return result
 
