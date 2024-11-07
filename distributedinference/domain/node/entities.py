@@ -180,6 +180,4 @@ class InferenceResponse:
 class CheckHealthResponse:
     node_id: UUID
     is_healthy: bool
-    time_to_first_token: float
-    tokens_per_second: float
     error: Optional[InferenceError] = None

@@ -101,8 +101,6 @@ async def _send_health_check_inference(
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=False,
-                    time_to_first_token=0.0,
-                    tokens_per_second=0.0,
                     error=InferenceError(
                         status_code=InferenceStatusCodes.INTERNAL_SERVER_ERROR,
                         message="Node did not respond to health check request",
@@ -112,21 +110,17 @@ async def _send_health_check_inference(
                 time_tracker.track_usage(response.chunk.usage)
                 is_healthy = is_node_healthy.execute(
                     time_tracker.get_time_to_first_token(),
-                    time_tracker.get_throughput()
+                    time_tracker.get_throughput(),
                 )
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=is_healthy,
-                    time_to_first_token=time_tracker.get_time_to_first_token(),
-                    tokens_per_second=time_tracker.get_throughput(),
                     error=None,
                 )
             if response.error:
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=False,
-                    time_to_first_token=0.0,
-                    tokens_per_second=0.0,
                     error=response.error,
                 )
             # TODO: what if node returns empty chunks? We should still return something?
@@ -134,8 +128,6 @@ async def _send_health_check_inference(
                 return CheckHealthResponse(
                     node_id=node.uid,
                     is_healthy=False,
-                    time_to_first_token=0.0,
-                    tokens_per_second=0.0,
                     error=None,
                 )
     finally:
