@@ -214,7 +214,12 @@ class PingPongProtocol:
     # Send a ping message to the client
     async def send_ping_message(self, node_id: str):
         node_info = self.active_nodes.get(node_id)
-        if node_info and node_info.websocket:
+        if node_info is None or node_info.websocket is None:
+            # Log an error if the node is not available
+            logger.error(
+                f"{self.config.name}: Node {node_id} websocket is not available to send ping message, node_info = {node_info}"
+            )
+        else:
             nonce = str(uuid.uuid4())
             # Construct the ping request
             ping_request = PingRequest(
@@ -246,11 +251,6 @@ class PingPongProtocol:
 
             logger.info(
                 f"{self.config.name}: Sent ping to node {node_id}, sent time = {sent_time}, nonce = {nonce}"
-            )
-        else:
-            # Log an error if the node is not available
-            logger.error(
-                f"{self.config.name}: Node {node_id} websocket is not available to send ping message, node_info = {node_info}"
             )
 
     async def missed_pong(self, node_id: str, node_info: NodePingInfo):
@@ -353,7 +353,12 @@ class PingPongProtocol:
 
     async def _send_node_reconnect_request(self, node_id: str):
         node_info = self.active_nodes.get(node_id)
-        if node_info and node_info.websocket:
+        if node_info is None or node_info.websocket is None:
+            # Log an error if the node is not available
+            logger.error(
+                f"{self.config.name}: Node {node_id} websocket is not available to send reconnect request, node_info = {node_info}"
+            )
+        else:
             reconnect_request = NodeReconnectRequest(
                 protocol_version=self.config.version,
                 message_type=PingPongMessageType.RECONNECT_REQUEST,
@@ -368,11 +373,6 @@ class PingPongProtocol:
             await node_info.websocket.send_json(message)
             logger.info(
                 f"{self.config.name}: Sent reconnection request to node {node_id}"
-            )
-        else:
-            # Log an error if the node is not available
-            logger.error(
-                f"{self.config.name}: Node {node_id} websocket is not available to send reconnect request, node_info = {node_info}"
             )
 
 
