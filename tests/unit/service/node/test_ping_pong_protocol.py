@@ -1,4 +1,5 @@
 import time
+from unittest import mock
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -50,6 +51,7 @@ async def test_handler_valid_pong(ping_pong_protocol):
         "message_type": 2,  # Pong message type
         "node_id": NODE_NAME,
         "nonce": NODE_NONCE,
+        "api_ping_time": [10, 20],
     }
 
     # Execute
@@ -76,6 +78,7 @@ async def test_handler_invalid_nonce(ping_pong_protocol, caplog):
         "message_type": 2,  # Pong message type
         "node_id": NODE_NAME,
         "nonce": "wrong_nonce",
+        "api_ping_time": [10, 20],
     }
 
     # Execute
@@ -86,9 +89,126 @@ async def test_handler_invalid_nonce(ping_pong_protocol, caplog):
 
 
 @pytest.mark.asyncio
+async def test_handler_invalid_api_ping_time(ping_pong_protocol):
+    # Setup
+    ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
+        websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
+        model="model",
+        waiting_for_pong=True,
+        ping_nonce="correct_nonce",
+    )
+    data = {
+        "protocol_version": ping_pong_protocol.config.version,
+        "message_type": 2,  # Pong message type
+        "node_id": NODE_NAME,
+        "nonce": "wrong_nonce",
+        "api_ping_time": [],
+    }
+
+    # Execute
+    await ping_pong_protocol.handle(data)
+
+    # Assert
+    assert ping_pong_protocol.active_nodes[NODE_NAME].waiting_for_pong
+
+
+@pytest.mark.asyncio
+async def test_handler_send_reconnect_request(ping_pong_protocol):
+    # Setup
+    ping_pong_protocol._send_node_reconnect_request = AsyncMock()
+    current_time = time.time_ns() // 1_000_000
+    ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
+        websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
+        model="model",
+        waiting_for_pong=True,
+        ping_sent_time=current_time - 200,
+        ping_nonce=NODE_NONCE,
+    )
+    data = {
+        "protocol_version": ping_pong_protocol.config.version,
+        "message_type": 2,  # Pong message type
+        "node_id": NODE_NAME,
+        "nonce": NODE_NONCE,
+        "api_ping_time": [10, 20],
+    }
+
+    # Execute
+    await ping_pong_protocol.handle(data)
+
+    # Assert
+    ping_pong_protocol._send_node_reconnect_request.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_handler_not_sent_reconnect_request_because_api_ping_too_many_none(
+    ping_pong_protocol,
+):
+    # Setup
+    ping_pong_protocol._send_node_reconnect_request = AsyncMock()
+    current_time = time.time_ns() // 1_000_000
+    ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
+        websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
+        model="model",
+        waiting_for_pong=True,
+        ping_sent_time=current_time - 200,
+        ping_nonce=NODE_NONCE,
+    )
+    data = {
+        "protocol_version": ping_pong_protocol.config.version,
+        "message_type": 2,  # Pong message type
+        "node_id": NODE_NAME,
+        "nonce": NODE_NONCE,
+        "api_ping_time": [None, None, 20],  # more than 50% of None
+    }
+
+    # Execute
+    await ping_pong_protocol.handle(data)
+
+    # Assert
+    ping_pong_protocol._send_node_reconnect_request.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handler_not_sent_reconnect_request_because_api_ping_too_high(
+    ping_pong_protocol,
+):
+    # Setup
+    ping_pong_protocol._send_node_reconnect_request = AsyncMock()
+    current_time = time.time_ns() // 1000000
+    ping_pong_protocol.active_nodes[NODE_NAME] = NodePingInfo(
+        websocket=AsyncMock(spec=WebSocket),
+        node_uuid=NODE_UUID,
+        model="model",
+        waiting_for_pong=True,
+        ping_sent_time=current_time - 200,
+        ping_nonce=NODE_NONCE,
+    )
+    data = {
+        "protocol_version": ping_pong_protocol.config.version,
+        "message_type": 2,  # Pong message type
+        "node_id": NODE_NAME,
+        "nonce": NODE_NONCE,
+        "api_ping_time": [
+            10,
+            130,
+            20,
+        ],  # at least one ping time is higher than the threshold
+    }
+
+    # Execute
+    await ping_pong_protocol.handle(data)
+
+    # Assert
+    ping_pong_protocol._send_node_reconnect_request.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_job_check_for_pongs(ping_pong_protocol):
     # Setup
-    current_time = round(time.time() * 1000)
+    current_time = time.time_ns() // 1_000_000
     ping_pong_protocol.active_nodes = {
         "node1": NodePingInfo(
             websocket=AsyncMock(spec=WebSocket),
@@ -159,7 +279,7 @@ async def test_remove_node(ping_pong_protocol):
 async def test_got_pong_on_time(ping_pong_protocol):
     # Setup
     node_id = "test_node"
-    current_time = round(time.time() * 1000)
+    current_time = time.time_ns() // 1_000_000
     ping_pong_protocol.active_nodes[node_id] = NodePingInfo(
         websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
