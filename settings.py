@@ -28,11 +28,14 @@ DB_HOST_READ = os.getenv("DB_HOST_READ", "localhost")
 DB_PORT_READ = os.getenv("DB_PORT_READ", "5432")
 
 
-SUPPORTED_MODELS = {
+SUPPORTED_MODELS = [
     "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
     "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
-}
+]
+if ENVIRONMENT == "local":
+    SUPPORTED_MODELS.append("hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4")
+
 MODEL_NAME_MAPPING = {
     "llama3.1": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
     "llama3.1:8b": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
