@@ -258,14 +258,14 @@ def test_model_name_translation_llama3_1_8b():
 
 def test_model_name_translation_llama3_1_70b():
     user_input = "llama3.1:70b"
-    expected_exact_name = "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16"
+    expected_exact_name = "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4"
     actual_exact_name = service._match_model_name(user_input)
     assert actual_exact_name == expected_exact_name
 
 
 def test_model_name_translation_llama3_1_405b():
     user_input = "llama3.1:405b"
-    expected_exact_name = "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16"
+    expected_exact_name = "hugging-quants/Meta-Llama-3.1-405B-Instruct-AWQ-INT4"
     actual_exact_name = service._match_model_name(user_input)
     assert actual_exact_name == expected_exact_name
 

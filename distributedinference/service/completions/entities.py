@@ -223,7 +223,8 @@ class ChatCompletionRequest(BaseModel):
                 "logit_bias": self.logit_bias,
                 "logprobs": self.logprobs,
                 "max_tokens": self.max_tokens,
-                "n": self.n,
+                # lmdeploy doesn't like this param
+                # "n": self.n,
                 # "parallel_tool_calls": self.parallel_tool_calls,
                 "presence_penalty": self.presence_penalty,
                 "response_format": self.response_format,

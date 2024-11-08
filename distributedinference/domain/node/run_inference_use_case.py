@@ -171,13 +171,13 @@ class InferenceExecutor:
         if response.chunk:
             # overwriting the usage each time
             self.usage = response.chunk.usage if response.chunk else None
-            if self.usage and not response.chunk.choices:
+            if self.usage and self._is_request_finished(response):
                 # last chunk only has usage, no choices - request is finished
                 self.request_successful = True
-                if self.is_include_usage:
-                    return response, True
+                if not self.is_include_usage:
+                    response.chunk.usage = None
                 self._track_time_elapsed_after_first_token()
-                return None, True
+                return response, True
             # if users doesn't need usage, we can remove it from the response
             if not self.is_include_usage:
                 response.chunk.usage = None
@@ -186,6 +186,16 @@ class InferenceExecutor:
         # if we got an error or no chunk, we can mark node as unhealthy and break
         await self._mark_node_as_unhealthy(node)
         return response, True
+
+    def _is_request_finished(self, response: InferenceResponse) -> bool:
+        """
+        this is necessary because vLLM sends one extra empty chunk after finish reason
+        chunk and causes "Received chunk for unknown request" error
+        """
+        return len(response.chunk.choices) == 0 or (
+            response.chunk.choices[0].delta.content == ""
+            and response.chunk.choices[0].finish_reason is not None
+        )
 
     def _initialise_metrics(self, request: InferenceRequest, node: ConnectedNode):
         self.metrics_increment = NodeMetricsIncrement(
