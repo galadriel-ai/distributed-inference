@@ -9,6 +9,15 @@ load_dotenv(dotenv_path=env_path)
 
 ENVIRONMENT = os.getenv("PLATFORM_ENVIRONMENT", "local")
 
+
+def is_production():
+    return ENVIRONMENT == "production"
+
+
+def is_test():
+    return ENVIRONMENT == "test"
+
+
 APPLICATION_NAME = "DISTRIBUTED_INFERENCE"
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1")
 API_PORT = int(os.getenv("API_PORT", 5000))
@@ -26,6 +35,15 @@ DB_PASSWORD_READ = os.getenv("DB_PASSWORD_READ", "passw0rd")
 DB_DATABASE_READ = os.getenv("DB_DATABASE_READ", "inference")
 DB_HOST_READ = os.getenv("DB_HOST_READ", "localhost")
 DB_PORT_READ = os.getenv("DB_PORT_READ", "5432")
+
+
+SUPPORTED_MODELS = [
+    "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+]
+if not is_production():
+    SUPPORTED_MODELS.append("hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4")
 
 MODEL_NAME_MAPPING = {
     "llama3.1": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
@@ -121,11 +139,3 @@ _peer_nodes = os.getenv("PEER_NODES_LIST", "").split(";")
 PEER_NODES_LIST = list(set(_peer_nodes))
 
 HOSTNAME = os.getenv("HOSTNAME", "")
-
-
-def is_production():
-    return ENVIRONMENT == "production"
-
-
-def is_test():
-    return ENVIRONMENT == "test"

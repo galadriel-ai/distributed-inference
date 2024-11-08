@@ -225,3 +225,17 @@ class UnsupportedClientVersionError(APIErrorResponse):
         if self.min_version:
             return f"{base_message}. Minimum supported version is {self.min_version}."
         return base_message
+
+
+class UnsupportedModelError(APIErrorResponse):
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+
+    def to_status_code(self) -> status:
+        return status.HTTP_404_NOT_FOUND
+
+    def to_code(self) -> str:
+        return "unsupported_model"
+
+    def to_message(self) -> str:
+        return f"Your requested model {self.model_name} is currently not supported."

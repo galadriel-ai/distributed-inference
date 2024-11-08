@@ -45,6 +45,9 @@ async def execute(
 ) -> Union[StreamingResponse, ChatCompletion]:
     request.model = _match_model_name(request.model)
 
+    if request.model not in settings.SUPPORTED_MODELS:
+        raise error_responses.UnsupportedModelError(model_name=request.model)
+
     if request.model not in settings.MODELS_SUPPORTING_TOOLS:
         # Required to ensure the dict value does not get set at all
         # in request.to_openai_chat_completion()
