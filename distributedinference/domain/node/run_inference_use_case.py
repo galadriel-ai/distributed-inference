@@ -193,6 +193,7 @@ class InferenceExecutor:
             await self._mark_node_as_unhealthy(node)
             return response, True
         if response.status == InferenceStatusCodes.DONE:
+            self.request_successful = True
             return response, True
         # if we got an error or no chunk, we can mark node as unhealthy and break
         await self._mark_node_as_unhealthy(node)
