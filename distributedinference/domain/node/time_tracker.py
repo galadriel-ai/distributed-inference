@@ -2,6 +2,7 @@ import time
 from typing import Optional
 
 from openai.types import CompletionUsage
+from openai.types.chat import ChatCompletionChunk
 
 
 class TimeTracker:
@@ -16,14 +17,15 @@ class TimeTracker:
     def start(self):
         self.start_time = time.time()
 
-    def chunk_received(self):
-        if self.first_token_time:
-            self.next_token_time = time.time()
-        else:
-            self.first_token_time = time.time()
+    def chunk_received(self, chunk: Optional[ChatCompletionChunk]):
+        if _is_chunk_with_tokens(chunk):
+            if self.first_token_time:
+                self.next_token_time = time.time()
+            else:
+                self.first_token_time = time.time()
 
-    def track_usage(self, usage: Optional[CompletionUsage]):
-        self.usage = usage
+        if chunk and chunk.usage:
+            self.usage = chunk.usage
 
     def get_time_to_first_token(self) -> float:
         """
@@ -49,3 +51,12 @@ class TimeTracker:
             if duration:
                 return self.usage.completion_tokens / duration
         return 0.0
+
+
+def _is_chunk_with_tokens(chunk: Optional[ChatCompletionChunk]):
+    return (
+        chunk
+        and chunk.choices
+        and chunk.choices[0].delta
+        and (chunk.choices[0].delta.content or chunk.choices[0].delta.function_call)
+    )
