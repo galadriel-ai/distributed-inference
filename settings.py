@@ -31,12 +31,14 @@ MODEL_NAME_MAPPING = {
     "llama3.1": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
     "llama3.1:8b": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
     "llama3.1-8b": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
-    "llama3.1:70b": "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
-    "llama3.1-70b": "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
-    "llama3.1:405b": "hugging-quants/Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
-    "llama3.1-405b": "hugging-quants/Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
+    "llama3.1:70b": "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "llama3.1-70b": "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "llama3.1:405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+    "llama3.1-405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
 }
 MODELS_SUPPORTING_TOOLS = [
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
     "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
     "hugging-quants/Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
 ]
