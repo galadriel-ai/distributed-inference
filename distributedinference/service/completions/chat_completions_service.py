@@ -74,16 +74,21 @@ async def execute(
                     status_code=inference_response.error.status_code,
                     message_extra=inference_response.error.message,
                 )
-            if inference_response.chunk and inference_response.chunk.choices:
-                if inference_response.chunk.choices[0].delta.content:
-                    response += inference_response.chunk.choices[0].delta.content
-                if inference_response.chunk.choices[0].delta.tool_calls:
-                    # tool_calls is a list, need to extend!
-                    tool_response_chunks.extend(
-                        inference_response.chunk.choices[0].delta.tool_calls
-                    )
-            if inference_response.chunk and inference_response.chunk.usage:
-                usage = inference_response.chunk.usage
+
+            response_chunk = inference_response.chunk
+            if response_chunk:
+                if response_chunk.choices:
+                    first_choice = inference_response.chunk.choices[0]
+                    content = first_choice.delta.content
+                    if content:
+                        response += content
+
+                    tool_calls = first_choice.delta.tool_calls
+                    if tool_calls:
+                        # tool_calls is a list, need to extend!
+                        tool_response_chunks.extend(tool_calls)
+                if response_chunk.usage:
+                    usage = response_chunk.usage
 
         # TODO: we dont return all the fields, eg refusal
         response_message = ChatCompletionMessage(role="assistant")
