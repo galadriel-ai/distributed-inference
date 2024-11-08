@@ -47,6 +47,9 @@ class EventName(Enum):
     # API call responses
     API_RESPONSE = "api_response"
 
+    # Tool
+    TOOL_WEB_SEARCH = "tool_web_search"
+
 
 @dataclass
 class AnalyticsEvent:
