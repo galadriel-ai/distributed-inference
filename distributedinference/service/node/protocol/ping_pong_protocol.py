@@ -213,40 +213,45 @@ class PingPongProtocol:
 
     # Send a ping message to the client
     async def send_ping_message(self, node_id: str):
-        node_info = self.active_nodes[node_id]
-        nonce = str(uuid.uuid4())
-        # Construct the ping request
-        ping_request = PingRequest(
-            protocol_version=self.config.version,
-            message_type=PingPongMessageType.PING,
-            node_id=node_id,  # the node id of the client
-            nonce=nonce,  # the nonce of the ping request
-            # Strictly not required for Ping-Pong,
-            # But can be used on the client side to do some priority analysis
-            # TODO remove `or 0` after the node is updated to expect None value for `rtt`
-            rtt=node_info.rtt or 0,  # send the previously observed RTT to client
-            ping_streak=node_info.ping_streak,  # send the ping streak to client
-            miss_streak=node_info.miss_streak,  # send the miss streak to client
-        )
+        node_info = self.active_nodes.get(node_id)
+        if node_info is None or node_info.websocket is None:
+            # Log an error if the node is not available
+            logger.error(
+                f"{self.config.name}: Node {node_id} websocket is not available to send ping message, node_info = {node_info}"
+            )
+        else:
+            nonce = str(uuid.uuid4())
+            # Construct the ping request
+            ping_request = PingRequest(
+                protocol_version=self.config.version,
+                message_type=PingPongMessageType.PING,
+                node_id=node_id,  # the node id of the client
+                nonce=nonce,  # the nonce of the ping request
+                # Strictly not required for Ping-Pong,
+                # But can be used on the client side to do some priority analysis
+                # TODO remove `or 0` after the node is updated to expect None value for `rtt`
+                rtt=node_info.rtt or 0,  # send the previously observed RTT to client
+                ping_streak=node_info.ping_streak,  # send the ping streak to client
+                miss_streak=node_info.miss_streak,  # send the miss streak to client
+            )
 
-        # Send the ping to the client
-        websocket = self.active_nodes[node_id].websocket
-        message = {
-            "protocol": self.config.name,
-            "data": jsonable_encoder(ping_request),
-        }
-        sent_time = _current_milli_time()
-        await websocket.send_json(message)
+            # Send the ping to the client
+            message = {
+                "protocol": self.config.name,
+                "data": jsonable_encoder(ping_request),
+            }
+            sent_time = _current_milli_time()
+            await node_info.websocket.send_json(message)
 
-        # Update the state and the counters after sending the ping
-        node_info.next_ping_time = 0  # reset the next ping time
-        node_info.waiting_for_pong = True  # set the node to waiting for pong
-        node_info.ping_nonce = nonce  # the nonce that was sent in the ping
-        node_info.ping_sent_time = sent_time  # update the last ping time
+            # Update the state and the counters after sending the ping
+            node_info.next_ping_time = 0  # reset the next ping time
+            node_info.waiting_for_pong = True  # set the node to waiting for pong
+            node_info.ping_nonce = nonce  # the nonce that was sent in the ping
+            node_info.ping_sent_time = sent_time  # update the last ping time
 
-        logger.info(
-            f"{self.config.name}: Sent ping to node {node_id}, sent time = {sent_time}, nonce = {nonce}"
-        )
+            logger.info(
+                f"{self.config.name}: Sent ping to node {node_id}, sent time = {sent_time}, nonce = {nonce}"
+            )
 
     async def missed_pong(self, node_id: str, node_info: NodePingInfo):
         # Update state
@@ -347,26 +352,27 @@ class PingPongProtocol:
         return False
 
     async def _send_node_reconnect_request(self, node_id: str):
-        node_info = self.active_nodes[node_id]
-        reconnect_request = NodeReconnectRequest(
-            protocol_version=self.config.version,
-            message_type=PingPongMessageType.RECONNECT_REQUEST,
-            node_id=node_id,
-            nonce=str(uuid.uuid4()),
-            reconnect_request=True,
-        )
-        message = {
-            "protocol": self.config.name,
-            "data": jsonable_encoder(reconnect_request),
-        }
-        if node_info and node_info.websocket:
+        node_info = self.active_nodes.get(node_id)
+        if node_info is None or node_info.websocket is None:
+            # Log an error if the node is not available
+            logger.error(
+                f"{self.config.name}: Node {node_id} websocket is not available to send reconnect request, node_info = {node_info}"
+            )
+        else:
+            reconnect_request = NodeReconnectRequest(
+                protocol_version=self.config.version,
+                message_type=PingPongMessageType.RECONNECT_REQUEST,
+                node_id=node_id,
+                nonce=str(uuid.uuid4()),
+                reconnect_request=True,
+            )
+            message = {
+                "protocol": self.config.name,
+                "data": jsonable_encoder(reconnect_request),
+            }
             await node_info.websocket.send_json(message)
             logger.info(
                 f"{self.config.name}: Sent reconnection request to node {node_id}"
-            )
-        else:
-            logger.error(
-                f"{self.config.name}: Node {node_id} websocket is not available to send reconnect request, node_info = {node_info}"
             )
 
 
