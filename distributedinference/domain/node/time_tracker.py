@@ -58,5 +58,9 @@ def _is_chunk_with_tokens(chunk: Optional[ChatCompletionChunk]):
         chunk
         and chunk.choices
         and chunk.choices[0].delta
-        and (chunk.choices[0].delta.content or chunk.choices[0].delta.function_call)
+        and (
+            chunk.choices[0].delta.content
+            or chunk.choices[0].delta.function_call
+            or chunk.choices[0].delta.tool_calls
+        )
     )
