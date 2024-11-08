@@ -27,6 +27,12 @@ DB_DATABASE_READ = os.getenv("DB_DATABASE_READ", "inference")
 DB_HOST_READ = os.getenv("DB_HOST_READ", "localhost")
 DB_PORT_READ = os.getenv("DB_PORT_READ", "5432")
 
+
+SUPPORTED_MODELS = {
+    "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+}
 MODEL_NAME_MAPPING = {
     "llama3.1": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
     "llama3.1:8b": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
