@@ -18,6 +18,8 @@ from distributedinference.service.completions.streaming_response import (
 )
 from distributedinference.service.error_responses import RateLimitError
 
+REQUESTED_MODEL = "llama3.1:70b"
+
 
 async def test_execute_no_rate_limit():
     # Mock the check_rate_limit function to simulate no rate limit
@@ -51,7 +53,7 @@ async def test_execute_no_rate_limit():
     ) as mock_service:
         response = MagicMock(headers={})
         await service.execute(
-            request=MagicMock(stream=False, tools=None),
+            request=MagicMock(stream=False, tools=None, model=REQUESTED_MODEL),
             response=response,
             user=MagicMock(),
             forwarding_from=MagicMock(),
@@ -103,7 +105,7 @@ async def test_execute_no_rate_limit_stream():
     ) as mock_stream_service:
         response = MagicMock()
         result = await service.execute(
-            request=MagicMock(stream=True, tools=None),
+            request=MagicMock(stream=True, tools=None, model=REQUESTED_MODEL),
             response=response,
             user=MagicMock(),
             forwarding_from=MagicMock(),
@@ -154,7 +156,7 @@ async def test_execute_rate_limited():
         response = MagicMock()
         with pytest.raises(RateLimitError) as exc_info:
             await service.execute(
-                request=MagicMock(tools=None),
+                request=MagicMock(tools=None, model=REQUESTED_MODEL),
                 response=response,
                 user=MagicMock(),
                 forwarding_from=MagicMock(),
@@ -178,7 +180,7 @@ async def test_execute_rate_limited():
 async def test_tools_not_supported_for_model():
     request = ChatCompletionRequest(
         messages=[Message(content="content", role="role")],
-        model="mock_model",
+        model="llama3.1:8b",
         stream=False,
         tools=[
             Tool(
@@ -240,6 +242,30 @@ async def test_keeps_tools_from_input():
         ],
         tool_choice=None,
     )
+
+
+async def test_model_not_supported():
+    request = ChatCompletionRequest(
+        messages=[Message(content="content", role="role")],
+        model="random_model",
+        stream=False,
+        tools=None,
+    )
+
+    service.chat_completions_service = AsyncMock()
+    with pytest.raises(error_responses.UnsupportedModelError) as e:
+        await service.execute(
+            request=request,
+            response=MagicMock(),
+            user=MagicMock(),
+            forwarding_from=MagicMock(),
+            node_repository=MagicMock(),
+            tokens_repository=AsyncMock(),
+            rate_limit_repository=AsyncMock(),
+            metrics_queue_repository=MagicMock(),
+            analytics=AsyncMock(),
+        )
+        assert e is not None
 
 
 def test_model_name_translation_no_suffix():

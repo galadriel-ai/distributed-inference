@@ -1,7 +1,12 @@
 from fastapi import APIRouter
 from fastapi import Depends
 
-from distributedinference import api_logger
+from distributedinference import api_logger, dependencies
+from distributedinference.analytics.analytics import (
+    Analytics,
+    AnalyticsEvent,
+    EventName,
+)
 from distributedinference.domain.user.entities import User
 from distributedinference.service.auth import authentication
 from distributedinference.service.tool import search_service
@@ -24,6 +29,10 @@ logger = api_logger.get()
 )
 async def search(
     request: SearchRequest,
-    _: User = Depends(authentication.validate_api_key_header),
+    analytics: Analytics = Depends(dependencies.get_analytics),
+    user: User = Depends(authentication.validate_api_key_header),
 ):
+    analytics.track_event(
+        user.uid, AnalyticsEvent(EventName.TOOL_CALL, {"tool": "web_search"})
+    )
     return await search_service.execute(request)

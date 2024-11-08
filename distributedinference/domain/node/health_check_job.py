@@ -96,7 +96,6 @@ async def _send_health_check_inference(
     try:
         while True:
             response = await node_repository.receive_for_request(node.uid, request.id)
-            time_tracker.chunk_received()
             if not response:
                 return CheckHealthResponse(
                     node_id=node.uid,
@@ -106,8 +105,8 @@ async def _send_health_check_inference(
                         message="Node did not respond to health check request",
                     ),
                 )
+            time_tracker.chunk_received(response.chunk)
             if response.chunk and response.chunk.usage and not response.chunk.choices:
-                time_tracker.track_usage(response.chunk.usage)
                 is_healthy = is_node_healthy.execute(
                     time_tracker.get_time_to_first_token(),
                     time_tracker.get_throughput(),
