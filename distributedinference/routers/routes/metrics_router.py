@@ -1,5 +1,4 @@
 from typing import List
-from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -82,34 +81,32 @@ async def get_metrics(
     _clear()
 
     nodes = await metrics_repository.get_connected_node_benchmarks()
-    node_model_names = {node.node_id: node.model_name for node in nodes}
     for node in nodes:
         network_nodes_gauge.labels(node.model_name).inc()
-    connected_node_ids = [node.node_id for node in nodes]
-    node_metrics = await node_repository.get_node_metrics_by_ids(connected_node_ids)
+    node_metrics = await node_repository.get_all_node_metrics()
 
     for node_uid, metrics in node_metrics.items():
-        node_requests_gauge.labels(node_model_names[node_uid], node_uid).set(
+        node_requests_gauge.labels(metrics.model_name, node_uid).set(
             metrics.requests_served
         )
-        node_requests_successful_gauge.labels(node_model_names[node_uid], node_uid).set(
+        node_requests_successful_gauge.labels(metrics.model_name, node_uid).set(
             metrics.requests_successful
         )
-        node_requests_failed_gauge.labels(node_model_names[node_uid], node_uid).set(
+        node_requests_failed_gauge.labels(metrics.model_name, node_uid).set(
             metrics.requests_failed
         )
         if metrics.time_to_first_token:
-            node_time_to_first_token_gauge.labels(
-                node_model_names[node_uid], node_uid
-            ).set(metrics.time_to_first_token)
+            node_time_to_first_token_gauge.labels(metrics.model_name, node_uid).set(
+                metrics.time_to_first_token
+            )
         if metrics.inference_tokens_per_second:
             node_inference_tokens_per_second_gauge.labels(
-                node_model_names[node_uid], node_uid
+                metrics.model_name, node_uid
             ).set(metrics.inference_tokens_per_second)
         if metrics.rtt:
             node_rtt_gauge.labels(node_uid).set(metrics.rtt)
 
-    await _set_node_tokens(metrics_repository, connected_node_ids)
+    await _set_node_tokens(metrics_repository)
     await _set_node_costs(nodes)
     await sql_engine_metrics.execute()
     await node_status_metrics.execute(metrics_repository)
@@ -140,11 +137,8 @@ def _clear():
 
 async def _set_node_tokens(
     metrics_repository: MetricsRepository,
-    connected_node_ids: List[UUID],
 ):
-    node_usage_total_tokens = await metrics_repository.get_total_tokens_by_node_ids(
-        connected_node_ids
-    )
+    node_usage_total_tokens = await metrics_repository.get_all_nodes_total_tokens()
 
     for usage in node_usage_total_tokens:
         node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(

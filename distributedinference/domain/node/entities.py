@@ -48,6 +48,7 @@ class NodeMetrics:
     total_uptime: int = 0
     current_uptime: int = 0
     gpu_model: str = None
+    model_name: str = None
 
 
 @dataclass

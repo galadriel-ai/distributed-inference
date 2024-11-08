@@ -187,7 +187,7 @@ class HealthCheckProtocol:
 
 
 def _current_milli_time():
-    return round(time.time() * 1000)
+    return time.time_ns() // 1_000_000
 
 
 def _is_supported_node_version(node_version: Optional[str]) -> bool:

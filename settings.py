@@ -38,7 +38,7 @@ MODEL_NAME_MAPPING = {
 }
 MODELS_SUPPORTING_TOOLS = [
     "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
-    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+    "hugging-quants/Meta-Llama-3.1-405B-Instruct-AWQ-INT4",
 ]
 
 # Rough estimate for 70% of lowest 3090 GPU node benchmark test
@@ -81,6 +81,10 @@ GALADRIEL_PROTOCOL_CONFIG = {
         "ping_miss_threshold": 3,  # If 3 consecutive pings are missed, mark the node as offline
     },
 }
+# Estimated latency (in ms) between different backend servers (e.g. EU west to US east)
+BACKEND_NODE_LATENCY_MILLISECONDS = int(
+    os.getenv("BACKEND_NODE_LATENCY_MILLISECONDS", 80)
+)
 NODE_HEALTH_CHECK_INTERVAL_SECONDS = int(os.getenv("NODE_HEALTH_CHECK_INTERVAL", "563"))
 
 # Grafana API

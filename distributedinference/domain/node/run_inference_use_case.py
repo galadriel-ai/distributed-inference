@@ -1,4 +1,3 @@
-import time
 from typing import AsyncGenerator
 from typing import Optional
 from uuid import UUID
@@ -23,6 +22,7 @@ from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
+from distributedinference.domain.node.time_tracker import TimeTracker
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -62,10 +62,9 @@ class InferenceExecutor:
         self.metrics_increment = None
         self.is_include_usage: bool = False
         self.usage: Optional[CompletionUsage] = None
-        self.request_start_time = None
-        self.first_token_time = None
-        self.time_elapsed_after_first_token = None
         self.request_successful = False
+
+        self.time_tracker = TimeTracker()
 
     # pylint: disable=too-many-branches, R0912, R0915
     async def execute(
@@ -163,20 +162,20 @@ class InferenceExecutor:
         * bool indicating if the streaming has been finished
         """
         response = await self.node_repository.receive_for_request(node.uid, request.id)
+        self.time_tracker.chunk_received()
         if not response:
             # Nothing to check, we can mark node as unhealthy and break
             await self._mark_node_as_unhealthy(node)
             return None, True
-        self._track_first_token_time()
         if response.chunk:
             # overwriting the usage each time
             self.usage = response.chunk.usage if response.chunk else None
+            self.time_tracker.track_usage(self.usage)
             if self.usage and self._is_request_finished(response):
                 # last chunk only has usage, no choices - request is finished
                 self.request_successful = True
                 if not self.is_include_usage:
                     response.chunk.usage = None
-                self._track_time_elapsed_after_first_token()
                 return response, True
             # if users doesn't need usage, we can remove it from the response
             if not self.is_include_usage:
@@ -205,18 +204,7 @@ class InferenceExecutor:
         self.is_include_usage: bool = bool(
             (request.chat_request.get("stream_options") or {}).get("include_usage")
         ) or not bool(request.chat_request.get("stream"))
-        self.request_start_time = time.time()
-
-    def _track_first_token_time(self):
-        if not self.first_token_time:
-            self.first_token_time = time.time() - self.request_start_time
-
-    def _track_time_elapsed_after_first_token(self):
-        # calculate the inference time starting from the first token arrival
-        if self.first_token_time:
-            self.time_elapsed_after_first_token = (
-                time.time() - self.request_start_time - self.first_token_time
-            )
+        self.time_tracker.start()
 
     def _select_node(
         self,
@@ -251,19 +239,19 @@ class InferenceExecutor:
                 user_uid=user_uid, request=request, node_uid=node.uid, usage=self.usage
             )
         # set only if we got at least one token
-        if self.first_token_time is not None:
-            self.metrics_increment.time_to_first_token = self.first_token_time
+        ttft = self.time_tracker.get_time_to_first_token()
+        if ttft is not None:
+            self.metrics_increment.time_to_first_token = ttft
             # add TTFT in histogram
             node_time_to_first_token_histogram.labels(request.model, node.uid).observe(
-                self.first_token_time
+                ttft
             )
         # use completion tokens / time elapsed to focus on the model generation performance
-        if self.time_elapsed_after_first_token and self.usage:
-            self.metrics_increment.inference_tokens_per_second = (
-                self.usage.completion_tokens / self.time_elapsed_after_first_token
-            )
+        throughput = self.time_tracker.get_throughput()
+        if throughput:
+            self.metrics_increment.inference_tokens_per_second = throughput
             logger.debug(
-                f"Inference generates {self.usage.completion_tokens} tokens, and takes {self.time_elapsed_after_first_token}s. TPS: {self.metrics_increment.inference_tokens_per_second} TTFT: {self.first_token_time}"
+                f"Inference generates {self.usage.completion_tokens} tokens, and takes {self.time_tracker.get_total_time()}s. TPS: {throughput} TTFT: {self.time_tracker.get_time_to_first_token()}"
             )
         if self.request_successful:
             self.metrics_increment.requests_successful_incerement += 1
