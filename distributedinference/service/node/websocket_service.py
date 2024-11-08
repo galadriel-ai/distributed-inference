@@ -120,7 +120,7 @@ async def execute(
                         await node.request_incoming_queues[request_id].put(parsed_data)
                     except KeyError:
                         logger.error(
-                            f"Received chunk for unknown request {request_id}, chunlk: {parsed_data}"
+                            f"Received chunk for unknown request {request_id}, chunk: {parsed_data}"
                         )
                 else:
                     logger.error("Invalid request id")

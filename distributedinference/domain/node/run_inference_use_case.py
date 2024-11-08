@@ -131,11 +131,11 @@ class InferenceExecutor:
                     if usage and not response.chunk.choices and not is_include_usage:
                         # Last chunk but usage is not requested - skip the last chunk
                         break
+                    if not is_include_usage:
+                        response.chunk.usage = None
                 if response.error:
                     logger.error(f"LLM Inference Proxy error: {response.error}")
                     raise NoAvailableNodesError()
-                if not is_include_usage:
-                    response.chunk.usage = None
                 yield response
             if usage:
                 await self._save_usage(
