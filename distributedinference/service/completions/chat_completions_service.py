@@ -31,7 +31,7 @@ from distributedinference.utils.timer import async_timer
 logger = api_logger.get()
 
 
-# pylint: disable=R0913
+# pylint: disable=R0913, R0914
 @async_timer("chat_completions_service.execute", logger=logger)
 async def execute(
     user: User,
