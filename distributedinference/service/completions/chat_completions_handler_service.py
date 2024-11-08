@@ -44,9 +44,9 @@ async def execute(
     analytics: Analytics,
 ) -> Union[StreamingResponse, ChatCompletion]:
     request.model = _match_model_name(request.model)
-
     if request.model not in settings.SUPPORTED_MODELS:
         raise error_responses.UnsupportedModelError(model_name=request.model)
+    request.max_tokens = _limit_max_tokens(request)
 
     if request.model not in settings.MODELS_SUPPORTING_TOOLS:
         # Required to ensure the dict value does not get set at all
@@ -128,3 +128,12 @@ def _match_model_name(user_input: str) -> str:
 
     # forward user_input as user may provide the full model name
     return user_input
+
+
+def _limit_max_tokens(request: ChatCompletionRequest) -> Optional[int]:
+    if not request.max_tokens:
+        return None
+    max_supported_tokens = settings.MODEL_MAX_TOKENS_MAPPING.get(request.model)
+    if max_supported_tokens and request.max_tokens > max_supported_tokens:
+        return max_supported_tokens
+    return request.max_tokens
