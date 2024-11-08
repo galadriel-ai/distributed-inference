@@ -48,7 +48,7 @@ class EventName(Enum):
     API_RESPONSE = "api_response"
 
     # Tool
-    TOOL_WEB_SEARCH = "tool_web_search"
+    TOOL_CALL = "tool_call"
 
 
 @dataclass

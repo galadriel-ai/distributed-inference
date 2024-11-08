@@ -33,6 +33,6 @@ async def search(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     analytics.track_event(
-        user.uid, AnalyticsEvent(EventName.TOOL_WEB_SEARCH, {"query": request.query})
+        user.uid, AnalyticsEvent(EventName.TOOL_CALL, {"tool": "web_search"})
     )
     return await search_service.execute(request)
