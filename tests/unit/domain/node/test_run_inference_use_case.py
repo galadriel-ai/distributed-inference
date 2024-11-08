@@ -1,4 +1,3 @@
-import os
 import time
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, patch
@@ -6,6 +5,7 @@ from unittest.mock import MagicMock
 from uuid import UUID, uuid1
 
 import pytest
+from packaging.version import Version
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice
@@ -14,9 +14,10 @@ from openai.types.chat.chat_completion_chunk import ChoiceDelta
 from distributedinference.domain.node import run_inference_use_case as use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceError
-from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.repository.node_repository import NodeRepository
@@ -36,7 +37,7 @@ def mock_websocket():
 
 @pytest.fixture
 def connected_node_factory(mock_websocket):
-    def _create_node(uid, model="model"):
+    def _create_node(uid, model="model", version="0.0.16"):
         return ConnectedNode(
             uid,
             uuid1(),
@@ -46,6 +47,7 @@ def connected_node_factory(mock_websocket):
             mock_websocket,
             {},
             NodeStatus.RUNNING,
+            version=Version(version),
         )
 
     return _create_node
@@ -112,7 +114,7 @@ class MockInferenceError:
             node_id=uuid1(),
             request_id=str(MOCK_UUID),
             error=InferenceError(
-                status_code=InferenceStatusCodes.BAD_REQUEST, message="mock error"
+                status_code=InferenceErrorStatusCodes.BAD_REQUEST, message="mock error"
             ),
         )
 
@@ -132,12 +134,14 @@ async def test_success(connected_node_factory):
                 request_id="request_id",
                 chunk=MagicMock(usage=None),
                 error=None,
+                status=InferenceStatusCodes.RUNNING,
             ),
             InferenceResponse(
                 node_id=TEST_NODE_ID,
                 request_id="request_id",
                 chunk=MagicMock(choices=[MagicMock(finish_reason="stop")], usage=None),
                 error=None,
+                status=InferenceStatusCodes.RUNNING,
             ),
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -149,6 +153,14 @@ async def test_success(connected_node_factory):
                     ),
                 ),
                 error=None,
+                status=InferenceStatusCodes.RUNNING,
+            ),
+            InferenceResponse(
+                node_id=TEST_NODE_ID,
+                request_id="request_id",
+                chunk=None,
+                error=None,
+                status=InferenceStatusCodes.DONE,
             ),
         ]
     )
@@ -175,7 +187,7 @@ async def test_success(connected_node_factory):
     ):
         responses.append(response)
 
-    assert len(responses) == 3
+    assert len(responses) == 4
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
@@ -370,12 +382,14 @@ async def test_streaming_no_usage(connected_node_factory):
                 request_id="request_id",
                 chunk=MagicMock(choices=[MagicMock(finish_reason=None)], usage=None),
                 error=None,
+                status=InferenceStatusCodes.RUNNING,
             ),
             InferenceResponse(
                 node_id=TEST_NODE_ID,
                 request_id="request_id",
                 chunk=MagicMock(choices=[MagicMock(finish_reason="stop")], usage=None),
                 error=None,
+                status=InferenceStatusCodes.RUNNING,
             ),
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -387,6 +401,14 @@ async def test_streaming_no_usage(connected_node_factory):
                     ),
                 ),
                 error=None,
+                status=InferenceStatusCodes.RUNNING,
+            ),
+            InferenceResponse(
+                node_id=TEST_NODE_ID,
+                request_id="request_id",
+                chunk=None,
+                error=None,
+                status=InferenceStatusCodes.DONE,
             ),
         ]
     )
@@ -417,7 +439,7 @@ async def test_streaming_no_usage(connected_node_factory):
     ):
         responses.append(response)
 
-    assert len(responses) == 3
+    assert len(responses) == 4
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
@@ -465,6 +487,13 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
                 ),
                 error=None,
             ),
+            InferenceResponse(
+                node_id=TEST_NODE_ID,
+                request_id="request_id",
+                chunk=None,
+                error=None,
+                status=InferenceStatusCodes.DONE,
+            ),
         ]
     )
     mock_node_repository.cleanup_request = AsyncMock()
@@ -493,8 +522,8 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     ):
         responses.append(response)
 
-    # 2 content chunks, 1 extra chunk for usage
-    assert len(responses) == 3
+    # 3 content chunks, 1 extra chunk for usage
+    assert len(responses) == 4
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
@@ -506,12 +535,13 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     )
 
 
-async def test_lmdeploy_detects_end(connected_node_factory):
+async def test_old_node_still_works(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID)
+        return_value=connected_node_factory(TEST_NODE_ID, version="0.0.15")
     )
+    node = connected_node_factory(TEST_NODE_ID, "0.0.15")
     mock_node_repository.send_inference_request = AsyncMock()
     mock_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -524,10 +554,14 @@ async def test_lmdeploy_detects_end(connected_node_factory):
             InferenceResponse(
                 node_id=TEST_NODE_ID,
                 request_id="request_id",
+                chunk=MagicMock(choices=[MagicMock(finish_reason="stop")], usage=None),
+                error=None,
+            ),
+            InferenceResponse(
+                node_id=TEST_NODE_ID,
+                request_id="request_id",
                 chunk=MagicMock(
-                    choices=[
-                        MagicMock(delta=MagicMock(content=""), finish_reason="stop")
-                    ],
+                    choices=[],
                     usage=CompletionUsage(
                         prompt_tokens=10, completion_tokens=20, total_tokens=30
                     ),
@@ -556,17 +590,21 @@ async def test_lmdeploy_detects_end(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
-        None,
         API_KEY,
+        None,
         request,
     ):
         responses.append(response)
 
-    # 1 content chunk, 1 stop chunk
-    assert len(responses) == 2
+    # 2 content chunk, 1 stop chunk
+    assert len(responses) == 3
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
+    assert responses[2].request_id == "request_id"
+    assert responses[2].chunk.choices == []
+    assert responses[2].chunk.usage is not None
+
     mock_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
@@ -589,7 +627,8 @@ async def test_inference_error_stops_loop(connected_node_factory):
                 request_id="request_id",
                 chunk=None,
                 error=InferenceError(
-                    status_code=InferenceStatusCodes.NOT_FOUND, message="No model found"
+                    status_code=InferenceErrorStatusCodes.NOT_FOUND,
+                    message="No model found",
                 ),
             ),
         ]
@@ -624,7 +663,7 @@ async def test_inference_error_stops_loop(connected_node_factory):
     assert len(responses) == 1
     assert responses[0].request_id == "request_id"
     assert responses[0].chunk == None
-    assert responses[0].error.status_code == InferenceStatusCodes.NOT_FOUND
+    assert responses[0].error.status_code == InferenceErrorStatusCodes.NOT_FOUND
     assert responses[0].error.message == "No model found"
     mock_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
@@ -648,7 +687,8 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
                 request_id="request_id",
                 chunk=None,
                 error=InferenceError(
-                    status_code=InferenceStatusCodes.NOT_FOUND, message="No model found"
+                    status_code=InferenceErrorStatusCodes.NOT_FOUND,
+                    message="No model found",
                 ),
             ),
         ]
@@ -685,7 +725,7 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     assert len(responses) == 1
     assert responses[0].request_id == "request_id"
     assert responses[0].chunk == None
-    assert responses[0].error.status_code == InferenceStatusCodes.NOT_FOUND
+    assert responses[0].error.status_code == InferenceErrorStatusCodes.NOT_FOUND
     assert responses[0].error.message == "No model found"
     mock_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request

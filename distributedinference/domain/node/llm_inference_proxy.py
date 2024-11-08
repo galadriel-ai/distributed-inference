@@ -8,7 +8,7 @@ import settings
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
-from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.service.error_responses import InferenceError
 
 logger = api_logger.get()
@@ -50,7 +50,7 @@ async def execute(
             request_id=request.id,
             error=InferenceError(
                 node_id=node_uid,
-                status_code=InferenceStatusCodes(exc.status_code),
+                status_code=InferenceErrorStatusCodes(exc.status_code),
                 message_extra=str(exc),
             ),
         )
@@ -60,7 +60,7 @@ async def execute(
             request_id=request.id,
             error=InferenceError(
                 node_id=node_uid,
-                status_code=InferenceStatusCodes.INTERNAL_SERVER_ERROR,
+                status_code=InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR,
                 message_extra=str(exc),
             ),
         )

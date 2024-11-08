@@ -9,6 +9,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import WebSocket
+from packaging.version import Version
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
@@ -114,6 +115,7 @@ class ConnectedNode:
     node_status: NodeStatus
     is_self_hosted: bool = False
     is_healthy: bool = True
+    version: Optional[Version] = None
 
     def active_requests_count(self) -> int:
         return len(self.request_incoming_queues)
@@ -133,6 +135,12 @@ class ConnectedNode:
 
 
 class InferenceStatusCodes(Enum):
+    RUNNING = 1
+    DONE = 2
+    ERROR = 3
+
+
+class InferenceErrorStatusCodes(Enum):
     BAD_REQUEST = 400
     AUTHENTICATION_ERROR = 401
     PERMISSION_DENIED = 403
@@ -145,7 +153,7 @@ class InferenceStatusCodes(Enum):
 
 @dataclass
 class InferenceError:
-    status_code: InferenceStatusCodes
+    status_code: InferenceErrorStatusCodes
     message: str
 
     def to_dict(self):
@@ -166,6 +174,7 @@ class InferenceRequest:
 class InferenceResponse:
     node_id: UUID
     request_id: str
+    status: Optional[InferenceStatusCodes] = None
     chunk: Optional[ChatCompletionChunk] = None
     error: Optional[InferenceError] = None
 
@@ -174,6 +183,7 @@ class InferenceResponse:
             "request_id": self.request_id,
             "error": self.error.to_dict() if self.error else None,
             "chunk": self.chunk.to_dict() if self.chunk else None,
+            "status": self.status.value if self.status else None,
         }
 
 

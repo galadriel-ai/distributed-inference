@@ -15,7 +15,7 @@ from distributedinference.analytics.analytics import (
 from distributedinference import api_logger
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import InferenceError
-from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import CheckHealthResponse
 from distributedinference.domain.node.entities import NodeStatus
@@ -97,7 +97,7 @@ async def _send_health_check_inference(
                     node_id=node.uid,
                     is_healthy=False,
                     error=InferenceError(
-                        status_code=InferenceStatusCodes.INTERNAL_SERVER_ERROR,
+                        status_code=InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR,
                         message="Node did not respond to health check request",
                     ),
                 )

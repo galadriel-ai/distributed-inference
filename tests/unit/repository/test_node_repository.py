@@ -11,7 +11,7 @@ from uuid_extensions import uuid7
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetricsIncrement
-from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
@@ -73,6 +73,7 @@ def connected_node_factory(mock_websocket):
             node_status,
             is_self_hosted,
             is_healthy,
+            None,
         )
 
     return _create_node
@@ -433,5 +434,5 @@ async def test_deregister_node_sends_error_on_disconnect(
     assert error_response["error"]["message"] == "Node disconnected"
     assert (
         error_response["error"]["status_code"]
-        == InferenceStatusCodes.UNPROCESSABLE_ENTITY.value
+        == InferenceErrorStatusCodes.UNPROCESSABLE_ENTITY.value
     )

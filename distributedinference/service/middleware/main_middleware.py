@@ -14,7 +14,7 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
-from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.utils import http_headers
 from distributedinference.service.error_responses import APIErrorResponse
 from distributedinference.service.middleware import util
@@ -116,7 +116,8 @@ class MainMiddleware(BaseHTTPMiddleware):
             else:
                 # Return INTERNAL_SERVER_ERROR(500) if it is not a APIErrorResponse
                 response_status_codes_counter.labels(
-                    request.url.path, InferenceStatusCodes.INTERNAL_SERVER_ERROR.value
+                    request.url.path,
+                    InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR.value,
                 ).inc()
 
                 user_id = util.get_state(request, RequestStateKey.USER_ID)
@@ -129,7 +130,7 @@ class MainMiddleware(BaseHTTPMiddleware):
                                 "request_id": request_id,
                                 "request_path": request.url.path,
                                 "error_message": "",
-                                "status_code": InferenceStatusCodes.INTERNAL_SERVER_ERROR,
+                                "status_code": InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR,
                             },
                         ),
                     )
