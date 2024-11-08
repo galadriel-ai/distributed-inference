@@ -29,17 +29,23 @@ class TimeTracker:
         """
         Returns TTFT
         """
-        return self.first_token_time - self.start_time
+        if self.first_token_time:
+            return self.first_token_time - self.start_time
+        return 0.0
 
     def get_total_time(self) -> float:
-        return self.next_token_time - self.start_time
+        if self.next_token_time:
+            return self.next_token_time - self.start_time
+        if self.first_token_time:
+            return self.first_token_time - self.start_time
+        return 0.0
 
     def get_throughput(self) -> float:
         """
         Returns tokens per second since the first token was generated
         """
-        if self.usage:
+        if self.usage and self.next_token_time:
             duration = self.next_token_time - self.first_token_time
             if duration:
                 return self.usage.completion_tokens / duration
-        return 0
+        return 0.0
