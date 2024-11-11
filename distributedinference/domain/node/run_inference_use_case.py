@@ -19,6 +19,7 @@ from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
+from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
@@ -182,7 +183,8 @@ class InferenceExecutor:
             return response, False
 
         # if we got an error or no chunk, we can mark node as unhealthy and break
-        await self._mark_node_as_unhealthy(node)
+        if not response.error or response.error.status_code != InferenceStatusCodes.BAD_REQUEST:
+            await self._mark_node_as_unhealthy(node)
         return response, True
 
     def _initialise_metrics(self, request: InferenceRequest, node: ConnectedNode):

@@ -46,7 +46,7 @@ async def execute(
     request.model = _match_model_name(request.model)
     if request.model not in settings.SUPPORTED_MODELS:
         raise error_responses.UnsupportedModelError(model_name=request.model)
-    request.max_tokens = _limit_max_tokens(request)
+    _check_max_tokens(request)
 
     if request.model not in settings.MODELS_SUPPORTING_TOOLS:
         # Required to ensure the dict value does not get set at all
@@ -130,10 +130,10 @@ def _match_model_name(user_input: str) -> str:
     return user_input
 
 
-def _limit_max_tokens(request: ChatCompletionRequest) -> Optional[int]:
+def _check_max_tokens(request: ChatCompletionRequest) -> None:
     if not request.max_tokens:
         return None
     max_supported_tokens = settings.MODEL_MAX_TOKENS_MAPPING.get(request.model)
     if max_supported_tokens and request.max_tokens > max_supported_tokens:
-        return max_supported_tokens
-    return request.max_tokens
+        raise error_responses.ValidationTypeError(
+            f"The given max_tokens exceeds the maximum the model supports: {max_supported_tokens}")

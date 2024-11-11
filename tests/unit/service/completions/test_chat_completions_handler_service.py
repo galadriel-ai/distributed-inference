@@ -316,32 +316,29 @@ def test_model_name_translation_exact_model():
 
 def test_model_max_context_handling():
     for model in settings.SUPPORTED_MODELS:
-        response = service._limit_max_tokens(
+        service._check_max_tokens(
             ChatCompletionRequest(messages=[], model=model, max_tokens=123)
         )
-        assert response == 123
 
-        response = service._limit_max_tokens(
+        service._check_max_tokens(
             ChatCompletionRequest(
                 messages=[],
                 model=model,
             )
         )
-        assert response is None
 
-        response = service._limit_max_tokens(
-            ChatCompletionRequest(messages=[], model=model, max_tokens=10_000_000_000)
-        )
-        assert response == settings.MODEL_MAX_TOKENS_MAPPING[model]
+        with pytest.raises(error_responses.ValidationTypeError) as e:
+            service._check_max_tokens(
+                ChatCompletionRequest(messages=[], model=model, max_tokens=10_000_000_000)
+            )
+            assert e is not None
 
 
 def test_model_max_context_handling_unexpected_model():
-    response = service._limit_max_tokens(
+    service._check_max_tokens(
         ChatCompletionRequest(messages=[], model="random", max_tokens=10_000_000_000)
     )
-    assert response == 10_000_000_000
 
-    response = service._limit_max_tokens(
+    service._check_max_tokens(
         ChatCompletionRequest(messages=[], model="random", max_tokens=None)
     )
-    assert response is None
