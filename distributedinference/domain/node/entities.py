@@ -161,8 +161,8 @@ class InferenceError:
     def __init__(self, **kwargs):
         try:
             # InferenceErrorStatusCodes(InferenceErrorStatusCodes.BAD_REQUEST) works and int also works
-            self.status_code = InferenceErrorStatusCodes(kwargs.get("status_code"))
-            self.message = kwargs.get("message")
+            self.status_code = InferenceErrorStatusCodes(kwargs["status_code"])
+            self.message = kwargs["message"]
         except Exception as _:
             self.status_code = InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR
             error = error_responses.InternalServerAPIError()
