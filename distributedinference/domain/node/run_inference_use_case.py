@@ -98,24 +98,24 @@ class InferenceExecutor:
             logger.info(
                 "No node for the requested model available, forwarding to peer nodes!"
             )
+            usage = None
             async for response in peer_nodes_forwarding.execute(api_key, request):
                 if not response:
                     # Peer nodes also don't support this model, break and call the fallback solution
                     break
-                if response.chunk and not response.chunk.choices:
-                    # Last chunk only has usage, no choices - request is finished
-                    if is_include_usage:
-                        yield response
-                    logger.debug("Peer nodes completed this inference!")
-                    return
+                if response.chunk:
+                    usage = response.chunk.usage
+                    if not is_include_usage:
+                        response.chunk.usage = None
+                    yield response
                 if response.error:
                     # Peer nodes did the inference but there are errors in the response, raise error and return
                     logger.error(f"Peer nodes inference error: {response.error}")
                     raise NoAvailableNodesError()
-                if not is_include_usage:
-                    response.chunk.usage = None
-                yield response
-
+            if usage:
+                # Peer nodes did the inference, exit
+                logger.debug("Peer nodes completed this inference!")
+                return
             llm_fallback_called_gauge.labels(request.model).inc()
             logger.info(
                 "Peer nodes don't support this model, calling a fallback proxy!"
