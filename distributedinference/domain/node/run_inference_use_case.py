@@ -19,6 +19,7 @@ from distributedinference import api_logger
 from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
@@ -195,7 +196,11 @@ class InferenceExecutor:
             self.request_successful = True
             return response, True
         # if we got an error or no chunk, we can mark node as unhealthy and break
-        if not response.error or response.error.status_code != InferenceStatusCodes.BAD_REQUEST:
+        if (
+            not response.error
+            # On client side issues don't blame the node
+            or response.error.status_code != InferenceErrorStatusCodes.BAD_REQUEST
+        ):
             await self._mark_node_as_unhealthy(node)
         return response, True
 

@@ -136,4 +136,6 @@ def _check_max_tokens(request: ChatCompletionRequest) -> None:
     max_supported_tokens = settings.MODEL_MAX_TOKENS_MAPPING.get(request.model)
     if max_supported_tokens and request.max_tokens > max_supported_tokens:
         raise error_responses.ValidationTypeError(
-            f"The given max_tokens exceeds the maximum the model supports: {max_supported_tokens}")
+            f"The given max_tokens exceeds the maximum the model supports: {max_supported_tokens}"
+        )
+    return None

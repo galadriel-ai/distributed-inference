@@ -329,7 +329,9 @@ def test_model_max_context_handling():
 
         with pytest.raises(error_responses.ValidationTypeError) as e:
             service._check_max_tokens(
-                ChatCompletionRequest(messages=[], model=model, max_tokens=10_000_000_000)
+                ChatCompletionRequest(
+                    messages=[], model=model, max_tokens=10_000_000_000
+                )
             )
             assert e is not None
 

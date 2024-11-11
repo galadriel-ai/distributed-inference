@@ -59,6 +59,7 @@ MODEL_MAX_TOKENS_MAPPING = {
     "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8": 8192,
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16": 131072,
     "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16": 131072,
+    "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4": 131072,
     "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4": 8192,
 }
 MODELS_SUPPORTING_TOOLS = [

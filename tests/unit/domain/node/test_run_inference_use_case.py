@@ -738,7 +738,9 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     )
 
 
-async def test_inference_client_error_not_marks_node_as_unhealthy(connected_node_factory):
+async def test_inference_client_error_not_marks_node_as_unhealthy(
+    connected_node_factory,
+):
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
     mock_node_repository.select_node = MagicMock(
@@ -752,7 +754,8 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(connected_node
                 request_id="request_id",
                 chunk=None,
                 error=InferenceError(
-                    status_code=InferenceStatusCodes.BAD_REQUEST, message="Client error"
+                    status_code=InferenceErrorStatusCodes.BAD_REQUEST,
+                    message="Client error",
                 ),
             ),
         ]
@@ -789,7 +792,7 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(connected_node
     assert len(responses) == 1
     assert responses[0].request_id == "request_id"
     assert responses[0].chunk == None
-    assert responses[0].error.status_code == InferenceStatusCodes.BAD_REQUEST
+    assert responses[0].error.status_code == InferenceErrorStatusCodes.BAD_REQUEST
     assert responses[0].error.message == "Client error"
     mock_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
