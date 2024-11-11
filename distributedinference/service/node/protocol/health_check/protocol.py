@@ -182,7 +182,7 @@ class HealthCheckProtocol:
             health=node_health,
         )
         logger.info(
-            f"{self.PROTOCOL_NAME}: Received health check response from node {response.node_id}, nonce = {node_info.last_request_nonce}"
+            f"{self.PROTOCOL_NAME}: Received health check response from node {response.node_id}, nonce = {response.nonce}"
         )
 
 

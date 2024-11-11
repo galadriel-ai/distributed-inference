@@ -25,6 +25,7 @@ from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository import utils
 from distributedinference.repository.connection import SessionProvider
@@ -508,7 +509,7 @@ class NodeRepository:
                         node_id=node_id,
                         request_id=request_id,
                         error=InferenceError(
-                            status_code=InferenceStatusCodes.UNPROCESSABLE_ENTITY,
+                            status_code=InferenceErrorStatusCodes.UNPROCESSABLE_ENTITY,
                             message="Node disconnected",
                         ),
                     ).to_dict()
@@ -881,11 +882,14 @@ class NodeRepository:
             ]
 
     @async_timer("node_repository.save_node_health", logger=logger)
-    async def get_node_status(self, node_id: UUID) -> NodeStatus:
+    async def get_node_status(self, node_id: UUID) -> Optional[NodeStatus]:
         data = {"node_id": node_id}
         async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATUS), data)
-            return NodeStatus(rows.first().status)
+            row = rows.first()
+            if row:
+                return NodeStatus(row.status)
+            return None
 
     @async_timer("node_repository.save_node_health", logger=logger)
     async def save_node_health(self, node_id: UUID, health: NodeHealth):
@@ -931,6 +935,11 @@ class NodeRepository:
                     ),
                     error=(
                         InferenceError(**data["error"]) if data.get("error") else None
+                    ),
+                    status=(
+                        InferenceStatusCodes(data["status"])
+                        if data.get("status")
+                        else None
                     ),
                 )
             except Exception:

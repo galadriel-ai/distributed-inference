@@ -9,6 +9,7 @@ from fastapi import WebSocketDisconnect
 from fastapi import status
 from fastapi.exceptions import WebSocketException
 from fastapi.exceptions import WebSocketRequestValidationError
+from packaging.version import Version
 
 import settings
 from distributedinference import api_logger
@@ -74,6 +75,7 @@ async def execute(
         request_incoming_queues={},
         is_self_hosted=user.is_self_hosted_nodes_provider(),
         node_status=node_status,
+        version=Version(node_info.version) if node_info.version else None,
     )
     logger.info(f"Node {node_uid} connected")
     analytics.track_event(
@@ -117,7 +119,9 @@ async def execute(
                     try:
                         await node.request_incoming_queues[request_id].put(parsed_data)
                     except KeyError:
-                        logger.error(f"Received chunk for unknown request {request_id}")
+                        logger.error(
+                            f"Received chunk for unknown request {request_id}, chunk: {parsed_data}"
+                        )
                 else:
                     logger.error("Invalid request id")
             else:

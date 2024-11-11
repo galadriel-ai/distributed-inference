@@ -5,6 +5,8 @@ from uuid import UUID
 from prometheus_client import Gauge
 from prometheus_client import Histogram
 
+from packaging import version
+
 from openai.types import CompletionUsage
 
 import settings
@@ -44,6 +46,9 @@ llm_fallback_called_gauge = Gauge(
     "Indicates how many times the llm fallback is called",
     ["model_name"],
 )
+
+# TODO REMOVE THIS AFTER ALL NODES ARE UPDATED
+LMDEPLOY_NODE_VERSION = version.parse("0.0.16")
 
 
 class InferenceExecutor:
@@ -126,11 +131,11 @@ class InferenceExecutor:
                     if usage and not response.chunk.choices and not is_include_usage:
                         # Last chunk but usage is not requested - skip the last chunk
                         break
+                    if not is_include_usage:
+                        response.chunk.usage = None
                 if response.error:
                     logger.error(f"LLM Inference Proxy error: {response.error}")
                     raise NoAvailableNodesError()
-                if not is_include_usage:
-                    response.chunk.usage = None
                 yield response
             if usage:
                 await self._save_usage(
@@ -171,21 +176,39 @@ class InferenceExecutor:
         if response.chunk:
             # overwriting the usage each time
             self.usage = response.chunk.usage if response.chunk else None
-            if self.usage and not response.chunk.choices:
+            # TODO REFACTOR THIS AFTER ALL NODES ARE UPDATED
+            if self._is_request_finished(node, response):
                 # last chunk only has usage, no choices - request is finished
                 self.request_successful = True
-                if self.is_include_usage:
-                    return response, True
-                return None, True
+                if not self.is_include_usage:
+                    response.chunk.usage = None
+                return response, True
             # if users doesn't need usage, we can remove it from the response
             if not self.is_include_usage:
                 response.chunk.usage = None
             return response, False
-
+        if response.status == InferenceStatusCodes.ERROR:
+            # if we got an error, we can mark node as unhealthy and break
+            await self._mark_node_as_unhealthy(node)
+            return response, True
+        if response.status == InferenceStatusCodes.DONE:
+            self.request_successful = True
+            return response, True
         # if we got an error or no chunk, we can mark node as unhealthy and break
         if not response.error or response.error.status_code != InferenceStatusCodes.BAD_REQUEST:
             await self._mark_node_as_unhealthy(node)
         return response, True
+
+    def _is_request_finished(
+        self, node: ConnectedNode, response: InferenceResponse
+    ) -> bool:
+        if (
+            node.version < LMDEPLOY_NODE_VERSION
+            and self.usage is not None
+            and len(response.chunk.choices) == 0
+        ):
+            return True
+        return False
 
     def _initialise_metrics(self, request: InferenceRequest, node: ConnectedNode):
         self.metrics_increment = NodeMetricsIncrement(
