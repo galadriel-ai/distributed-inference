@@ -63,6 +63,11 @@ LAST_CHUNK = ChatCompletionChunk(
     created=123,
     model="llama3",
     object="chat.completion.chunk",
+    usage=CompletionUsage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+    ),
 )
 
 
@@ -90,6 +95,11 @@ class MockInference:
                     created=123,
                     model="llama3",
                     object="chat.completion.chunk",
+                    usage=CompletionUsage(
+                        prompt_tokens=10,
+                        completion_tokens=20,
+                        total_tokens=30,
+                    ),
                 ),
             )
         yield InferenceResponse(
