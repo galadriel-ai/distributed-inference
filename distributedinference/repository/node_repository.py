@@ -888,7 +888,7 @@ class NodeRepository:
             rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATUS), data)
             row = rows.first()
             if row:
-                return NodeStatus(rows.first().status)
+                return NodeStatus(row.status)
             return None
 
     @async_timer("node_repository.save_node_health", logger=logger)
