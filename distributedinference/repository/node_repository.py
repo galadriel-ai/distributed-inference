@@ -882,11 +882,14 @@ class NodeRepository:
             ]
 
     @async_timer("node_repository.save_node_health", logger=logger)
-    async def get_node_status(self, node_id: UUID) -> NodeStatus:
+    async def get_node_status(self, node_id: UUID) -> Optional[NodeStatus]:
         data = {"node_id": node_id}
         async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_NODE_STATUS), data)
-            return NodeStatus(rows.first().status)
+            row = rows.first()
+            if row:
+                return NodeStatus(rows.first().status)
+            return None
 
     @async_timer("node_repository.save_node_health", logger=logger)
     async def save_node_health(self, node_id: UUID, health: NodeHealth):
