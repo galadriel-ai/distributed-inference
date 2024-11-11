@@ -6,7 +6,7 @@ from distributedinference.domain.node.entities import (
     ConnectedNode,
     CheckHealthResponse,
     InferenceError,
-    InferenceStatusCodes,
+    InferenceErrorStatusCodes,
 )
 from distributedinference.analytics.analytics import (
     Analytics,
@@ -22,7 +22,15 @@ from distributedinference.service.node.protocol.protocol_handler import Protocol
 @pytest.fixture
 def mock_node():
     return ConnectedNode(
-        "node-1", "user-1", "model-1", 16000, int(time.time()), MagicMock(), {}, False
+        "node-1",
+        "user-1",
+        "model-1",
+        16000,
+        int(time.time()),
+        MagicMock(),
+        {},
+        False,
+        None,
     )
 
 
@@ -83,7 +91,7 @@ async def test_check_node_health_unhealthy(
         node_id=mock_node.uid,
         is_healthy=False,
         error=InferenceError(
-            status_code=InferenceStatusCodes.INTERNAL_SERVER_ERROR,
+            status_code=InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR,
             message="Node did not respond to health check request",
         ),
     )
@@ -159,7 +167,7 @@ async def test_send_health_check_inference_unhealthy(mock_node, mock_node_reposi
     )
 
     assert response.is_healthy is False
-    assert response.error.status_code == InferenceStatusCodes.INTERNAL_SERVER_ERROR
+    assert response.error.status_code == InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR
     assert response.error.message == "Node did not respond to health check request"
 
     mock_node_repository.send_inference_request.assert_called_once()
@@ -181,7 +189,7 @@ async def test_send_health_check_inference_error_response(
     error_response = AsyncMock(
         chunk=None,
         error=InferenceError(
-            status_code=InferenceStatusCodes.INTERNAL_SERVER_ERROR,
+            status_code=InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR,
             message="Node encountered an error",
         ),
     )
@@ -192,7 +200,7 @@ async def test_send_health_check_inference_error_response(
     )
 
     assert response.is_healthy is False
-    assert response.error.status_code == InferenceStatusCodes.INTERNAL_SERVER_ERROR
+    assert response.error.status_code == InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR
     assert response.error.message == "Node encountered an error"
     mock_node_repository.send_inference_request.assert_called_once()
     call_args = mock_node_repository.send_inference_request.call_args

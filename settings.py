@@ -57,6 +57,7 @@ MODEL_NAME_MAPPING = {
 MODELS_SUPPORTING_TOOLS = [
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
     "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+    "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
 ]
 
 # Rough estimate for 70% of lowest 3090 GPU node benchmark test

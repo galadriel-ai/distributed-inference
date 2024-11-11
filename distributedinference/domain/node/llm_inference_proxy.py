@@ -6,10 +6,10 @@ import openai
 
 import settings
 from distributedinference import api_logger
+from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
-from distributedinference.domain.node.entities import InferenceStatusCodes
-from distributedinference.service.error_responses import InferenceError
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 
 logger = api_logger.get()
 
@@ -45,13 +45,16 @@ async def execute(
                 chunk=chunk,
             )
     except openai.APIStatusError as exc:
+        try:
+            status_code = InferenceErrorStatusCodes(exc.status_code)
+        except ValueError:
+            status_code = InferenceErrorStatusCodes.BAD_REQUEST
         yield InferenceResponse(
             node_id=node_uid,
             request_id=request.id,
             error=InferenceError(
-                node_id=node_uid,
-                status_code=InferenceStatusCodes(exc.status_code),
-                message_extra=str(exc),
+                status_code=status_code,
+                message=str(exc),
             ),
         )
     except Exception as exc:
@@ -59,9 +62,8 @@ async def execute(
             node_id=node_uid,
             request_id=request.id,
             error=InferenceError(
-                node_id=node_uid,
-                status_code=InferenceStatusCodes.INTERNAL_SERVER_ERROR,
-                message_extra=str(exc),
+                status_code=InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR,
+                message=str(exc),
             ),
         )
 
