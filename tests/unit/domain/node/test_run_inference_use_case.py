@@ -684,6 +684,5 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(connected_node
     mock_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
-    mock_node_repository.update_node_status.assert_awaited_once_with(
-        TEST_NODE_ID, False, NodeStatus.RUNNING_DEGRADED
-    )
+    # Node status MUST not be updated if it's a client side error
+    mock_node_repository.update_node_status.assert_not_called()

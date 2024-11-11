@@ -12,6 +12,8 @@ from fastapi import WebSocket
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
+from distributedinference.service import error_responses
+
 
 class NodeStatus(Enum):
     RUNNING = "RUNNING"
@@ -147,6 +149,15 @@ class InferenceStatusCodes(Enum):
 class InferenceError:
     status_code: InferenceStatusCodes
     message: str
+
+    def __init__(self, **kwargs):
+        try:
+            self.status_code = InferenceStatusCodes(kwargs.get("status_code"))
+            self.message = kwargs.get("message")
+        except:
+            self.status_code = InferenceStatusCodes.INTERNAL_SERVER_ERROR
+            error = error_responses.InternalServerAPIError()
+            self.message = error.to_message()
 
     def to_dict(self):
         return {
