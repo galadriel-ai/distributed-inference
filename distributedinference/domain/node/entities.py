@@ -36,7 +36,6 @@ class NodeMetricsIncrement:
     inference_tokens_per_second: Optional[float] = None
     rtt: Optional[int] = None
     uptime_increment: int = 0
-    status: str = NodeStatus.RUNNING
 
 
 @dataclass

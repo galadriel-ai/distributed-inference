@@ -322,8 +322,7 @@ async def test_save_node_metrics(node_repository, session_provider):
     assert args[0].text == SQL_INCREMENT_NODE_METRICS
 
     data = args[1]
-    assert data["node_id"] == node_id
-    assert data["model_name"] == "model"
+    assert data["node_info_id"] == node_id
     assert data["requests_served_increment"] == node_metrics.requests_served_incerement
     assert (
         data["requests_successful_increment"]
@@ -335,7 +334,6 @@ async def test_save_node_metrics(node_repository, session_provider):
         data["inference_tokens_per_second"] == node_metrics.inference_tokens_per_second
     )
     assert data["uptime_increment"] == node_metrics.uptime_increment
-    assert "created_at" in data
     assert "last_updated_at" in data
 
     # Check if the commit was called

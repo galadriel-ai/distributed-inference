@@ -164,7 +164,7 @@ SET
 WHERE node_info_id = :id;
 """
 
-SQL_INCREMENT_NODE_METRICS = """
+SQL_CREATE_NODE_METRICS = """
 INSERT INTO node_metrics (
     id,
     node_info_id,
@@ -208,6 +208,19 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     model_name = COALESCE(EXCLUDED.model_name, node_metrics.model_name),
     status = COALESCE(EXCLUDED.status, node_metrics.status),
     last_updated_at = EXCLUDED.last_updated_at;
+"""
+
+SQL_INCREMENT_NODE_METRICS = """
+UPDATE node_metrics SET
+    requests_served = requests_served + :requests_served_increment,
+    requests_successful = requests_successful + :requests_successful_increment,
+    requests_failed = requests_failed + :requests_failed_increment,    
+    time_to_first_token = COALESCE(:time_to_first_token, time_to_first_token),
+    inference_tokens_per_second = COALESCE(:inference_tokens_per_second, inference_tokens_per_second),
+    rtt = COALESCE(:rtt, rtt),
+    uptime = uptime + :uptime_increment,
+    last_updated_at = :last_updated_at
+WHERE node_info_id = :node_info_id;
 """
 
 SQL_GET_NODE_INFO = """
@@ -294,13 +307,6 @@ SET
     connected_at = :connected_at,
     last_updated_at = :last_updated_at
 WHERE node_info_id = :id;
-"""
-
-SQL_UPDATE_ALL_NODE_CONNECTION_TIMESTAMP = """
-UPDATE node_metrics
-SET
-    connected_at = :connected_at,
-    last_updated_at = :last_updated_at;
 """
 
 SQL_GET_CONNECTED_NODE_COUNT = """
@@ -687,7 +693,7 @@ class NodeRepository:
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
+            await session.execute(sqlalchemy.text(SQL_CREATE_NODE_METRICS), data)
             await session.commit()
 
     @async_timer("node_repository.update_node_connection_timestamp", logger=logger)
@@ -722,8 +728,7 @@ class NodeRepository:
     @async_timer("node_repository.increment_node_metrics", logger=logger)
     async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
         data = {
-            "id": str(uuid7()),
-            "node_id": metrics.node_id,
+            "node_info_id": metrics.node_id,
             "requests_served_increment": metrics.requests_served_incerement,
             "requests_successful_increment": metrics.requests_successful_incerement,
             "requests_failed_increment": metrics.requests_failed_increment,
@@ -731,10 +736,6 @@ class NodeRepository:
             "inference_tokens_per_second": metrics.inference_tokens_per_second,
             "rtt": metrics.rtt,
             "uptime_increment": metrics.uptime_increment,
-            "connected_at": None,
-            "model_name": metrics.model,
-            "status": metrics.status,
-            "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
