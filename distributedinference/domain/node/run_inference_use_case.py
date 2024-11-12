@@ -110,9 +110,10 @@ class InferenceExecutor:
                         response.chunk.usage = None
                     yield response
                 if response.error:
-                    # Peer nodes did the inference but there are errors in the response, raise error and return
+                    # Peer nodes did the inference but there are errors in the response. Return so the error is handled higher
                     logger.error(f"Peer nodes inference error: {response.error}")
-                    raise NoAvailableNodesError()
+                    yield response
+                    return
             if usage:
                 # Peer nodes did the inference, exit
                 logger.debug("Peer nodes completed this inference!")
@@ -134,9 +135,6 @@ class InferenceExecutor:
                         break
                     if not is_include_usage:
                         response.chunk.usage = None
-                if response.error:
-                    logger.error(f"LLM Inference Proxy error: {response.error}")
-                    raise NoAvailableNodesError()
                 yield response
             if usage:
                 await self._save_usage(
