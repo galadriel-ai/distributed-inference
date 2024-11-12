@@ -115,7 +115,7 @@ class PingPongProtocol:
             pong_response.node_id, node_info, pong_received_time
         )
 
-        if self._is_node_reconnect_needed(
+        if node_info.rtt and self._is_node_reconnect_needed(
             pong_response.node_id,
             pong_response.api_ping_time,
             node_info.rtt,
@@ -328,7 +328,7 @@ class PingPongProtocol:
     # True means the node is not connected to the closest backend server and should reconnect
     # False means the node is already connected to the closest backend server
     def _is_node_reconnect_needed(
-        self, node_id: str, api_ping_time: list, rtt: int
+        self, node_id: str, api_ping_time: list, rtt: float
     ) -> bool:
         # RTT is good enough, no need to reconnect
         if rtt < settings.BACKEND_NODE_LATENCY_MILLISECONDS:
