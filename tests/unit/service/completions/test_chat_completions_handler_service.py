@@ -53,7 +53,9 @@ async def test_execute_no_rate_limit():
     ) as mock_service:
         response = MagicMock(headers={})
         await service.execute(
-            request=MagicMock(stream=False, tools=None, model=REQUESTED_MODEL),
+            request=MagicMock(
+                stream=False, tools=None, model=REQUESTED_MODEL, max_tokens=None
+            ),
             response=response,
             user=MagicMock(),
             forwarding_from=MagicMock(),
@@ -105,7 +107,9 @@ async def test_execute_no_rate_limit_stream():
     ) as mock_stream_service:
         response = MagicMock()
         result = await service.execute(
-            request=MagicMock(stream=True, tools=None, model=REQUESTED_MODEL),
+            request=MagicMock(
+                stream=True, tools=None, model=REQUESTED_MODEL, max_tokens=None
+            ),
             response=response,
             user=MagicMock(),
             forwarding_from=MagicMock(),
@@ -156,7 +160,7 @@ async def test_execute_rate_limited():
         response = MagicMock()
         with pytest.raises(RateLimitError) as exc_info:
             await service.execute(
-                request=MagicMock(tools=None, model=REQUESTED_MODEL),
+                request=MagicMock(tools=None, model=REQUESTED_MODEL, max_tokens=None),
                 response=response,
                 user=MagicMock(),
                 forwarding_from=MagicMock(),
@@ -308,3 +312,35 @@ def test_model_name_translation_exact_model():
     expected_exact_name = "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16"
     actual_exact_name = service._match_model_name(user_input)
     assert actual_exact_name == expected_exact_name
+
+
+def test_model_max_context_handling():
+    for model in settings.SUPPORTED_MODELS:
+        service._check_max_tokens(
+            ChatCompletionRequest(messages=[], model=model, max_tokens=123)
+        )
+
+        service._check_max_tokens(
+            ChatCompletionRequest(
+                messages=[],
+                model=model,
+            )
+        )
+
+        with pytest.raises(error_responses.ValidationTypeError) as e:
+            service._check_max_tokens(
+                ChatCompletionRequest(
+                    messages=[], model=model, max_tokens=10_000_000_000
+                )
+            )
+            assert e is not None
+
+
+def test_model_max_context_handling_unexpected_model():
+    service._check_max_tokens(
+        ChatCompletionRequest(messages=[], model="random", max_tokens=10_000_000_000)
+    )
+
+    service._check_max_tokens(
+        ChatCompletionRequest(messages=[], model="random", max_tokens=None)
+    )

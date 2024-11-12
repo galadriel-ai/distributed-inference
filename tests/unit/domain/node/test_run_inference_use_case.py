@@ -746,3 +746,69 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     mock_node_repository.update_node_status.assert_awaited_once_with(
         TEST_NODE_ID, False, NodeStatus.RUNNING_DEGRADED
     )
+
+
+async def test_inference_client_error_not_marks_node_as_unhealthy(
+    connected_node_factory,
+):
+    mock_node_repository = MagicMock(NodeRepository)
+    mock_tokens_repository = MagicMock(TokensRepository)
+    mock_node_repository.select_node = MagicMock(
+        return_value=connected_node_factory(TEST_NODE_ID)
+    )
+    mock_node_repository.send_inference_request = AsyncMock()
+    mock_node_repository.receive_for_request = AsyncMock(
+        side_effect=[
+            InferenceResponse(
+                node_id=TEST_NODE_ID,
+                request_id="request_id",
+                chunk=None,
+                error=InferenceError(
+                    status_code=InferenceErrorStatusCodes.BAD_REQUEST,
+                    message="Client error",
+                ),
+            ),
+        ]
+    )
+    mock_node_repository.cleanup_request = AsyncMock()
+    mock_node_repository.update_node_status = AsyncMock()
+    mock_node_repository.get_node_status = AsyncMock(return_value=NodeStatus.RUNNING)
+
+    chat_input = await ChatCompletionRequest(
+        model="llama3",
+        messages=[Message(role="user", content="asd")],
+        stream=True,
+        stream_options=StreamOptions(include_usage=True),
+    ).to_openai_chat_completion()
+    request = InferenceRequest(
+        id="request_id",
+        model="model-1",
+        chat_request=chat_input,
+    )
+
+    responses = []
+    executor = use_case.InferenceExecutor(
+        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+    )
+    async for response in executor.execute(
+        USER_UUID,
+        None,
+        API_KEY,
+        request,
+    ):
+        responses.append(response)
+
+    # 1 error response
+    assert len(responses) == 1
+    assert responses[0].request_id == "request_id"
+    assert responses[0].chunk == None
+    assert responses[0].error.status_code == InferenceErrorStatusCodes.BAD_REQUEST
+    assert responses[0].error.message == "Client error"
+    mock_node_repository.send_inference_request.assert_awaited_once_with(
+        TEST_NODE_ID, request
+    )
+    mock_node_repository.cleanup_request.assert_awaited_once_with(
+        TEST_NODE_ID, "request_id"
+    )
+    # Node status MUST not be updated if it's a client side error
+    mock_node_repository.update_node_status.assert_not_called()

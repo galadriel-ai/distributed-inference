@@ -13,6 +13,8 @@ from packaging.version import Version
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 
+from distributedinference.service import error_responses
+
 
 class NodeStatus(Enum):
     RUNNING = "RUNNING"
@@ -155,6 +157,16 @@ class InferenceErrorStatusCodes(Enum):
 class InferenceError:
     status_code: InferenceErrorStatusCodes
     message: str
+
+    def __init__(self, **kwargs):
+        try:
+            # InferenceErrorStatusCodes(InferenceErrorStatusCodes.BAD_REQUEST) works and int also works
+            self.status_code = InferenceErrorStatusCodes(kwargs["status_code"])
+            self.message = kwargs["message"]
+        except Exception as _:
+            self.status_code = InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR
+            error = error_responses.InternalServerAPIError()
+            self.message = error.to_message()
 
     def to_dict(self):
         return {

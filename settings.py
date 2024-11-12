@@ -36,7 +36,7 @@ DB_DATABASE_READ = os.getenv("DB_DATABASE_READ", "inference")
 DB_HOST_READ = os.getenv("DB_HOST_READ", "localhost")
 DB_PORT_READ = os.getenv("DB_PORT_READ", "5432")
 
-
+# This should be unified to a sensible unified data format at some point
 SUPPORTED_MODELS = [
     "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
@@ -54,6 +54,13 @@ MODEL_NAME_MAPPING = {
     "llama3.1-70b": "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
     "llama3.1:405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
     "llama3.1-405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+}
+MODEL_MAX_TOKENS_MAPPING = {
+    "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8": 8192,
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16": 131072,
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16": 131072,
+    "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4": 131072,
+    "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4": 8192,
 }
 MODELS_SUPPORTING_TOOLS = [
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",

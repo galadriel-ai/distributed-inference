@@ -9,7 +9,7 @@ class APIErrorResponse(Exception):
     def __init__(self):
         pass
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         raise NotImplementedError
 
     def to_code(self) -> str:
@@ -25,7 +25,7 @@ class InferenceError(APIErrorResponse):
         self.status_code = status_code
         self.message_extra = message_extra
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return self.status_code
 
     def to_code(self) -> str:
@@ -49,7 +49,7 @@ class AuthorizationProviderAPIError(APIErrorResponse):
         self.code = code
         self.message = message
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_400_BAD_REQUEST
 
     def to_code(self) -> str:
@@ -63,7 +63,7 @@ class AuthorizationMissingAPIError(APIErrorResponse):
     def __init__(self):
         pass
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_401_UNAUTHORIZED
 
     def to_code(self) -> str:
@@ -77,7 +77,7 @@ class InvalidCredentialsAPIError(APIErrorResponse):
     def __init__(self, message_extra: str = None):
         self.message_extra = message_extra
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_401_UNAUTHORIZED
 
     def to_code(self) -> str:
@@ -94,7 +94,7 @@ class NotFoundAPIError(APIErrorResponse):
     def __init__(self, message_extra: str = None):
         self.message_extra = message_extra
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_404_NOT_FOUND
 
     def to_code(self) -> str:
@@ -110,7 +110,7 @@ class UsernameAlreadyExistsAPIError(APIErrorResponse):
     def __init__(self):
         pass
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_409_CONFLICT
 
     def to_code(self) -> str:
@@ -126,7 +126,7 @@ class ValidationError(APIErrorResponse):
     def __init__(self):
         pass
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def to_code(self) -> str:
@@ -140,7 +140,7 @@ class ValidationTypeError(APIErrorResponse):
     def __init__(self, message: str):
         self.message = message
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def to_code(self) -> str:
@@ -154,7 +154,7 @@ class RateLimitError(APIErrorResponse):
     def __init__(self, headers: dict):
         self.headers = headers
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_429_TOO_MANY_REQUESTS
 
     def to_code(self) -> str:
@@ -170,7 +170,7 @@ class InternalServerAPIError(APIErrorResponse):
     def __init__(self):
         pass
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_500_INTERNAL_SERVER_ERROR
 
     def to_code(self) -> str:
@@ -184,7 +184,7 @@ class NoAvailableInferenceNodesError(APIErrorResponse):
     def __init__(self):
         pass
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_503_SERVICE_UNAVAILABLE
 
     def to_code(self) -> str:
@@ -198,7 +198,7 @@ class UnsupportedClientError(APIErrorResponse):
     def __init__(self, client_name: str):
         self.client_name = client_name
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_426_UPGRADE_REQUIRED
 
     def to_code(self) -> str:
@@ -214,7 +214,7 @@ class UnsupportedClientVersionError(APIErrorResponse):
         self.client_version = client_version
         self.min_version = min_version
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_426_UPGRADE_REQUIRED
 
     def to_code(self) -> str:
@@ -231,7 +231,7 @@ class UnsupportedModelError(APIErrorResponse):
     def __init__(self, model_name: str):
         self.model_name = model_name
 
-    def to_status_code(self) -> status:
+    def to_status_code(self) -> int:
         return status.HTTP_404_NOT_FOUND
 
     def to_code(self) -> str:
