@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from starlette import status
 
 

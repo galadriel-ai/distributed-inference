@@ -383,6 +383,7 @@ async def test_no_nodes_and_proxy_also_fails():
     assert len(result) == 1
     assert result[0].error == INFERENCE_ERROR
 
+
 async def test_streaming_no_usage(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
