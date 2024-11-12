@@ -69,8 +69,12 @@ async def execute(
             request=inference_request,
         ):
             if inference_response.error:
+                logger.error(f"Inference error: "
+                             f"node_id={inference_response.node_id}, "
+                             f"status_code={inference_response.error.status_code}, "
+                             f"message={inference_response.error.message}")
+
                 raise error_responses.InferenceError(
-                    node_id=inference_response.node_id,
                     status_code=inference_response.error.status_code.value,
                     message_extra=inference_response.error.message,
                 )

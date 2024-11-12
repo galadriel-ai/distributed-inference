@@ -20,8 +20,7 @@ class APIErrorResponse(Exception):
 
 
 class InferenceError(APIErrorResponse):
-    def __init__(self, node_id: UUID, status_code, message_extra: str = None):
-        self.node_id = node_id
+    def __init__(self, status_code, message_extra: str = None):
         self.status_code = status_code
         self.message_extra = message_extra
 
@@ -32,7 +31,7 @@ class InferenceError(APIErrorResponse):
         return "inference_error"
 
     def to_message(self) -> str:
-        result = f"Inference error (Node ID: {self.node_id})"
+        result = "Inference error"
         if self.message_extra:
             result += f" - {self.message_extra}"
         return result
