@@ -676,7 +676,6 @@ class NodeRepository:
     async def set_node_connection_timestamp(
         self, node_id: UUID, model_name: str, connected_at: datetime, status: NodeStatus
     ):
-        # UPSERT
         data = {
             "id": str(uuid7()),
             "node_id": node_id,
@@ -728,7 +727,6 @@ class NodeRepository:
 
     @async_timer("node_repository.increment_node_metrics", logger=logger)
     async def increment_node_metrics(self, metrics: NodeMetricsIncrement):
-        # TODO: this is increment aka update, there can't be upsert lols
         data = {
             "node_info_id": metrics.node_id,
             "requests_served_increment": metrics.requests_served_incerement,
@@ -740,7 +738,6 @@ class NodeRepository:
             "uptime_increment": metrics.uptime_increment,
             "last_updated_at": utcnow(),
         }
-        print("\nINCREMENT NODE METRICS:", data)
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_INCREMENT_NODE_METRICS), data)
             await session.commit()
