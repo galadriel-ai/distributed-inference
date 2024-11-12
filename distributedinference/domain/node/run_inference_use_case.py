@@ -196,10 +196,10 @@ class InferenceExecutor:
             self.request_successful = True
             return response, True
         # if we got an error or no chunk, we can mark node as unhealthy and break
-        if (
-            not response.error
+        if not (
+            response.error
             # On client side issues don't blame the node
-            or response.error.status_code != InferenceErrorStatusCodes.BAD_REQUEST
+            and response.error.status_code == InferenceErrorStatusCodes.BAD_REQUEST
         ):
             await self._mark_node_as_unhealthy(node)
         return response, True
