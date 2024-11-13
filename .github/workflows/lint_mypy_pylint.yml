@@ -37,7 +37,7 @@ jobs:
       - name: Count mypy errors
         id: mypy-count
         run: |
-          error_count=$(grep -oP "\d+ errors" mypy_output.txt | sed 's/ errors//g' || echo 0)
+          error_count=$(grep -oP "\d+ errors" mypy_pyright_outputs/mypy_output.txt | sed 's/ errors//g' || echo 0)
           echo "Mypy error count: $error_count"
           if [[ "$error_count" -gt 0 ]]; then
             echo "::warning::Found $error_count mypy errors."
@@ -53,7 +53,7 @@ jobs:
       - name: Count pyright errors
         id: pyright-count
         run: |
-          error_count=$(grep -oP "\d+ errors" pyright_output.txt | sed 's/ errors//g' || echo 0)
+          error_count=$(grep -oP "\d+ errors" mypy_pyright_outputs/pyright_output.txt | sed 's/ errors//g' || echo 0)
           echo "pyright error count: $error_count"
           if [[ "$error_count" -gt 0 ]]; then
             echo "::warning::Found $error_count pyright errors."
