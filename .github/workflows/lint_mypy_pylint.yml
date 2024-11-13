@@ -6,6 +6,9 @@ on:
 jobs:
   lint-and-type-check:
     runs-on: ubuntu-latest
+    outputs:
+      mypy_errors: ${{ steps.mypy-count.outputs.error_count }}
+      pyright_errors: ${{ steps.pyright-count.outputs.error_count }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -34,6 +37,12 @@ jobs:
         run: |
           mypy distributedinference/ > mypy_pyright_outputs/mypy_output.txt || true
         continue-on-error: true
+      - name: Count mypy errors
+        id: mypy-count
+        run: |
+          error_count=$(grep -c "error:" mypy_output.txt || true)
+          echo "mypy error count: $error_count"
+          echo "::set-output name=error_count::$error_count"
       - name: Print mypy output
         run: |
           echo "=== mypy output ==="
@@ -42,6 +51,12 @@ jobs:
         run: |
           pyright distributedinference/ > mypy_pyright_outputs/pyright_output.txt || true
         continue-on-error: true
+      - name: Count pyright errors
+        id: pyright-count
+        run: |
+          error_count=$(grep -c "error" pyright_output.txt || true)
+          echo "pyright error count: $error_count"
+          echo "::set-output name=error_count::$error_count"
       - name: Print pyright output
         run: |
           echo "=== pyright output ==="
@@ -51,3 +66,21 @@ jobs:
         with:
           name: mypy-pyright-outputs
           path: mypy_pyright_outputs/
+  lint-summary:
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+    if: success()
+    steps:
+      - name: Display Linting Summary
+        run: |
+          mypy_errors="${{ needs.lint-and-type-check.outputs.mypy_errors }}"
+          pyright_errors="${{ needs.lint-and-type-check.outputs.pyright_errors }}"
+          echo "Linting completed. Found $mypy_errors mypy errors and $pyright_errors pyright errors."
+          
+          # Set custom status for the check-run (if needed)
+          if [[ "$mypy_errors" -gt 0 || "$pyright_errors" -gt 0 ]]; then
+            echo "::warning ::Linting issues found: $mypy_errors mypy errors, $pyright_errors pyright errors"
+          else
+            echo "::notice ::No linting issues detected."
+          fi
+  
