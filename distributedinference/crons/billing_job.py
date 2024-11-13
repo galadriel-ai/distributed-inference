@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict
 from typing import Optional
+from uuid import UUID
 
 import settings
 from distributedinference import api_logger
@@ -95,7 +96,7 @@ async def _bill_user(
         if credits_left <= Decimal("0"):
             credits_left = Decimal("0")
             await billing_repository.update_user_usage_tier(
-                billable_user.user_profile_id, settings.DEFAULT_USAGE_TIER_UUID
+                billable_user.user_profile_id, UUID(settings.DEFAULT_USAGE_TIER_UUID)
             )
         await billing_repository.update_user_credits(
             billable_user.user_profile_id,

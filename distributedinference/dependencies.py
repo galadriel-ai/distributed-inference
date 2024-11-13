@@ -9,6 +9,9 @@ from distributedinference.repository.billing_repository import BillingRepository
 
 from distributedinference.repository.connection import get_session_provider
 from distributedinference.repository.connection import get_session_provider_read
+from distributedinference.repository.embedding_api_repository import (
+    EmbeddingApiRepository,
+)
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -30,6 +33,7 @@ _metrics_repository: MetricsRepository
 _rate_limit_repository: RateLimitRepository
 _billing_repository: BillingRepository
 
+_embedding_api_repository: EmbeddingApiRepository
 _authentication_api_repository: AuthenticationApiRepository
 _analytics: Analytics
 _protocol_handler: ProtocolHandler
@@ -47,6 +51,7 @@ def init_globals():
     global _metrics_repository
     global _rate_limit_repository
     global _billing_repository
+    global _embedding_api_repository
     global _authentication_api_repository
     global _analytics
     global _protocol_handler
@@ -82,6 +87,7 @@ def init_globals():
         logger=api_logger.get(),
     )
 
+    _embedding_api_repository = EmbeddingApiRepository(settings.EMBEDDING_API_BASE_URL)
     if settings.is_production() or (
         settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET
     ):
@@ -120,6 +126,10 @@ def get_metrics_queue_repository() -> MetricsQueueRepository:
 
 def get_metrics_repository() -> MetricsRepository:
     return _metrics_repository
+
+
+def get_embedding_api_repository() -> EmbeddingApiRepository:
+    return _embedding_api_repository
 
 
 def get_authentication_api_repository() -> AuthenticationApiRepository:

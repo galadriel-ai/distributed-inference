@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from distributedinference import api_logger
 from distributedinference.routers.routes import chat_router
+from distributedinference.routers.routes import embedding_router
 from distributedinference.routers.routes import network_router
 from distributedinference.routers.routes import node_router
 from distributedinference.routers.routes import metrics_router
@@ -19,6 +20,7 @@ logger = api_logger.get()
 routers_to_include: List[APIRouter] = [
     # This is the order they show up in openapi.json
     chat_router.router,
+    embedding_router.router,
     tool_router.router,
     node_router.router,
     network_router.router,
