@@ -47,7 +47,7 @@ jobs:
           echo "=== pyright output ==="
           cat mypy_pyright_outputs/pyright_output.txt
       - name: Upload mypy and pyright outputs as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mypy-pyright-outputs
           path: mypy_pyright_outputs/
