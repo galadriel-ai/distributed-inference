@@ -6,7 +6,7 @@ function format {
   black .
 }
 
-function mypy {
+function type-check {
   mypy distributedinference
 }
 
