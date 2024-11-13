@@ -16,6 +16,7 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
+from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
@@ -71,6 +72,7 @@ class InferenceExecutor:
         self.usage: Optional[CompletionUsage] = None
         self.request_successful = False
 
+        self.is_node_marked_as_unhealthy = False
         self.time_tracker = TimeTracker()
 
     # pylint: disable=too-many-branches, R0912, R0915
@@ -154,6 +156,13 @@ class InferenceExecutor:
                     yield response
                 if is_finished:
                     break
+
+            is_performant = is_node_performant.execute(
+                self.time_tracker.get_time_to_first_token(),
+                self.time_tracker.get_throughput(),
+            )
+            if not is_performant:
+                await self._mark_node_as_unhealthy(node)
         finally:
             await self.node_repository.cleanup_request(node.uid, request.id)
             await self._log_metrics(user_uid, request, node)
@@ -296,14 +305,16 @@ class InferenceExecutor:
         )
 
     async def _mark_node_as_unhealthy(self, node: ConnectedNode) -> None:
-        status = await node_status_transition.execute(
-            self.node_repository, node.uid, NodeStatusEvent.DEGRADED
-        )
-        await self.node_repository.update_node_status(node.uid, False, status)
-        self.analytics.track_event(
-            node.user_id,
-            AnalyticsEvent(
-                EventName.NODE_HEALTH,
-                {"node_id": node.uid, "is_healthy": False},
-            ),
-        )
+        if not self.is_node_marked_as_unhealthy:
+            self.is_node_marked_as_unhealthy = True
+            status = await node_status_transition.execute(
+                self.node_repository, node.uid, NodeStatusEvent.DEGRADED
+            )
+            await self.node_repository.update_node_status(node.uid, False, status)
+            self.analytics.track_event(
+                node.user_id,
+                AnalyticsEvent(
+                    EventName.NODE_HEALTH,
+                    {"node_id": node.uid, "is_healthy": False},
+                ),
+            )
