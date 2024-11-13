@@ -50,6 +50,10 @@ class TimeTracker:
             duration = self.next_token_time - self.first_token_time
             if duration:
                 return self.usage.completion_tokens / duration
+
+        # If token has been received we should still return something
+        if self.first_token_time:
+            return 1.0
         return 0.0
 
 

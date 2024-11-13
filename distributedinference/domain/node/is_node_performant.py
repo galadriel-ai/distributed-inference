@@ -10,6 +10,7 @@ def execute(time_to_first_token: float, throughput: float) -> bool:
     as this is the worst possible case for the TTFT.
 
     TODO: based on the benchmarks, currently the MIN_TIME_TO_FIRST_TOKEN_SEC ~= 8
+    TODO: distinguish between small and big prompts
 
     return: True if node is performant, False otherwise
     """

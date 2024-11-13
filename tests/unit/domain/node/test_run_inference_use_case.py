@@ -131,6 +131,11 @@ class MockInferenceError:
         )
 
 
+def setup_function():
+    use_case.is_node_performant = MagicMock()
+    use_case.is_node_performant.execute.return_value = True
+
+
 async def test_success(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
