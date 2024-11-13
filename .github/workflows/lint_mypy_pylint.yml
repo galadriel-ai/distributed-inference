@@ -4,14 +4,14 @@ on:
   pull_request:
 
 jobs:
-  unit-tests:
+  lint-and-type-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Run mypy and save output
         run: |
-          mypy distributedinference/ > mypy_output.txt || true
+          mypy distributedinference/ > mypy_pyright_outputs/mypy_output.txt || true
         continue-on-error: true
       - name: Print mypy output
         run: |
@@ -38,19 +38,14 @@ jobs:
           cat mypy_output.txt
       - name: Run pyright and save output
         run: |
-          pyright distributedinference/ > pyright_output.txt || true
+          pyright distributedinference/ > mypy_pyright_outputs/pyright_output.txt || true
         continue-on-error: true
       - name: Print pyright output
         run: |
           echo "=== pyright output ==="
           cat pyright_output.txt
-      - name: Upload mypy output as artifact
+      - name: Upload mypy and pyright outputs as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: mypy-results
-          path: mypy_output.txt
-      - name: Upload pyright output as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: pyright-results
-          path: pyright_output.txt
+          name: mypy-pyright-outputs
+          path: mypy_pyright_outputs/
