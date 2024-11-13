@@ -1,4 +1,4 @@
-name: Lint MyPy & Pylint
+name: Lint MyPy, Pyright & Pylint
 
 on:
   pull_request:
@@ -24,5 +24,33 @@ jobs:
       - name: Install Python Dependencies
         run: |
           pip install -r requirements.txt
+          pip install mypy pyright
       - name: Run PyLint
         run: pylint --rcfile=setup.cfg distributedinference/*
+
+      - name: Run mypy and save output
+        run: |
+          mypy distributedinference/ > mypy_output.txt || true
+        continue-on-error: true
+      - name: Print mypy output
+        run: |
+          echo "=== mypy output ==="
+          cat mypy_output.txt
+      - name: Run pyright and save output
+        run: |
+          pyright distributedinference/ > pyright_output.txt || true
+        continue-on-error: true
+      - name: Print pyright output
+        run: |
+          echo "=== pyright output ==="
+          cat pyright_output.txt
+      - name: Upload mypy output as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mypy-results
+          path: mypy_output.txt
+      - name: Upload pyright output as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: pyright-results
+          path: pyright_output.txt
