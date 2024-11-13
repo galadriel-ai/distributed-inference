@@ -35,7 +35,7 @@ jobs:
       - name: Print mypy output
         run: |
           echo "=== mypy output ==="
-          cat mypy_output.txt
+          cat mypy_pyright_outputs/mypy_output.txt
       - name: Run pyright and save output
         run: |
           pyright distributedinference/ > mypy_pyright_outputs/pyright_output.txt || true
@@ -43,7 +43,7 @@ jobs:
       - name: Print pyright output
         run: |
           echo "=== pyright output ==="
-          cat pyright_output.txt
+          cat mypy_pyright_outputs/pyright_output.txt
       - name: Upload mypy and pyright outputs as artifact
         uses: actions/upload-artifact@v3
         with:
