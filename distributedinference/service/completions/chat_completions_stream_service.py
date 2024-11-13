@@ -3,6 +3,7 @@ from typing import AsyncIterable, Optional
 from openai.types.chat import CompletionCreateParams
 from uuid_extensions import uuid7
 
+from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
@@ -15,6 +16,8 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
 from distributedinference.service.completions.entities import ChatCompletionRequest
+
+logger = api_logger.get()
 
 
 # pylint: disable=R0801, R0913
@@ -51,8 +54,14 @@ async def execute(
             request=inference_request,
         ):
             if inference_response.error:
+                logger.error(
+                    f"Inference error: "
+                    f"node_id={inference_response.node_id}, "
+                    f"status_code={inference_response.error.status_code}, "
+                    f"message={inference_response.error.message}"
+                )
+
                 raise error_responses.InferenceError(
-                    node_id=inference_response.node_id,
                     status_code=inference_response.error.status_code.value,
                     message_extra=inference_response.error.message,
                 )

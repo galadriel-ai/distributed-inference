@@ -56,6 +56,10 @@ def connected_node_factory(mock_websocket):
 TEST_NODE_ID = uuid1()
 MOCK_UUID = uuid1()
 
+INFERENCE_ERROR = InferenceError(
+    status_code=InferenceErrorStatusCodes.BAD_REQUEST, message="mock error"
+)
+
 CHUNK_COUNT = 3
 LAST_CHUNK = ChatCompletionChunk(
     id=f"mock-{CHUNK_COUNT}",
@@ -123,9 +127,7 @@ class MockInferenceError:
         yield InferenceResponse(
             node_id=uuid1(),
             request_id=str(MOCK_UUID),
-            error=InferenceError(
-                status_code=InferenceErrorStatusCodes.BAD_REQUEST, message="mock error"
-            ),
+            error=INFERENCE_ERROR,
         )
 
 
@@ -264,14 +266,16 @@ async def test_no_nodes_forward_to_peers_failed():
     executor = use_case.InferenceExecutor(
         mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
     )
-    with pytest.raises(NoAvailableNodesError):
-        async for response in executor.execute(
-            USER_UUID,
-            API_KEY,
-            None,
-            request,
-        ):
-            pass
+    result = []
+    async for request in executor.execute(
+        USER_UUID,
+        API_KEY,
+        None,
+        request,
+    ):
+        result.append(request)
+    assert len(result) == 1
+    assert result[0].error == INFERENCE_ERROR
 
 
 async def test_no_nodes_no_forward_for_forwarding_request():
@@ -368,14 +372,16 @@ async def test_no_nodes_and_proxy_also_fails():
     executor = use_case.InferenceExecutor(
         mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
     )
-    with pytest.raises(NoAvailableNodesError):
-        async for _ in executor.execute(
-            USER_UUID,
-            API_KEY,
-            None,
-            request,
-        ):
-            pass
+    result = []
+    async for request in executor.execute(
+        USER_UUID,
+        API_KEY,
+        None,
+        request,
+    ):
+        result.append(request)
+    assert len(result) == 1
+    assert result[0].error == INFERENCE_ERROR
 
 
 async def test_streaming_no_usage(connected_node_factory):
