@@ -35,8 +35,9 @@ SELECT
     :created_at, 
     :last_updated_at
 FROM node_exists ne
-ON CONFLICT (node_id, model_name) DO UPDATE SET
+ON CONFLICT (node_id) DO UPDATE SET
     tokens_per_second = EXCLUDED.tokens_per_second,
+    model_name = EXCLUDED.model_name,
     last_updated_at = EXCLUDED.last_updated_at;
 """
 
