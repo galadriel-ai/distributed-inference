@@ -13,7 +13,7 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
-from distributedinference.domain.node import is_node_healthy
+from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
@@ -107,7 +107,7 @@ async def _send_health_check_inference(
                 )
             time_tracker.chunk_received(response.chunk)
             if response.chunk and response.chunk.usage and not response.chunk.choices:
-                is_healthy = is_node_healthy.execute(
+                is_healthy = is_node_performant.execute(
                     time_tracker.get_time_to_first_token(),
                     time_tracker.get_throughput(),
                 )

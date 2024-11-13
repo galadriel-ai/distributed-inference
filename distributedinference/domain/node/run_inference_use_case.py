@@ -16,6 +16,7 @@ from distributedinference.analytics.analytics import (
     EventName,
 )
 from distributedinference import api_logger
+from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
@@ -155,6 +156,13 @@ class InferenceExecutor:
                 if is_finished:
                     break
         finally:
+            is_performant = is_node_performant.execute(
+                self.time_tracker.get_time_to_first_token(),
+                self.time_tracker.get_throughput(),
+            )
+            if not is_performant:
+                await self._mark_node_as_unhealthy(node)
+
             await self.node_repository.cleanup_request(node.uid, request.id)
             await self._log_metrics(user_uid, request, node)
 
