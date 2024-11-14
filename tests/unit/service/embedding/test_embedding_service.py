@@ -1,6 +1,9 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from openai.types import CreateEmbeddingResponse
+from openai.types import Embedding
+from openai.types.create_embedding_response import Usage
 
 import settings
 from distributedinference.domain.embedding.entities import EmbeddingApiError
@@ -9,22 +12,28 @@ from distributedinference.repository.embedding_api_repository import (
 )
 from distributedinference.service import error_responses
 from distributedinference.service.embedding import embedding_service as service
-from distributedinference.service.embedding.entities import EmbeddingObject
 from distributedinference.service.embedding.entities import EmbeddingRequest
-from distributedinference.service.embedding.entities import EmbeddingResponse
+
+
+def _get_default_response() -> CreateEmbeddingResponse:
+    return CreateEmbeddingResponse(
+        data=[
+            Embedding(embedding=[1, 2, 3], index=0, object="embedding"),
+            Embedding(embedding=[4, 5, 6], index=0, object="embedding"),
+        ],
+        model=settings.SUPPORTED_EMBEDDING_MODELS[0],
+        object="list",
+        usage=Usage(
+            prompt_tokens=15,
+            total_tokens=15,
+        ),
+    )
 
 
 async def test_success():
     service.create_embeddings_use_case = AsyncMock()
-    service.create_embeddings_use_case.execute.return_value = [
-        [1, 2, 3],
-        [4, 5, 6],
-    ]
+    service.create_embeddings_use_case.execute.return_value = _get_default_response()
     repo = AsyncMock(spec=EmbeddingApiRepository)
-    repo.create_embeddings.return_value = [
-        [1, 2, 3],
-        [4, 5, 6],
-    ]
     model = settings.SUPPORTED_EMBEDDING_MODELS[0]
     response = await service.execute(
         EmbeddingRequest(
@@ -33,52 +42,40 @@ async def test_success():
         ),
         repository=repo,
     )
-    assert response == EmbeddingResponse(
-        object="list",
-        data=[
-            EmbeddingObject(
-                index=0,
-                embedding=[1, 2, 3],
-                object="embedding",
-            ),
-            EmbeddingObject(
-                index=1,
-                embedding=[4, 5, 6],
-                object="embedding",
-            ),
-        ],
-        model=model,
+    assert response == _get_default_response()
+    service.create_embeddings_use_case.execute.assert_called_with(
+        ["asd", "fgh"], None, repo
     )
-    service.create_embeddings_use_case.execute.assert_called_with(["asd", "fgh"], repo)
 
 
 async def test_converts_to_list():
     service.create_embeddings_use_case = AsyncMock()
-    service.create_embeddings_use_case.execute.return_value = [[1, 2, 3]]
+    service.create_embeddings_use_case.execute.return_value = _get_default_response()
     repo = AsyncMock(spec=EmbeddingApiRepository)
-    repo.create_embeddings.return_value = [
-        [1, 2, 3],
-    ]
     model = settings.SUPPORTED_EMBEDDING_MODELS[0]
     response = await service.execute(
-        EmbeddingRequest(
-            input="asd",
-            model=model,
-        ),
+        EmbeddingRequest(input="asd", model=model, encoding_format="base64"),
         repository=repo,
     )
-    assert response == EmbeddingResponse(
-        object="list",
-        data=[
-            EmbeddingObject(
-                index=0,
-                embedding=[1, 2, 3],
-                object="embedding",
-            ),
-        ],
-        model=model,
+    assert response == _get_default_response()
+    service.create_embeddings_use_case.execute.assert_called_with(
+        ["asd"], "base64", repo
     )
-    service.create_embeddings_use_case.execute.assert_called_with(["asd"], repo)
+
+
+async def test_converts_list_of_ints():
+    service.create_embeddings_use_case = AsyncMock()
+    service.create_embeddings_use_case.execute.return_value = _get_default_response()
+    repo = AsyncMock(spec=EmbeddingApiRepository)
+    model = settings.SUPPORTED_EMBEDDING_MODELS[0]
+    response = await service.execute(
+        EmbeddingRequest(input=[1, 2, 3], model=model, encoding_format="float"),
+        repository=repo,
+    )
+    assert response == _get_default_response()
+    service.create_embeddings_use_case.execute.assert_called_with(
+        [[1, 2, 3]], "float", repo
+    )
 
 
 async def test_unsupported_model():

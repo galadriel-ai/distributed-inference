@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import Depends
+from openai.types import CreateEmbeddingResponse
 
 from distributedinference import api_logger
 from distributedinference import dependencies
@@ -10,7 +11,6 @@ from distributedinference.repository.embedding_api_repository import (
 from distributedinference.service.auth import authentication
 from distributedinference.service.embedding import embedding_service
 from distributedinference.service.embedding.entities import EmbeddingRequest
-from distributedinference.service.embedding.entities import EmbeddingResponse
 
 TAG = "Embeddings"
 router = APIRouter(prefix="/embeddings")
@@ -24,7 +24,7 @@ logger = api_logger.get()
     summary="Creates an embedding vector representing the input text.",
     description="Given a list of strings return embeddings for them.",
     response_description="Returns a list of embeddings.",
-    response_model=EmbeddingResponse,
+    response_model=CreateEmbeddingResponse,
 )
 async def completions(
     request: EmbeddingRequest,

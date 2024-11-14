@@ -87,7 +87,9 @@ def init_globals():
         logger=api_logger.get(),
     )
 
-    _embedding_api_repository = EmbeddingApiRepository(settings.EMBEDDING_API_BASE_URL)
+    _embedding_api_repository = EmbeddingApiRepository(
+        settings.EMBEDDING_API_BASE_URL, settings.SUPPORTED_EMBEDDING_MODELS[0]
+    )
     if settings.is_production() or (
         settings.STYTCH_PROJECT_ID and settings.STYTCH_SECRET
     ):

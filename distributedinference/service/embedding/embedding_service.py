@@ -1,4 +1,9 @@
 from typing import List
+from typing import Literal
+from typing import Optional
+from typing import Union
+
+from openai.types import CreateEmbeddingResponse
 
 import settings
 from distributedinference.domain.embedding import create_embeddings_use_case
@@ -7,17 +12,15 @@ from distributedinference.repository.embedding_api_repository import (
     EmbeddingApiRepository,
 )
 from distributedinference.service import error_responses
-from distributedinference.service.embedding.entities import EmbeddingObject
 from distributedinference.service.embedding.entities import EmbeddingRequest
-from distributedinference.service.embedding.entities import EmbeddingResponse
 
-MAX_BATCH_SIZE: int = 32
+MAX_BATCH_SIZE: int = 2048
 
 
 async def execute(
     request: EmbeddingRequest,
     repository: EmbeddingApiRepository,
-) -> EmbeddingResponse:
+) -> CreateEmbeddingResponse:
     if request.model not in settings.SUPPORTED_EMBEDDING_MODELS:
         raise error_responses.UnsupportedModelError(model_name=request.model)
 
@@ -26,39 +29,41 @@ async def execute(
         raise error_responses.ValidationTypeError(
             f"Maximum input array size for embeddings is {MAX_BATCH_SIZE}"
         )
-    embeddings = await _get_embedding_result(input_texts, repository)
-    return EmbeddingResponse(
-        object="list",
-        data=_format_embeddings(embeddings),
-        model=request.model,
-    )
+    return await _get_embedding_result(input_texts, request.encoding_format, repository)
 
 
-async def _get_input_texts(request: EmbeddingRequest) -> List[str]:
+async def _get_input_texts(
+    request: EmbeddingRequest,
+) -> Union[List[str], List[List[int]]]:
     input_texts = request.input
+
     if not isinstance(input_texts, list):
         input_texts = [input_texts]
+    elif all(isinstance(i, int) for i in input_texts):
+        # If it's a List[int], convert it to List[List[int]] by wrapping it in another list
+        input_texts = [input_texts]
+    elif isinstance(input_texts[0], list) and all(
+        isinstance(i, int) for sublist in input_texts for i in sublist
+    ):
+        # It's already a List[List[int]], so we leave it as is
+        pass
+    elif not all(isinstance(i, str) for i in input_texts):
+        raise ValueError("Invalid input format: Expected List[str] or List[List[int]]")
+
     return input_texts
 
 
 async def _get_embedding_result(
-    input_texts: List[str], repository: EmbeddingApiRepository
-) -> List[List[float]]:
+    input_texts: Union[List[str], List[List[int]]],
+    encoding_format: Optional[Literal["float", "base64"]],
+    repository: EmbeddingApiRepository,
+) -> CreateEmbeddingResponse:
     try:
-        embeddings = await create_embeddings_use_case.execute(input_texts, repository)
+        embeddings = await create_embeddings_use_case.execute(
+            input_texts, encoding_format, repository
+        )
     except EmbeddingApiError as exc:
         raise error_responses.EmbeddingError(exc.status, exc.message)
     except Exception as _:
         raise error_responses.InternalServerAPIError()
     return embeddings
-
-
-def _format_embeddings(embeddings: List[List[float]]) -> List[EmbeddingObject]:
-    return [
-        EmbeddingObject(
-            index=i,
-            embedding=embedding,
-            object="embedding",
-        )
-        for i, embedding in enumerate(embeddings)
-    ]

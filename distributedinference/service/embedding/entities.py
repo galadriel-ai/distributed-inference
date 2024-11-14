@@ -8,10 +8,13 @@ from pydantic import Field
 
 
 class EmbeddingRequest(BaseModel):
-    input: Union[str, List[str]] = Field(description="")
+    input: Union[str, List[str], List[int], List[List[int]]] = Field(
+        description="Input text to embed, encoded as a string or array of tokens. "
+        "To embed multiple inputs in a single request, pass an array of strings "
+        "or array of token arrays. The input must not exceed the max input tokens for the model"
+    )
     model: str = Field(description="ID of the model to use.")
-    # TODO: do we want to support base64 like openAI?
-    encoding_format: Optional[Literal["float"]] = Field(
+    encoding_format: Optional[Literal["float", "base64"]] = Field(
         description="The format to return the embeddings in. Can be either `float` or `base64`.",
         default=None,
     )
@@ -34,21 +37,3 @@ class EmbeddingRequest(BaseModel):
                 ],
             }
         }
-
-
-class EmbeddingObject(BaseModel):
-    index: int = Field(
-        description="The index of the embedding in the list of embeddings."
-    )
-    embedding: List[float] = Field(
-        description="The embedding vector, which is a list of floats. The length of vector depends on the model."
-    )
-    object: Literal["embedding"] = Field(
-        description='The object type, which is always "embedding".'
-    )
-
-
-class EmbeddingResponse(BaseModel):
-    object: Literal["list"] = Field()
-    data: List[EmbeddingObject] = Field()
-    model: str = Field()
