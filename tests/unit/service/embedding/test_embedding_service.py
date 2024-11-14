@@ -92,6 +92,21 @@ async def test_unsupported_model():
         assert e is not None
 
 
+async def test_empty_input():
+    repo = AsyncMock(spec=EmbeddingApiRepository)
+    model = settings.SUPPORTED_EMBEDDING_MODELS[0]
+    for i in ["", [], [[123, 33], []], ["", "asd"]]:
+        with pytest.raises(error_responses.ValidationTypeError) as e:
+            await service.execute(
+                EmbeddingRequest(
+                    input=i,
+                    model=model,
+                ),
+                repository=repo,
+            )
+            assert e is not None
+
+
 async def test_batch_size_exceeded_model():
     repo = AsyncMock(spec=EmbeddingApiRepository)
     model = settings.SUPPORTED_EMBEDDING_MODELS[0]
