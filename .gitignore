@@ -14,3 +14,4 @@ prometheus
 .coverage
 tests/reports/
 
+scripts/openapi.json

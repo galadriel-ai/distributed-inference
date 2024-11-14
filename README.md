@@ -126,3 +126,12 @@ PYTHONPATH=. python scripts/add_credits.py --email kristjan@galadriel.com --cred
 PYTHONPATH=. python scripts/add_credits.py --user_id 06710e92-acb3-784f-8000-aa9e8972ba51 --credits "0.2"
 ```
 
+## Documentation
+
+User facing documentation is hosted on https://docs.galadriel.com
+
+To export openapi.json:
+```
+PYTHONPATH=. python scripts/export_openapi.py
+```
+

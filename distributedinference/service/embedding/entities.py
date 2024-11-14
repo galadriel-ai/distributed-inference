@@ -11,9 +11,11 @@ class EmbeddingRequest(BaseModel):
     input: Union[str, List[str], List[int], List[List[int]]] = Field(
         description="Input text to embed, encoded as a string or array of tokens. "
         "To embed multiple inputs in a single request, pass an array of strings "
-        "or array of token arrays. The input must not exceed the max input tokens for the model"
+        "or array of token arrays. The input must not exceed the max input tokens for the [model](/for-developers/models)."
     )
-    model: str = Field(description="ID of the model to use.")
+    model: str = Field(
+        description="ID of the model to use. Get ID for available [models](/for-developers/models)"
+    )
     encoding_format: Optional[Literal["float", "base64"]] = Field(
         description="The format to return the embeddings in. Can be either `float` or `base64`.",
         default=None,

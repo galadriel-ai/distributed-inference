@@ -20,7 +20,13 @@ from distributedinference.service.middleware import util
 from distributedinference.service.middleware.entitites import RequestStateKey
 
 API_KEY_NAME = "Authorization"
-API_KEY_HEADER = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+API_KEY_HEADER = APIKeyHeader(
+    name=API_KEY_NAME,
+    auto_error=False,
+    description="Bearer authentication header.\n\n"
+    "example value: `Bearer Galadriel-API-key`\n\n"
+    "Get API key from [Galadriel dashboard](https://dashboard.galadriel.com).",
+)
 
 FORWARDING_NAME = "Peer-Forwarding-From"
 FORWARDING_HEADER = APIKeyHeader(name=FORWARDING_NAME, auto_error=False)
