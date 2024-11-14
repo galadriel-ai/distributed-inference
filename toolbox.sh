@@ -6,6 +6,10 @@ function format {
   black .
 }
 
+function type-check {
+  mypy distributedinference
+}
+
 function unit-test {
   python -m pytest tests
 }

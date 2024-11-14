@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import List
+from typing import Optional
 
 import aiohttp
 
@@ -43,7 +44,9 @@ def _format_credits(credits_amount: Decimal):
         return f"${credits_amount}"
 
 
-def _format_percentage(percentage: Decimal) -> str:
+def _format_percentage(percentage: Optional[Decimal]) -> str:
+    if not percentage:
+        return "🔴 -"
     if percentage < 10:
         return f"🔴 {round(percentage, 2)}%"
     if percentage < 25:

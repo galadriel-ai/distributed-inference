@@ -180,7 +180,7 @@ async def test_user_runs_out_of_credits_tier_updated():
     await job.execute(billing_repository, tokens_repository)
 
     billing_repository.update_user_usage_tier.assert_called_with(
-        USER_ID_0, settings.DEFAULT_USAGE_TIER_UUID
+        USER_ID_0, UUID(settings.DEFAULT_USAGE_TIER_UUID)
     )
     billing_repository.update_user_credits.assert_called_with(
         USER_ID_0,

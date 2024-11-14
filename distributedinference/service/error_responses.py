@@ -1,3 +1,5 @@
+from typing import Optional
+
 from starlette import status
 
 
@@ -18,7 +20,7 @@ class APIErrorResponse(Exception):
 
 
 class InferenceError(APIErrorResponse):
-    def __init__(self, status_code, message_extra: str = None):
+    def __init__(self, status_code, message_extra: Optional[str] = None):
         self.status_code = status_code
         self.message_extra = message_extra
 
@@ -30,6 +32,24 @@ class InferenceError(APIErrorResponse):
 
     def to_message(self) -> str:
         result = "Inference error"
+        if self.message_extra:
+            result += f" - {self.message_extra}"
+        return result
+
+
+class EmbeddingError(APIErrorResponse):
+    def __init__(self, status_code: int, message_extra: Optional[str] = None):
+        self.status_code = status_code
+        self.message_extra = message_extra
+
+    def to_status_code(self) -> int:
+        return self.status_code
+
+    def to_code(self) -> str:
+        return "embedding_error"
+
+    def to_message(self) -> str:
+        result = "Embedding error"
         if self.message_extra:
             result += f" - {self.message_extra}"
         return result
@@ -71,7 +91,7 @@ class AuthorizationMissingAPIError(APIErrorResponse):
 
 
 class InvalidCredentialsAPIError(APIErrorResponse):
-    def __init__(self, message_extra: str = None):
+    def __init__(self, message_extra: Optional[str] = None):
         self.message_extra = message_extra
 
     def to_status_code(self) -> int:
@@ -88,7 +108,7 @@ class InvalidCredentialsAPIError(APIErrorResponse):
 
 
 class NotFoundAPIError(APIErrorResponse):
-    def __init__(self, message_extra: str = None):
+    def __init__(self, message_extra: Optional[str] = None):
         self.message_extra = message_extra
 
     def to_status_code(self) -> int:

@@ -107,3 +107,4 @@ class RateLimitRepository:
             row = result.first()
             if row:
                 return UsageTier(id=tier_id, name=row.name, description=row.description)
+        return None
