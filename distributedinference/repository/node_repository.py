@@ -9,6 +9,8 @@ from typing import List
 from typing import Optional
 from uuid import UUID
 
+from prometheus_client import Gauge
+
 from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionChunk
 import sqlalchemy
@@ -654,6 +656,9 @@ class NodeRepository:
     def get_unhealthy_nodes(self) -> List[ConnectedNode]:
         # returns only in-memory unhealthy nodes
         return [node for node in self._connected_nodes.values() if not node.is_healthy]
+
+    def get_locally_connected_nodes(self) -> List[ConnectedNode]:
+        return list(self._connected_nodes.values())
 
     @async_timer("node_repository.get_nodes_for_benchmarking", logger=logger)
     async def get_nodes_for_benchmarking(self) -> List[ConnectedNode]:
