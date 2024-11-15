@@ -138,7 +138,7 @@ async def _check_node_health(
     node: ConnectedNode,
     node_repository: NodeRepository,
     analytics: Analytics,
-    protocol_handler: ProtocolHandler,
+    _: ProtocolHandler,
 ) -> None:
     is_healthy = False
     try:
@@ -152,8 +152,9 @@ async def _check_node_health(
             status = await node_status_transition.execute(
                 node_repository, node.uid, NodeStatusEvent.DEGRADED
             )
-        if status == NodeStatus.STOPPED_BENCHMARK_FAILED:
-            await _disconnect_node(node, node_repository, protocol_handler, status)
+        # TODO: add back soon
+        # if status == NodeStatus.STOPPED_BENCHMARK_FAILED:
+        #    await _disconnect_node(node, node_repository, protocol_handler, status)
 
         await node_repository.update_node_status(node.uid, is_healthy, status)
 
