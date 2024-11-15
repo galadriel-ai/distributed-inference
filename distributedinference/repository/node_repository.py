@@ -655,6 +655,9 @@ class NodeRepository:
         # returns only in-memory unhealthy nodes
         return [node for node in self._connected_nodes.values() if not node.is_healthy]
 
+    def get_locally_connected_nodes(self) -> List[ConnectedNode]:
+        return list(self._connected_nodes.values())
+
     @async_timer("node_repository.get_nodes_for_benchmarking", logger=logger)
     async def get_nodes_for_benchmarking(self) -> List[ConnectedNode]:
         connected_node_ids = list(self._connected_nodes.keys())

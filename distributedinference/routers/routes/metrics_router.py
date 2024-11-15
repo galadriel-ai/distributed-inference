@@ -29,6 +29,13 @@ logger = api_logger.get()
 network_nodes_gauge = Gauge(
     "network_nodes", "Nodes in network by model_name", ["model_name"]
 )
+
+locally_connected_nodes_gauge = Gauge(
+    "locally_connected_nodes",
+    "Connected nodes to the current backend counts by model name, status and node uid",
+    ["model_name", "node_uid", "node_status"],
+)
+
 node_tokens_gauge = Gauge(
     "node_tokens",
     "Total tokens by model_name and node uid",
@@ -83,6 +90,13 @@ async def get_metrics(
     nodes = await metrics_repository.get_connected_node_benchmarks()
     for node in nodes:
         network_nodes_gauge.labels(node.model_name).inc()
+
+    locally_connected_nodes = node_repository.get_locally_connected_nodes()
+    for node in locally_connected_nodes:
+        locally_connected_nodes_gauge.labels(
+            node.model, node.uid, node.node_status
+        ).inc()
+
     node_metrics = await node_repository.get_all_node_metrics()
 
     for node_uid, metrics in node_metrics.items():
@@ -125,6 +139,7 @@ def _get_registry() -> CollectorRegistry:
 
 def _clear():
     network_nodes_gauge.clear()
+    locally_connected_nodes_gauge.clear()
     node_tokens_gauge.clear()
     node_requests_gauge.clear()
     node_requests_successful_gauge.clear()
