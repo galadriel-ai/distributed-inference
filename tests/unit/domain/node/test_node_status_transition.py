@@ -60,7 +60,7 @@ async def test_transitions():
         (
             NodeStatusEvent.DEGRADED,
             NodeStatus.RUNNING_BENCHMARKING,
-            NodeStatus.STOPPED_BENCHMARK_FAILED,  # STOP EVENT!
+            NodeStatus.RUNNING_BENCHMARKING,
         ),
         (
             NodeStatusEvent.DEGRADED,

@@ -18,6 +18,11 @@ Some helpers:
 Together AI
 BASE_URL = "https://api.together.xyz/v1"
 API_KEY = "1945d0425839ea2aad5a8d9636bf71afab1be86b7653c328f121172755facb08"
+MODEL = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
+python ttft_test.py \
+  --base-url https://api.together.xyz/v1 \
+  --api-key 1945d0425839ea2aad5a8d9636bf71afab1be86b7653c328f121172755facb08 \
+  --model meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo
 
 Galadriel
 BASE_URL = "https://api.galadriel.com/v1"
