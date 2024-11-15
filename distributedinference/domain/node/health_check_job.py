@@ -110,6 +110,7 @@ async def _send_health_check_inference(
                 is_healthy = is_node_performant.execute(
                     time_tracker.get_time_to_first_token(),
                     time_tracker.get_throughput(),
+                    time_tracker.get_prompt_tokens(),
                 )
                 return CheckHealthResponse(
                     node_id=node.uid,
