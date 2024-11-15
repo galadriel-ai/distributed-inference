@@ -92,6 +92,7 @@ def test_start_one_chunk_with_usage():
     assert tracker.get_throughput() == 1.0
     assert tracker.get_time_to_first_token() == 100.00
     assert tracker.get_total_time() == 100.00
+    assert tracker.get_prompt_tokens() == 1000
 
 
 def test_start_two_chunks_no_tokens():
@@ -125,6 +126,7 @@ def test_start_two_chunks_with_usage_and_tokens():
     assert tracker.get_throughput() == 10.0
     assert tracker.get_time_to_first_token() == 100.00
     assert tracker.get_total_time() == 200.00
+    assert tracker.get_prompt_tokens() == 1000
 
 
 def test_start_two_chunks_second_with_tokens():
@@ -146,6 +148,7 @@ def test_start_two_chunks_second_with_tokens():
     assert tracker.get_throughput() == 1.0
     assert tracker.get_time_to_first_token() == 200.00
     assert tracker.get_total_time() == 200.00
+    assert tracker.get_prompt_tokens() == 1000
 
 
 def test_start_three_chunks_one_without_tokens():
@@ -169,3 +172,4 @@ def test_start_three_chunks_one_without_tokens():
     assert tracker.get_throughput() == 5.0
     assert tracker.get_time_to_first_token() == 100.00
     assert tracker.get_total_time() == 300.00
+    assert tracker.get_prompt_tokens() == 1000

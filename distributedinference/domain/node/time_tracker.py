@@ -56,6 +56,11 @@ class TimeTracker:
             return 1.0
         return 0.0
 
+    def get_prompt_tokens(self) -> int:
+        if self.usage:
+            return self.usage.prompt_tokens
+        return 0
+
 
 def _is_chunk_with_tokens(chunk: Optional[ChatCompletionChunk]):
     return (
