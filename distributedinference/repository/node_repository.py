@@ -9,8 +9,6 @@ from typing import List
 from typing import Optional
 from uuid import UUID
 
-from prometheus_client import Gauge
-
 from uuid_extensions import uuid7
 from openai.types.chat import ChatCompletionChunk
 import sqlalchemy
