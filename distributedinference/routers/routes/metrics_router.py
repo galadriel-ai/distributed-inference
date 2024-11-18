@@ -60,7 +60,7 @@ node_requests_failed_gauge = Gauge(
 node_time_to_first_token_gauge = Gauge(
     "node_time_to_first_token",
     "Time to first token in seconds by model and node uid",
-    ["model_name", "node_uid"],
+    ["model_name", "node_uid", "node_status"],
 )
 node_inference_tokens_per_second_gauge = Gauge(
     "node_inference_tokens_per_second",
@@ -110,9 +110,9 @@ async def get_metrics(
             metrics.requests_failed
         )
         if metrics.time_to_first_token:
-            node_time_to_first_token_gauge.labels(metrics.model_name, node_uid).set(
-                metrics.time_to_first_token
-            )
+            node_time_to_first_token_gauge.labels(
+                metrics.model_name, node_uid, metrics.status
+            ).set(metrics.time_to_first_token)
         if metrics.inference_tokens_per_second:
             node_inference_tokens_per_second_gauge.labels(
                 metrics.model_name, node_uid

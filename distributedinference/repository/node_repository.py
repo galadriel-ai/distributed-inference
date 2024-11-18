@@ -113,7 +113,8 @@ SELECT
     node_metrics.model_name,
     node_metrics.connected_at,
     node_metrics.created_at,
-    node_metrics.last_updated_at
+    node_metrics.last_updated_at,
+    node_metrics.status
 FROM node_metrics
 LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
 WHERE node_metrics.node_info_id = ANY(:node_ids);
@@ -134,7 +135,8 @@ SELECT
     node_metrics.model_name,
     node_metrics.connected_at,
     node_metrics.created_at,
-    node_metrics.last_updated_at
+    node_metrics.last_updated_at,
+    node_metrics.status
 FROM node_metrics
 LEFT JOIN node_info on node_info.id = node_metrics.node_info_id
 """
@@ -330,7 +332,8 @@ SELECT
     time_to_first_token,
     inference_tokens_per_second,
     uptime,
-    connected_at
+    connected_at,
+    status
 FROM node_metrics
 WHERE node_info_id = :id AND connected_at IS NOT NULL;
 """
@@ -594,6 +597,7 @@ class NodeRepository:
                         if not row.connected_at
                         else int(time.time() - row.connected_at.timestamp())
                     ),
+                    status=row.status,
                 )
 
     @async_timer("node_repository.get_node_metrics_by_ids", logger=logger)
@@ -623,6 +627,7 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
+                    status=row.status,
                 )
             return result
 
@@ -648,6 +653,7 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
+                    status=row.status,
                 )
             return result
 
