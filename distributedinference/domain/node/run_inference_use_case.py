@@ -54,6 +54,7 @@ LMDEPLOY_NODE_VERSION = version.parse("0.0.16")
 
 
 class InferenceExecutor:
+    metrics_increment: NodeMetricsIncrement
 
     def __init__(
         self,
@@ -67,7 +68,6 @@ class InferenceExecutor:
         self.metrics_queue_repository = metrics_queue_repository
         self.analytics = analytics
 
-        self.metrics_increment = None
         self.is_include_usage: bool = False
         self.usage: Optional[CompletionUsage] = None
         self.request_successful = False
@@ -217,9 +217,9 @@ class InferenceExecutor:
         self, node: ConnectedNode, response: InferenceResponse
     ) -> bool:
         if (
-            node.version < LMDEPLOY_NODE_VERSION
+            (not node.version or node.version < LMDEPLOY_NODE_VERSION)
             and self.usage is not None
-            and len(response.chunk.choices) == 0
+            and response.chunk and len(response.chunk.choices) == 0
         ):
             return True
         return False
@@ -279,7 +279,7 @@ class InferenceExecutor:
         if throughput:
             self.metrics_increment.inference_tokens_per_second = throughput
             logger.debug(
-                f"Inference generates {self.usage.completion_tokens} tokens, and takes {self.time_tracker.get_total_time()}s. TPS: {throughput} TTFT: {self.time_tracker.get_time_to_first_token()}"
+                f"Inference generates {self.usage.completion_tokens if self.usage else 0} tokens, and takes {self.time_tracker.get_total_time()}s. TPS: {throughput} TTFT: {self.time_tracker.get_time_to_first_token()}"
             )
         if self.request_successful:
             self.metrics_increment.requests_successful_incerement += 1
