@@ -37,14 +37,24 @@ DB_HOST_READ = os.getenv("DB_HOST_READ", "localhost")
 DB_PORT_READ = os.getenv("DB_PORT_READ", "5432")
 
 # This should be unified to a sensible unified data format at some point
-SUPPORTED_MODELS = [
-    "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
-    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
-    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
-    "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
-]
+SUPPORTED_MODELS = {
+    "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8": {
+        "benchmark_required": True,
+    },
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16": {
+        "benchmark_required": False,
+    },
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16": {
+        "benchmark_required": False,
+    },
+    "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4": {
+        "benchmark_required": False,
+    },
+}
 if not is_production():
-    SUPPORTED_MODELS.append("hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4")
+    SUPPORTED_MODELS["hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4"] = {
+        "benchmark_required": True,
+    }
 
 MODEL_NAME_MAPPING = {
     "llama3.1": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",

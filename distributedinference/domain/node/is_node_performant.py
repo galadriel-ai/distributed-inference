@@ -1,7 +1,12 @@
 import settings
+from distributedinference import api_logger
+
+logger = api_logger.get()
 
 
-def execute(time_to_first_token: float, throughput: float, prompt_tokens: int) -> bool:
+def execute(
+    time_to_first_token: float, throughput: float, prompt_tokens: int, model: str
+) -> bool:
     """
     Measures how performant the node is. Currently, only the 8B model is graded as this
     is run by the end users on consumer grade GPUs.
@@ -17,6 +22,13 @@ def execute(time_to_first_token: float, throughput: float, prompt_tokens: int) -
 
     return: True if node is performant, False otherwise
     """
+    logger.debug(
+        f"is_node_performant, ttft: {time_to_first_token}, throughput: {throughput}, "
+        f"prompt_tokens: {prompt_tokens}, model:{model}"
+    )
+    if not _is_check_required(model):
+        return True
+
     if time_to_first_token <= 0.0:
         return False
 
@@ -26,3 +38,10 @@ def execute(time_to_first_token: float, throughput: float, prompt_tokens: int) -
     if prompt_tokens < settings.SMALL_PROMPT_SIZE:
         return time_to_first_token < settings.MIN_TIME_TO_FIRST_TOKEN_SMALL_SEC
     return time_to_first_token < settings.MIN_TIME_TO_FIRST_TOKEN_BIG_SEC
+
+
+def _is_check_required(model: str) -> bool:
+    model_config = settings.SUPPORTED_MODELS.get(model)
+    if model_config:
+        return model_config.get("benchmark_required")
+    return False

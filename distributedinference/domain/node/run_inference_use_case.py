@@ -161,6 +161,7 @@ class InferenceExecutor:
                 self.time_tracker.get_time_to_first_token(),
                 self.time_tracker.get_throughput(),
                 self.time_tracker.get_prompt_tokens(),
+                request.model,
             )
             if not is_performant:
                 await self._mark_node_as_unhealthy(node)
