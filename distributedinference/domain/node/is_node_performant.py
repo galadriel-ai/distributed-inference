@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import settings
 from distributedinference import api_logger
 
@@ -5,7 +7,11 @@ logger = api_logger.get()
 
 
 def execute(
-    time_to_first_token: float, throughput: float, prompt_tokens: int, model: str
+    time_to_first_token: float,
+    throughput: float,
+    prompt_tokens: int,
+    model: str,
+    node_uid: UUID,
 ) -> bool:
     """
     Measures how performant the node is. Currently, only the 8B model is graded as this
@@ -24,7 +30,7 @@ def execute(
     """
     logger.debug(
         f"is_node_performant, ttft: {time_to_first_token}, throughput: {throughput}, "
-        f"prompt_tokens: {prompt_tokens}, model:{model}"
+        f"prompt_tokens: {prompt_tokens}, model:{model}, node_uid: {node_uid}"
     )
     if not _is_check_required(model):
         return True
