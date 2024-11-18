@@ -97,7 +97,9 @@ async def validate_session_token(
     )
 
     if not user:
-        raise error_responses.InvalidCredentialsAPIError(message_extra="User not found.")
+        raise error_responses.InvalidCredentialsAPIError(
+            message_extra="User not found."
+        )
 
     util.set_state(request, RequestStateKey.USER_ID, user.uid)
     return user
