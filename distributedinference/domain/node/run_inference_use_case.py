@@ -40,7 +40,7 @@ logger = api_logger.get()
 node_time_to_first_token_histogram = Histogram(
     "node_time_to_first_token_histogram",
     "Time to first token histogram in seconds by model and node uid",
-    ["model_name", "node_uid"],
+    ["model_name", "node_uid", "node_status"],
     buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10],
 )
 llm_fallback_called_gauge = Gauge(
@@ -271,9 +271,9 @@ class InferenceExecutor:
         if ttft is not None:
             self.metrics_increment.time_to_first_token = ttft
             # add TTFT in histogram
-            node_time_to_first_token_histogram.labels(request.model, node.uid).observe(
-                ttft
-            )
+            node_time_to_first_token_histogram.labels(
+                request.model, node.uid, node.node_status
+            ).observe(ttft)
         # use completion tokens / time elapsed to focus on the model generation performance
         throughput = self.time_tracker.get_throughput()
         if throughput:
