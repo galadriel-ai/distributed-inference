@@ -129,7 +129,7 @@ class MainMiddleware(BaseHTTPMiddleware):
                             {
                                 "request_id": request_id,
                                 "request_path": request.url.path,
-                                "error_message": "",
+                                "error_message": "internal_server_error",
                                 "status_code": InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR.value,
                             },
                         ),
