@@ -2,8 +2,10 @@
 
 [![unit tests](https://github.com/galadriel-ai/distributed-inference/actions/workflows/unit_test.yml/badge.svg)](https://github.com/galadriel-ai/distributed-inference/actions/workflows/unit_test.yml)
 
-This repository contains the code for the centralised server (a.ka. distributed inference)
-that interfaces to the consumer side to get the inference request and schedule it to the
+This repository contains the code for the centralised server (a.ka. distributed
+inference)
+that interfaces to the consumer side to get the inference request and schedule
+it to the
 `galadriel-node`s in the Galadriel network.
 
 ## Requirements to run
@@ -55,7 +57,8 @@ pip3 install -r requirements.txt
 
 ### Install Database
 
-We use postgres to store all the information about the nodes and the requests. To setup the database, run the
+We use postgres to store all the information about the nodes and the requests.
+To setup the database, run the
 following
 command:
 
@@ -73,7 +76,8 @@ PYTHONPATH=. python scripts/insert_users.py
 PYTHONPATH=. python scripts/insert_nodes.py
 ```
 
-`inset_node.py` has a variable `user_id` which should be updated with one of the `id` from `user_profile` table.
+`inset_node.py` has a variable `user_id` which should be updated with one of
+the `id` from `user_profile` table.
 For now this has to be done manually but in future we will automate this.
 
 ### Run the server:
@@ -113,8 +117,8 @@ cd database
 alembic upgrade head
 ```
 
-
 **Adding credits**
+
 ```
 source venv/bin/activate
 
@@ -131,6 +135,7 @@ PYTHONPATH=. python scripts/add_credits.py --user_id 06710e92-acb3-784f-8000-aa9
 User facing documentation is hosted on https://docs.galadriel.com
 
 To export openapi.json:
+
 ```
 PYTHONPATH=. python scripts/export_openapi.py
 ```

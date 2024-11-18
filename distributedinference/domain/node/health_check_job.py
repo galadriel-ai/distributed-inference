@@ -111,6 +111,7 @@ async def _send_health_check_inference(
                     time_tracker.get_time_to_first_token(),
                     time_tracker.get_throughput(),
                     time_tracker.get_prompt_tokens(),
+                    request.model,
                 )
                 return CheckHealthResponse(
                     node_id=node.uid,
@@ -144,10 +145,10 @@ async def _check_node_health(
     is_healthy = False
     try:
         response = await _send_health_check_inference(node, node_repository)
-        logger.debug(
-            f"Node health check result, node_id={node.uid}, is_healthy={response.is_healthy}"
-        )
         is_healthy = response.is_healthy
+        logger.debug(
+            f"Node health check result, node_id={node.uid}, is_healthy={is_healthy}"
+        )
         status = NodeStatus.RUNNING
         if not is_healthy:
             status = await node_status_transition.execute(
@@ -174,13 +175,18 @@ async def _check_node_health(
         )
 
 
+def _get_long_text():
+    file_path = "distributedinference/assets/ai_wiki_8k.txt"
+    with open(file_path, "r", encoding="utf-8") as file:
+        return file.read()
+
+
 async def _get_health_check_request(node: ConnectedNode) -> CompletionCreateParams:
     try:
+        long_text = _get_long_text()
         return await async_maybe_transform(
             {
-                "messages": [
-                    Message(role="user", content="Respond with only letter A")
-                ],
+                "messages": [Message(role="user", content=long_text)],
                 "model": node.model,
             },
             CompletionCreateParams,
