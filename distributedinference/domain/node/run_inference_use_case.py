@@ -219,7 +219,8 @@ class InferenceExecutor:
         if (
             (not node.version or node.version < LMDEPLOY_NODE_VERSION)
             and self.usage is not None
-            and response.chunk and len(response.chunk.choices) == 0
+            and response.chunk
+            and len(response.chunk.choices) == 0
         ):
             return True
         return False
