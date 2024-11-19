@@ -33,7 +33,6 @@ jobs:
       - name: Run mypy and save output
         run: |
           mypy distributedinference/ > mypy_pyright_outputs/mypy_output.txt || true
-        continue-on-error: true
       - name: Count mypy errors
         id: mypy-count
         run: |

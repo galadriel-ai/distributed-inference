@@ -24,6 +24,7 @@ sql_engine_checked_out_connections = Gauge(
 
 logger = api_logger.get()
 
+a: str = 0
 
 @dataclass
 class SqlStatus:
