@@ -1,4 +1,4 @@
-from typing import Dict
+from dataclasses import dataclass
 
 from prometheus_client import Gauge
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -25,6 +25,14 @@ sql_engine_checked_out_connections = Gauge(
 logger = api_logger.get()
 
 
+@dataclass
+class SqlStatus:
+    pool_size: float
+    connections_in_pool: float
+    current_overflow: float
+    checked_out_connections: float
+
+
 async def execute():
     clear()
 
@@ -38,13 +46,15 @@ async def execute():
 def set_values(engine: AsyncEngine, db_host: str):
     status = engine.pool.status()
     logger.info(f"SQL Engine Pool Raw Status: {status}")
-    status = _parse_engine_pool_status(status)
+    parsed_status = _parse_engine_pool_status(status)
 
-    sql_engine_pool_size.labels(db_host).set(status["pool_size"])
-    sql_engine_connections_in_pool.labels(db_host).set(status["connections_in_pool"])
-    sql_engine_current_overflow.labels(db_host).set(status["current_overflow"])
+    sql_engine_pool_size.labels(db_host).set(parsed_status.pool_size)
+    sql_engine_connections_in_pool.labels(db_host).set(
+        parsed_status.connections_in_pool
+    )
+    sql_engine_current_overflow.labels(db_host).set(parsed_status.current_overflow)
     sql_engine_checked_out_connections.labels(db_host).set(
-        status["checked_out_connections"]
+        parsed_status.checked_out_connections
     )
 
 
@@ -55,17 +65,17 @@ def clear():
     sql_engine_checked_out_connections.clear()
 
 
-def _parse_engine_pool_status(status: str) -> Dict:
-    return {
-        "pool_size": _parse(status, "Pool size: "),
-        "connections_in_pool": _parse(status, "Connections in pool: "),
-        "current_overflow": _parse(status, "Current Overflow: "),
-        "checked_out_connections": _parse(status, "Current Checked out connections: "),
-    }
+def _parse_engine_pool_status(status: str) -> SqlStatus:
+    return SqlStatus(
+        pool_size=_parse(status, "Pool size: "),
+        connections_in_pool=_parse(status, "Connections in pool: "),
+        current_overflow=_parse(status, "Current Overflow: "),
+        checked_out_connections=_parse(status, "Current Checked out connections: "),
+    )
 
 
-def _parse(status: str, name: str) -> str:
+def _parse(status: str, name: str) -> float:
     try:
-        return status.split(name)[1].split()[0]
+        return float(status.split(name)[1].split()[0])
     except:
-        return ""
+        return float(0)

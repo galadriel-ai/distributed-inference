@@ -24,16 +24,17 @@ In the logs you will see:
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
+from typing import Optional
 
 
 class Timer:
     """Measure elapsed time"""
 
-    # pylint: disable=too-few-public-methods
-    started_at: datetime = None
-    ended_at: datetime = None
-    message_at: datetime = None
+    started_at: datetime
+    ended_at: Optional[datetime] = None
+    message_at: Optional[datetime] = None
 
     def __init__(self, text=None, iterable=None, logger=None, interval=None):
         self.text = text
