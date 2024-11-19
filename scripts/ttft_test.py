@@ -180,7 +180,18 @@ def append_output(tracker: TimeTracker):
         )
 
 
-async def main(base_url: str, api_key: str, model: str):
+async def main(base_url: str, api_key: str, model: str, concurrency: int):
+    print("concurrency:", concurrency)
+    tasks = []
+    for i in range(concurrency):
+        task = asyncio.create_task(runnable(base_url, api_key, model))
+        tasks.append(task)
+
+    results = await asyncio.gather(*tasks)
+    print(f"\n\nResults: {results}")
+
+
+async def runnable(base_url: str, api_key: str, model: str):
     for i in range(1, 60):
         text = get_long_text()
         n = i * 10000
@@ -208,11 +219,13 @@ if __name__ == "__main__":
         "--api-key", help="API key of the service, for example: gal-Xshqm..."
     )
     parser.add_argument("--model", help="Model name, for example: llama3.1-70b")
+    parser.add_argument("--concurrency", required=False, type=int, default=1)
     args = parser.parse_args()
     asyncio.run(
         main(
             base_url=args.base_url,
             api_key=args.api_key,
             model=args.model,
+            concurrency=args.concurrency,
         )
     )
