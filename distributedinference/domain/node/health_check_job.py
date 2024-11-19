@@ -112,6 +112,7 @@ async def _send_health_check_inference(
                     time_tracker.get_throughput(),
                     time_tracker.get_prompt_tokens(),
                     request.model,
+                    node.uid,
                 )
                 return CheckHealthResponse(
                     node_id=node.uid,
