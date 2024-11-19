@@ -31,7 +31,9 @@ async def execute(
             # User is expected to do something if status code is 400
             # 401 would just mean invalid credentials
             raise error_responses.AuthorizationProviderAPIError(
-                e.details.error_type, e.details.error_message
+                e.details.error_type
+                or error_responses.InternalServerAPIError().to_code(),
+                e.details.error_message,
             )
         raise error_responses.InvalidCredentialsAPIError(e.details.error_message)
     except:

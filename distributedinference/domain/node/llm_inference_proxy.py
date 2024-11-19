@@ -7,9 +7,9 @@ import openai
 import settings
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import InferenceError
+from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
-from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 
 logger = api_logger.get()
 
@@ -24,7 +24,7 @@ MODELS_MAP = {
 
 async def execute(
     request: InferenceRequest, node_uid: UUID
-) -> AsyncGenerator[InferenceResponse, None]:
+) -> AsyncGenerator[Optional[InferenceResponse], None]:
     client = openai.AsyncOpenAI(base_url=BASE_URL, api_key=settings.TOGETHER_AI_API_KEY)
     # Force streaming and token usage inclusion
 
@@ -34,11 +34,11 @@ async def execute(
         return
     request.model = model
     request.chat_request["model"] = model
-    request.chat_request["stream"] = True
+    request.chat_request["stream"] = True  # type: ignore
     request.chat_request["stream_options"] = {"include_usage": True}
     try:
-        completion = await client.chat.completions.create(**request.chat_request)
-        async for chunk in completion:
+        completion = await client.chat.completions.create(**request.chat_request)  # type: ignore
+        async for chunk in completion:  # type: ignore
             yield InferenceResponse(
                 node_id=node_uid,
                 request_id=request.id,

@@ -10,8 +10,8 @@ from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node_stats.entities import NodeStats
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.tokens_repository import TimedUsageTokens
 from distributedinference.repository.tokens_repository import TokensRepository
-from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
 from distributedinference.service.node import get_node_stats_service as service
 from distributedinference.service.node.entities import GetNodeStatsResponse
@@ -60,7 +60,7 @@ async def test_success():
     mock_repository.get_node_stats.return_value = node_stats
 
     mock_tokens_repository = AsyncMock(spec=TokensRepository)
-    usage_tokens = UsageTokens(
+    usage_tokens = TimedUsageTokens(
         consumer_user_profile_id=uuid7(),
         producer_node_info_id=NODE_UUID,
         model_name="model",

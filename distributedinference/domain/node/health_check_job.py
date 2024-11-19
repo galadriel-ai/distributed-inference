@@ -1,5 +1,6 @@
 import asyncio
 from typing import List
+from typing import cast
 
 from uuid_extensions import uuid7
 from openai._utils import async_maybe_transform
@@ -185,13 +186,14 @@ def _get_long_text():
 async def _get_health_check_request(node: ConnectedNode) -> CompletionCreateParams:
     try:
         long_text = _get_long_text()
-        return await async_maybe_transform(
+        result = await async_maybe_transform(
             {
                 "messages": [Message(role="user", content=long_text)],
                 "model": node.model,
             },
             CompletionCreateParams,
         )
+        return cast(CompletionCreateParams, result)
     except Exception as e:
         logger.warning("Failed to create health check request", exc_info=True)
         raise e
