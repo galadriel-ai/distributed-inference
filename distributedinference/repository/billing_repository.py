@@ -152,7 +152,7 @@ class BillingRepository:
             rows = await session.execute(sqlalchemy.text(SQL_ADD_CREDITS), data)
             row = rows.first()
             if row:
-                credits_id = row.first().id
+                credits_id = row.id
                 credits_addition_data = {
                     "id": uuid7(),
                     "user_credits_id": credits_id,
