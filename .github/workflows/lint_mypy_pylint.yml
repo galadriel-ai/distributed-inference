@@ -32,7 +32,7 @@ jobs:
         run: mkdir -p mypy_pyright_outputs
       - name: Run mypy and save output
         run: |
-          mypy distributedinference/ > mypy_pyright_outputs/mypy_output.txt || true
+          mypy distributedinference/ > mypy_pyright_outputs/mypy_output.txt
       - name: Count mypy errors
         id: mypy-count
         run: |
