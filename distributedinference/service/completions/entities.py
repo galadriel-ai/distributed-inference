@@ -3,6 +3,7 @@ from typing import List
 from typing import Literal
 from typing import Optional
 from typing import Union
+from typing import cast
 
 from openai._utils import async_maybe_transform
 from openai.types.chat import ChatCompletion as OpenAiChatCompletion
@@ -53,7 +54,7 @@ class JsonSchema(BaseModel):
     schema: Optional[Dict] = Field(
         description="The schema for the response format, described as a JSON Schema object.",
         default=None,
-    )
+    )  # type: ignore
     strict: Optional[bool] = Field(
         description="Whether to enable strict schema adherence when generating the output. If set to true, the model will always follow the exact schema defined in the schema field. Only a subset of JSON Schema is supported when `strict` is `true`.",
         default=None,
@@ -243,13 +244,14 @@ class ChatCompletionRequest(BaseModel):
             # vllm (at least <=0.6.3.post1) does not support the "tool_choice" field
             # even if the dict has it as "None" then vllm will return an error
             if self.tool_choice:
-                dict_input["tool_choice"] = self.tool_choice
+                dict_input["tool_choice"] = self.tool_choice  # type: ignore
             if self.tools:
                 dict_input["tools"] = self.tools
-            return await async_maybe_transform(
+            result = await async_maybe_transform(
                 dict_input,
                 completion_create_params.CompletionCreateParams,
             )
+            return cast(completion_create_params.CompletionCreateParams, result)
         except Exception as e:
             logger.warning("Failed to convert input to openAI CompletionCreateParams")
             raise e

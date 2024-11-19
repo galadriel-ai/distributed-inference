@@ -71,12 +71,14 @@ class PingPongProtocol:
         # Initialize the protocol with the configurations
         self.config = PingPongConfig()
         self.config.name = protocol_name
-        self.config.version = config.get("version")
+        self.config.version = config.get("version", "")
         self.config.ping_interval_in_msec = (
-            config.get("ping_interval_in_seconds") * 1000
+            config.get("ping_interval_in_seconds", 0) * 1000
         )
-        self.config.ping_timeout_in_msec = config.get("ping_timeout_in_seconds") * 1000
-        self.config.ping_miss_threshold = config.get("ping_miss_threshold")
+        self.config.ping_timeout_in_msec = (
+            config.get("ping_timeout_in_seconds", 0) * 1000
+        )
+        self.config.ping_miss_threshold = config.get("ping_miss_threshold", 0)
 
         self.metrics_queue_repository = metrics_queue_repository
         # The main data structure that stores the active nodes
@@ -230,7 +232,9 @@ class PingPongProtocol:
                 # Strictly not required for Ping-Pong,
                 # But can be used on the client side to do some priority analysis
                 # TODO remove `or 0` after the node is updated to expect None value for `rtt`
-                rtt=node_info.rtt or 0,  # send the previously observed RTT to client
+                rtt=(
+                    int(node_info.rtt) if node_info.rtt else 0
+                ),  # send the previously observed RTT to client
                 ping_streak=node_info.ping_streak,  # send the ping streak to client
                 miss_streak=node_info.miss_streak,  # send the miss streak to client
             )
@@ -440,21 +444,21 @@ def _pong_protocol_validations(
 def _validate_config(protocol_name: str, config: dict):
     if protocol_name != settings.PING_PONG_PROTOCOL_NAME or config is None:
         return False
-    if config.get("version") is None or config.get("version") == "":
+    if config.get("version") is None or config.get("version", "") == "":
         return False
     if (
         config.get("ping_interval_in_seconds") is None
-        or config.get("ping_interval_in_seconds") <= 1
+        or config.get("ping_interval_in_seconds", 0) <= 1
     ):
         return False
     if (
         config.get("ping_timeout_in_seconds") is None
-        or config.get("ping_timeout_in_seconds") <= 1
+        or config.get("ping_timeout_in_seconds", 0) <= 1
     ):
         return False
 
     if (config.get("ping_miss_threshold") is None) or (
-        config.get("ping_miss_threshold") <= 1
+        config.get("ping_miss_threshold", 0) <= 1
     ):
         return False
     return True

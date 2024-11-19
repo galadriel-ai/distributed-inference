@@ -1,6 +1,7 @@
 from typing import List
 from typing import Literal
 from typing import Optional
+from typing import Union
 
 from openai import AsyncOpenAI
 from openai.types import CreateEmbeddingResponse
@@ -20,7 +21,9 @@ class EmbeddingApiRepository:
         )
 
     async def create_embeddings(
-        self, chunks: List[str], encoding_format: Optional[Literal["float", "base64"]]
+        self,
+        chunks: Union[List[str], List[List[int]]],
+        encoding_format: Optional[Literal["float", "base64"]],
     ) -> CreateEmbeddingResponse:
         return await self.client.embeddings.create(
             model=self.model, input=chunks, encoding_format=encoding_format or "float"

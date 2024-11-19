@@ -15,7 +15,7 @@ logger = api_logger.get()
 # pylint: disable=R0801
 async def execute(
     api_key: str, request: InferenceRequest
-) -> AsyncGenerator[InferenceResponse, None]:
+) -> AsyncGenerator[Optional[InferenceResponse], None]:
     peer_node_ips = settings.PEER_NODES_LIST
 
     for node_ip in peer_node_ips:
@@ -31,13 +31,13 @@ async def execute(
         hostname = settings.HOSTNAME
 
         # Force streaming and token usage inclusion
-        request.chat_request["stream"] = True
+        request.chat_request["stream"] = True  # type: ignore
         request.chat_request["stream_options"] = {"include_usage": True}
         # Add forwarding flag indicating this is a peer forwarding call
-        request.chat_request["extra_headers"] = {"Peer-Forwarding-From": hostname}
+        request.chat_request["extra_headers"] = {"Peer-Forwarding-From": hostname}  # type: ignore
         try:
             completion = await client.chat.completions.create(**request.chat_request)
-            async for chunk in completion:
+            async for chunk in completion:  # type: ignore
                 yield InferenceResponse(
                     node_id=node_uid,
                     request_id=request.id,
