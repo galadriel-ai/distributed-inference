@@ -5,7 +5,6 @@ from openai.types.chat import ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 
 
-# This function will be updated with LMDeploy
 def execute(
     tool_chunks: List[ChoiceDeltaToolCall],
 ) -> List[ChatCompletionMessageToolCall]:

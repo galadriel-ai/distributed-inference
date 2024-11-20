@@ -18,22 +18,29 @@ START_TRANSITIONS = {
     NodeStatus.STOPPED_DEGRADED: NodeStatus.RUNNING_BENCHMARKING,
     NodeStatus.STOPPED_BENCHMARK_FAILED: NodeStatus.RUNNING_BENCHMARKING,
     NodeStatus.STOPPED: NodeStatus.RUNNING,
+    NodeStatus.STOPPED_DISABLED: NodeStatus.RUNNING_DISABLED,
     # If already running status need to keep the same status
     NodeStatus.RUNNING: NodeStatus.RUNNING,
     NodeStatus.RUNNING_BENCHMARKING: NodeStatus.RUNNING_BENCHMARKING,
     NodeStatus.RUNNING_DEGRADED: NodeStatus.RUNNING_DEGRADED,
+    NodeStatus.RUNNING_DISABLED: NodeStatus.RUNNING_DISABLED,
 }
 
 STOP_TRANSITIONS = {
     NodeStatus.RUNNING: NodeStatus.STOPPED,
     NodeStatus.RUNNING_BENCHMARKING: NodeStatus.STOPPED_BENCHMARK_FAILED,
     NodeStatus.RUNNING_DEGRADED: NodeStatus.STOPPED_DEGRADED,
+    NodeStatus.RUNNING_DISABLED: NodeStatus.STOPPED_DISABLED,
+    NodeStatus.STOPPED_DISABLED: NodeStatus.STOPPED_DISABLED,
 }
 
 DEGRADED_TRANSITIONS = {
     NodeStatus.RUNNING: NodeStatus.RUNNING_DEGRADED,
     NodeStatus.RUNNING_BENCHMARKING: NodeStatus.RUNNING_BENCHMARKING,
     NodeStatus.RUNNING_DEGRADED: NodeStatus.RUNNING_DEGRADED,
+    # Should not be possible
+    NodeStatus.RUNNING_DISABLED: NodeStatus.RUNNING_DISABLED,
+    NodeStatus.STOPPED_DISABLED: NodeStatus.STOPPED_DISABLED,
 }
 
 logger = api_logger.get()

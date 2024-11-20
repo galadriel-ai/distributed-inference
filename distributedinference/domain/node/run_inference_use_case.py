@@ -298,7 +298,7 @@ class InferenceExecutor:
             status = await node_status_transition.execute(
                 self.node_repository, node.uid, NodeStatusEvent.DEGRADED
             )
-            await self.node_repository.update_node_status(node.uid, False, status)
+            await self.node_repository.update_node_status(node.uid, status)
             self.analytics.track_event(
                 node.user_id,
                 AnalyticsEvent(

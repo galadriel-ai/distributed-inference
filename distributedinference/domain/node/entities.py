@@ -3,15 +3,15 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List
 from typing import Dict
+from typing import List
 from typing import Optional
 from uuid import UUID
 
 from fastapi import WebSocket
-from packaging.version import Version
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
+from packaging.version import Version
 
 from distributedinference.service import error_responses
 
@@ -20,9 +20,16 @@ class NodeStatus(Enum):
     RUNNING = "RUNNING"
     RUNNING_BENCHMARKING = "RUNNING_BENCHMARKING"
     RUNNING_DEGRADED = "RUNNING_DEGRADED"
+    # node can only get into the *_DISABLED status manually
+    # to get out of the DISABLED status also needs manual intervention
+    RUNNING_DISABLED = "RUNNING_DISABLED"
     STOPPED = "STOPPED"
     STOPPED_BENCHMARK_FAILED = "STOPPED_BENCHMARK_FAILED"
     STOPPED_DEGRADED = "STOPPED_DEGRADED"
+    STOPPED_DISABLED = "STOPPED_DISABLED"
+
+    def is_healthy(self):
+        return self in [NodeStatus.RUNNING]
 
 
 @dataclass
@@ -116,7 +123,6 @@ class ConnectedNode:
     request_incoming_queues: Dict[str, asyncio.Queue]
     node_status: NodeStatus
     is_self_hosted: bool = False
-    is_healthy: bool = True
     version: Optional[Version] = None
 
     def active_requests_count(self) -> int:
@@ -127,9 +133,6 @@ class ConnectedNode:
 
     def can_handle_parallel_requests(self) -> bool:
         return self.vram > 8000  # 8GB vram is needed to handle parallel requests
-
-    def is_node_healthy(self) -> bool:
-        return self.is_healthy and self.node_status == NodeStatus.RUNNING
 
     @property
     def current_uptime(self) -> int:

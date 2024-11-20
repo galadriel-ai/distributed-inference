@@ -198,8 +198,8 @@ async def test_success(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
-        None,
         API_KEY,
+        None,
         request,
     ):
         responses.append(response)
@@ -736,8 +736,8 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     )
     async for response in executor.execute(
         USER_UUID,
-        None,
         API_KEY,
+        None,
         request,
     ):
         responses.append(response)
@@ -755,7 +755,7 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
         TEST_NODE_ID, "request_id"
     )
     mock_node_repository.update_node_status.assert_awaited_once_with(
-        TEST_NODE_ID, False, NodeStatus.RUNNING_DEGRADED
+        TEST_NODE_ID, NodeStatus.RUNNING_DEGRADED
     )
 
 
