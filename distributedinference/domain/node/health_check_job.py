@@ -173,7 +173,7 @@ async def _check_node_health(
         # if status == NodeStatus.STOPPED_BENCHMARK_FAILED:
         #    await _disconnect_node(node, node_repository, protocol_handler, status)
 
-        await node_repository.update_node_status(node.uid, is_healthy, status)
+        await node_repository.update_node_status(node.uid, status)
 
     except Exception:
         logger.error(

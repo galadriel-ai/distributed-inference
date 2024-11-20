@@ -43,6 +43,16 @@ async def test_transitions():
             NodeStatus.STOPPED_DEGRADED,
             NodeStatus.RUNNING_BENCHMARKING,
         ),
+        (
+            NodeStatusEvent.START,
+            NodeStatus.RUNNING_DISABLED,
+            NodeStatus.RUNNING_DISABLED,
+        ),
+        (
+            NodeStatusEvent.START,
+            NodeStatus.STOPPED_DISABLED,
+            NodeStatus.RUNNING_DISABLED,
+        ),
         # Stop
         (NodeStatusEvent.STOP, NodeStatus.RUNNING, NodeStatus.STOPPED),
         (
@@ -55,6 +65,16 @@ async def test_transitions():
             NodeStatus.RUNNING_DEGRADED,
             NodeStatus.STOPPED_DEGRADED,
         ),
+        (
+            NodeStatusEvent.STOP,
+            NodeStatus.RUNNING_DISABLED,
+            NodeStatus.STOPPED_DISABLED,
+        ),
+        (
+            NodeStatusEvent.STOP,
+            NodeStatus.STOPPED_DISABLED,
+            NodeStatus.STOPPED_DISABLED,
+        ),
         # Degraded
         (NodeStatusEvent.DEGRADED, NodeStatus.RUNNING, NodeStatus.RUNNING_DEGRADED),
         (
@@ -66,6 +86,16 @@ async def test_transitions():
             NodeStatusEvent.DEGRADED,
             NodeStatus.RUNNING_DEGRADED,
             NodeStatus.RUNNING_DEGRADED,
+        ),
+        (
+            NodeStatusEvent.DEGRADED,
+            NodeStatus.RUNNING_DISABLED,
+            NodeStatus.RUNNING_DISABLED,
+        ),
+        (
+            NodeStatusEvent.DEGRADED,
+            NodeStatus.STOPPED_DISABLED,
+            NodeStatus.STOPPED_DISABLED,
         ),
     ]
 

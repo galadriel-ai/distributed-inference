@@ -57,7 +57,6 @@ def connected_node_factory(mock_websocket):
         datacenter_node=False,
         is_self_hosted=False,
         node_status=NodeStatus.RUNNING,
-        is_healthy=True,
     ):
         vram = 8000 if small_node else 16000
         if datacenter_node:
@@ -72,7 +71,6 @@ def connected_node_factory(mock_websocket):
             {},
             node_status,
             is_self_hosted,
-            is_healthy,
             None,
         )
 
@@ -233,10 +231,8 @@ def test_select_node_skips_unhealthy_not_self_hosted_nodes(
     node_repository, connected_node_factory
 ):
     node = connected_node_factory("1")
+    node.node_status = NodeStatus.RUNNING_DEGRADED
     node_repository.register_node(node)
-
-    # Mark the node as unhealthy
-    node.is_healthy = False
 
     # It should return None
     assert node_repository.select_node("model") is None
@@ -247,9 +243,6 @@ def test_select_node_does_not_skip_unhealthy_self_hosted_nodes(
 ):
     node = connected_node_factory("1", is_self_hosted=True)
     node_repository.register_node(node)
-
-    # Mark the node as unhealthy
-    node.is_healthy = False
 
     # It should return the node
     assert node_repository.select_node("model") == node

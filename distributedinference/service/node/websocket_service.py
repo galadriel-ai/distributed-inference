@@ -202,7 +202,7 @@ async def _websocket_error(
 ):
     await ping_pong_protocol.remove_node(node_info.name)
     await health_check_protocol.remove_node(node_info.name)
-    node_status = await _get_new_node_status(node.uid, node_repository)
+    node_status = await _get_new_node_stopped_status(node.uid, node_repository)
     await node_repository.update_node_to_disconnected(node.uid, node_status)
 
     node_repository.deregister_node(node_uid)
@@ -213,7 +213,7 @@ async def _websocket_error(
     )
 
 
-async def _get_new_node_status(
+async def _get_new_node_stopped_status(
     node_id: UUID, node_repository: NodeRepository
 ) -> NodeStatus:
     return await node_status_transition.execute(

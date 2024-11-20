@@ -157,10 +157,9 @@ SET
 WHERE node_info_id = :id;
 """
 
-SQL_UPDATE_IS_HEALTHY = """
+SQL_UPDATE_NODE_STATUS = """
 UPDATE node_metrics
 SET
-    is_healthy = :is_healthy,
     status = :status,
     last_updated_at = :last_updated_at
 WHERE node_info_id = :id;
@@ -549,7 +548,7 @@ class NodeRepository:
         return random.choice(eligible_nodes)
 
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
-        if not node.is_self_hosted and not node.is_node_healthy():
+        if not node.is_self_hosted and not node.node_status.is_healthy():
             return False
         if node.is_datacenter_gpu():
             return (
@@ -660,7 +659,11 @@ class NodeRepository:
 
     def get_unhealthy_nodes(self) -> List[ConnectedNode]:
         # returns only in-memory unhealthy nodes
-        return [node for node in self._connected_nodes.values() if not node.is_healthy]
+        return [
+            node
+            for node in self._connected_nodes.values()
+            if not node.node_status.is_healthy()
+        ]
 
     def get_locally_connected_nodes(self) -> List[ConnectedNode]:
         return list(self._connected_nodes.values())
@@ -719,20 +722,16 @@ class NodeRepository:
             await session.commit()
 
     @async_timer("node_repository.update_node_status", logger=logger)
-    async def update_node_status(
-        self, node_id: UUID, is_healthy: bool, status: NodeStatus
-    ):
+    async def update_node_status(self, node_id: UUID, status: NodeStatus):
         data = {
             "id": node_id,
-            "is_healthy": is_healthy,
             "status": status.value,
             "last_updated_at": utcnow(),
         }
         if node_id in self._connected_nodes:
-            self._connected_nodes[node_id].is_healthy = is_healthy
             self._connected_nodes[node_id].node_status = status
         async with self._session_provider.get() as session:
-            await session.execute(sqlalchemy.text(SQL_UPDATE_IS_HEALTHY), data)
+            await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_STATUS), data)
             await session.commit()
 
     @async_timer("node_repository.increment_node_metrics", logger=logger)

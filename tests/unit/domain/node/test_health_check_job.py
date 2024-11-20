@@ -81,7 +81,7 @@ async def test_check_node_health_healthy(
     )
 
     mock_node_repository.update_node_status.assert_called_once_with(
-        mock_node.uid, True, NodeStatus.RUNNING
+        mock_node.uid, NodeStatus.RUNNING
     )
     mock_analytics.track_event.assert_called_once_with(
         mock_node.user_id,
@@ -115,7 +115,7 @@ async def test_check_node_health_unhealthy(
     )
 
     mock_node_repository.update_node_status.assert_called_once_with(
-        mock_node.uid, False, NodeStatus.RUNNING_DEGRADED
+        mock_node.uid, NodeStatus.RUNNING_DEGRADED
     )
     mock_analytics.track_event.assert_called_once_with(
         mock_node.user_id,
