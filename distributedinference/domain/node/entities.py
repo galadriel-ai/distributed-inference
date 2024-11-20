@@ -31,6 +31,9 @@ class NodeStatus(Enum):
     def is_healthy(self):
         return self in [NodeStatus.RUNNING]
 
+    def is_disabled(self):
+        return self in [NodeStatus.RUNNING_DISABLED, NodeStatus.STOPPED_DISABLED]
+
 
 @dataclass
 class NodeMetricsIncrement:
