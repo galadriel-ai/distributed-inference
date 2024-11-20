@@ -159,6 +159,12 @@ async def _check_node_health(
 ) -> None:
     is_healthy = False
     try:
+        node_status = await node_repository.get_node_status(node.uid)
+        if node_status and node_status.is_disabled():
+            logger.debug(
+                f"Skipping node health check for node_id={node.uid}, current status: {node_status.value}"
+            )
+            return
         response = await _send_health_check_inference(node, node_repository)
         is_healthy = response.is_healthy
         logger.debug(

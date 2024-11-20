@@ -29,14 +29,14 @@ from distributedinference.service.node.protocol.protocol_handler import Protocol
 def create_mock_node():
     def _create_mock_node(version="0.0.16"):
         return ConnectedNode(
-            UUID("6b1f4b1e-0b1b-4b1b-8b1b-1b1f4b1e0b1c"),
-            UUID("6b1f4b1e-0b1b-4b1b-8b1b-1b1f4b1e0b1d"),
-            "model-1",
-            16000,
-            int(time.time()),
-            MagicMock(),
-            {},
-            False,
+            uid=UUID("6b1f4b1e-0b1b-4b1b-8b1b-1b1f4b1e0b1c"),
+            user_id=UUID("6b1f4b1e-0b1b-4b1b-8b1b-1b1f4b1e0b1d"),
+            model="model-1",
+            vram=16000,
+            connected_at=int(time.time()),
+            websocket=MagicMock(),
+            request_incoming_queues={},
+            node_status=NodeStatus.RUNNING_DEGRADED,
             version=Version(version),
         )
 
@@ -142,6 +142,20 @@ async def test_check_node_health_exception(
             EventName.NODE_HEALTH, {"node_id": mock_node.uid, "is_healthy": False}
         ),
     )
+
+
+async def test_check_node_health_skips_disabled(
+    create_mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+):
+    mock_node = create_mock_node()
+    mock_node_repository.get_node_status.return_value = NodeStatus.RUNNING_DISABLED
+    mock_node_repository.receive_for_request.side_effect = Exception("Ooops")
+
+    await health_check_job._check_node_health(
+        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+    )
+
+    mock_node_repository.send_inference_request.assert_not_called()
 
 
 async def test_send_health_check_inference_healthy(
