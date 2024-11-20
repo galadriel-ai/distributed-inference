@@ -56,6 +56,7 @@ async def execute(
     await _check_before_connecting(
         model_name, node_info, node_repository, benchmark_repository, user
     )
+    formatted_model_name: str = model_name or ""
 
     node_uid = node_info.node_id
     connect_time = time.time()
@@ -63,13 +64,16 @@ async def execute(
         node_repository, node_uid, NodeStatusEvent.START
     )
     await node_repository.set_node_connection_timestamp(
-        node_uid, model_name, datetime.fromtimestamp(connect_time), node_status
+        node_uid,
+        formatted_model_name,
+        datetime.fromtimestamp(connect_time),
+        node_status,
     )
     node = ConnectedNode(
         uid=node_uid,
         user_id=user.uid,
-        model=model_name,
-        vram=node_info.vram,
+        model=formatted_model_name,
+        vram=node_info.vram or 0,
         connected_at=int(time.time()),
         websocket=websocket,
         request_incoming_queues={},
@@ -97,7 +101,7 @@ async def execute(
     )
 
     if not ping_pong_protocol.add_node(
-        node_info.node_id, node_info.name, model_name, websocket
+        node_info.node_id, node_info.name, formatted_model_name, websocket
     ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,

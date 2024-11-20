@@ -49,7 +49,7 @@ async def execute(
         )
         async for inference_response in executor.execute(
             user_uid=user.uid,
-            api_key=user.currently_using_api_key,
+            api_key=user.currently_using_api_key or "",
             forwarding_from=forwarding_from,
             request=inference_request,
         ):

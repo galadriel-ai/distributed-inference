@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 GALADRIEL_DOMAIN = "@galadriel.com"
@@ -11,10 +12,10 @@ class User:
     name: str
     email: str
     usage_tier_id: UUID
-    username: str = None
-    profile_data: dict = None
-    authentication_id: str = None
-    currently_using_api_key: str = None
+    username: Optional[str] = None
+    profile_data: Optional[dict] = None
+    authentication_id: Optional[str] = None
+    currently_using_api_key: Optional[str] = None
 
     def is_self_hosted_nodes_provider(self) -> bool:
         return self.email.endswith(GALADRIEL_DOMAIN)

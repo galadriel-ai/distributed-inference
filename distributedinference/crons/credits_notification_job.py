@@ -33,7 +33,7 @@ async def _get_reports(billing_repository: BillingRepository) -> List[CreditsRep
             ) * Decimal("100")
         else:
             report.percentage_left = Decimal("0")
-    reports = sorted(reports, key=lambda x: x.percentage_left)
+    reports = sorted(reports, key=lambda x: x.percentage_left or Decimal("0"))
     return reports
 
 
