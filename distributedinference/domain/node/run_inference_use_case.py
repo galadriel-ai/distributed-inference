@@ -5,8 +5,6 @@ from uuid import UUID
 from prometheus_client import Gauge
 from prometheus_client import Histogram
 
-from packaging import version
-
 from openai.types import CompletionUsage
 
 import settings
@@ -17,6 +15,7 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference import api_logger
 from distributedinference.domain.node import is_node_performant
+from distributedinference.domain.node import is_inference_request_finished
 from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
@@ -48,9 +47,6 @@ llm_fallback_called_gauge = Gauge(
     "Indicates how many times the llm fallback is called",
     ["model_name"],
 )
-
-# TODO REMOVE THIS AFTER ALL NODES ARE UPDATED
-LMDEPLOY_NODE_VERSION = version.parse("0.0.16")
 
 
 class InferenceExecutor:
@@ -188,7 +184,7 @@ class InferenceExecutor:
             # overwriting the usage each time
             self.usage = response.chunk.usage if response.chunk else None
             # TODO REFACTOR THIS AFTER ALL NODES ARE UPDATED
-            if self._is_request_finished(node, response):
+            if is_inference_request_finished.execute(node, response, self.usage):
                 # last chunk only has usage, no choices - request is finished
                 self.request_successful = True
                 if not self.is_include_usage:
@@ -213,18 +209,6 @@ class InferenceExecutor:
         ):
             await self._mark_node_as_unhealthy(node)
         return response, True
-
-    def _is_request_finished(
-        self, node: ConnectedNode, response: InferenceResponse
-    ) -> bool:
-        if (
-            (not node.version or node.version < LMDEPLOY_NODE_VERSION)
-            and self.usage is not None
-            and response.chunk
-            and len(response.chunk.choices) == 0
-        ):
-            return True
-        return False
 
     def _initialise_metrics(self, request: InferenceRequest, node: ConnectedNode):
         self.metrics_increment = NodeMetricsIncrement(
