@@ -15,7 +15,9 @@ from distributedinference.analytics.analytics import (
 from distributedinference import api_logger
 from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import node_status_transition
+from distributedinference.domain.node import is_inference_request_finished
 from distributedinference.domain.node.entities import InferenceError
+from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import CheckHealthResponse
@@ -106,7 +108,12 @@ async def _send_health_check_inference(
                     ),
                 )
             time_tracker.chunk_received(response.chunk)
-            if response.chunk and response.chunk.usage and not response.chunk.choices:
+            usage = response.chunk.usage if response.chunk else None
+            if (
+                # TODO remove this after all nodes are updated
+                is_inference_request_finished.execute(node, response, usage)
+                or response.status == InferenceStatusCodes.DONE
+            ):
                 is_healthy = is_node_performant.execute(
                     time_tracker.get_time_to_first_token(),
                     time_tracker.get_throughput(),
@@ -118,6 +125,12 @@ async def _send_health_check_inference(
                     node_id=node.uid,
                     is_healthy=is_healthy,
                     error=None,
+                )
+            if response.status == InferenceStatusCodes.ERROR:
+                return CheckHealthResponse(
+                    node_id=node.uid,
+                    is_healthy=False,
+                    error=response.error,
                 )
             if response.error:
                 return CheckHealthResponse(
