@@ -46,15 +46,15 @@ class ClientVersionValidationMiddleware(BaseHTTPMiddleware):
 
         if client_name and client_version:
             try:
-                client = Client(client_name)
+                client = Client(client_name)  # type: ignore
             except ValueError:
                 raise error_responses.UnsupportedClientError(client_name)
 
-            if not client.version_range.is_version_supported(client_version):
+            if not client.version_range.is_version_supported(client_version):  # type: ignore
                 raise error_responses.UnsupportedClientVersionError(
                     client_name=client_name,
                     client_version=client_version,
-                    min_version=client.version_range.min_version,
+                    min_version=client.version_range.min_version,  # type: ignore
                 )
 
         return await call_next(request)

@@ -215,7 +215,7 @@ class InferenceExecutor:
             node_id=node.uid, model=node.model
         )
         self.metrics_increment.requests_served_incerement += 1
-        self.is_include_usage: bool = bool(
+        self.is_include_usage = bool(
             (request.chat_request.get("stream_options") or {}).get("include_usage")
         ) or not bool(request.chat_request.get("stream"))
         self.time_tracker.start()

@@ -28,7 +28,7 @@ async def execute(
     )
     return RateLimitResponse(
         usage_tier_name=limits.name,
-        usage_tier_description=limits.description,
+        usage_tier_description=limits.description or "",
         credits_balance=f"{limits.credits}" if limits.credits is not None else None,
         usages=[_get_formatted_single_limit(l) for l in limits.usages],
     )

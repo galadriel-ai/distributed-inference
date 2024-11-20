@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,8 +8,8 @@ from sqlalchemy.ext.asyncio import create_async_engine
 import settings
 from distributedinference import api_logger
 
-connection = {}
-connection_read = {}
+connection: Dict = {}
+connection_read: Dict = {}
 
 DEFAULT_POOL_SIZE = 100
 DEFAULT_POOL_OVERFLOW = 0

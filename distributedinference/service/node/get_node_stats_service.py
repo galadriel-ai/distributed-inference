@@ -5,8 +5,8 @@ from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node_stats.entities import NodeStats
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.tokens_repository import TimedUsageTokens
 from distributedinference.repository.tokens_repository import TokensRepository
-from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.service import error_responses
 from distributedinference.service.node.entities import GetNodeStatsResponse
 from distributedinference.service.node.entities import InferenceStats
@@ -34,7 +34,7 @@ async def execute(
     )
 
     return GetNodeStatsResponse(
-        requests_served=node_stats.requests_served,
+        requests_served=node_stats.requests_served or 0,
         requests_served_day=await tokens_repository.get_latest_count_by_time_and_node(
             node_info.node_id
         ),
@@ -50,7 +50,9 @@ async def execute(
     )
 
 
-def _get_completed_inferences(usage_tokens: List[UsageTokens]) -> List[InferenceStats]:
+def _get_completed_inferences(
+    usage_tokens: List[TimedUsageTokens],
+) -> List[InferenceStats]:
     return [
         InferenceStats(
             model_name=i.model_name,

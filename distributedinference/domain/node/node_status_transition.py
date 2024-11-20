@@ -4,6 +4,7 @@ from uuid import UUID
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service import error_responses
 
 
 class NodeStatusEvent(Enum):
@@ -62,6 +63,7 @@ async def execute(
             _print_error(status, event)
             status = NodeStatus.STOPPED_DEGRADED
         return status
+    raise error_responses.InternalServerAPIError()
 
 
 def _print_error(status, event):

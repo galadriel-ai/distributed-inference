@@ -49,5 +49,5 @@ def execute(
 def _is_check_required(model: str) -> bool:
     model_config = settings.SUPPORTED_MODELS.get(model)
     if model_config:
-        return model_config.get("benchmark_required")
+        return model_config.get("benchmark_required", False)
     return False

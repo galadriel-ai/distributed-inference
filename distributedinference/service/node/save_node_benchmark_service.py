@@ -3,6 +3,7 @@ from uuid import UUID
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
+from distributedinference.service import error_responses
 from distributedinference.service.node.entities import PostNodeBenchmarkRequest
 from distributedinference.service.node.entities import PostNodeBenchmarkResponse
 
@@ -13,6 +14,8 @@ async def execute(
     user_profile_id: UUID,
     repository: BenchmarkRepository,
 ) -> PostNodeBenchmarkResponse:
+    if not node_info.gpu_model:
+        raise error_responses.NotFoundAPIError("Node details is missing GPU model")
     node_benchmark = NodeBenchmark(
         node_id=node_info.node_id,
         model_name=request.model_name,
@@ -22,9 +25,4 @@ async def execute(
     )
     await repository.save_node_benchmark(user_profile_id, node_benchmark)
 
-    return PostNodeBenchmarkResponse(
-        model_name=node_benchmark.model_name,
-        benchmark_tokens_per_second=round(
-            node_benchmark.benchmark_tokens_per_second, 2
-        ),
-    )
+    return PostNodeBenchmarkResponse()

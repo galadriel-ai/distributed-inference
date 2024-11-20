@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List
-from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
@@ -133,7 +132,11 @@ class UsageTokens:
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
-    created_at: Optional[datetime] = None
+
+
+@dataclass
+class TimedUsageTokens(UsageTokens):
+    created_at: datetime
 
 
 @dataclass
@@ -189,7 +192,7 @@ class TokensRepository:
     @async_timer("tokens_repository.get_user_latest_usage_tokens", logger=logger)
     async def get_user_latest_usage_tokens(
         self, user_id: UUID, node_id: UUID, count: int
-    ) -> List[UsageTokens]:
+    ) -> List[TimedUsageTokens]:
         data = {"producer_node_info_id": node_id, "count": count}
         tokens = []
         async with self._session_provider_read.get() as session:
@@ -198,7 +201,7 @@ class TokensRepository:
             )
             for row in rows:
                 tokens.append(
-                    UsageTokens(
+                    TimedUsageTokens(
                         consumer_user_profile_id=row.consumer_user_profile_id,
                         producer_node_info_id=row.producer_node_info_id,
                         model_name=row.model_name,

@@ -9,8 +9,8 @@ class SearchRequest(BaseModel):
     query: str = Field(description="Search query")
     max_results: int = Field(
         description="Search query",
-        min=1,
-        max=10,
+        ge=1,
+        le=10,
         default=5,
     )
 

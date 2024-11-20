@@ -599,6 +599,7 @@ class NodeRepository:
                     ),
                     status=row.status,
                 )
+        return None
 
     @async_timer("node_repository.get_node_metrics_by_ids", logger=logger)
     async def get_node_metrics_by_ids(

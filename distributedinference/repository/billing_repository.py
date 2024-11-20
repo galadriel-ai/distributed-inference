@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -148,20 +149,22 @@ class BillingRepository:
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            row = await session.execute(sqlalchemy.text(SQL_ADD_CREDITS), data)
-            credits_id = row.first().id
-            credits_addition_data = {
-                "id": uuid7(),
-                "user_credits_id": credits_id,
-                "credits_change": credits_addition,
-                "currency": currency,
-                "created_at": utcnow(),
-                "last_updated_at": utcnow(),
-            }
-            await session.execute(
-                sqlalchemy.text(SQL_ADD_CREDITS_ADDITION), credits_addition_data
-            )
-            await session.commit()
+            rows = await session.execute(sqlalchemy.text(SQL_ADD_CREDITS), data)
+            row = rows.first()
+            if row:
+                credits_id = row.id
+                credits_addition_data = {
+                    "id": uuid7(),
+                    "user_credits_id": credits_id,
+                    "credits_change": credits_addition,
+                    "currency": currency,
+                    "created_at": utcnow(),
+                    "last_updated_at": utcnow(),
+                }
+                await session.execute(
+                    sqlalchemy.text(SQL_ADD_CREDITS_ADDITION), credits_addition_data
+                )
+                await session.commit()
 
     async def update_user_credits(
         self,
@@ -205,7 +208,7 @@ class BillingRepository:
         return None
 
     async def get_billable_users(self) -> List[BillableUser]:
-        data = {}
+        data: Dict = {}
         results = []
         async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_BILLABLE_USERS), data)
@@ -236,7 +239,7 @@ class BillingRepository:
         return None
 
     async def get_credits_reports(self) -> List[CreditsReport]:
-        data = {}
+        data: Dict = {}
         results = []
         async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_CREDITS_REPORTS), data)

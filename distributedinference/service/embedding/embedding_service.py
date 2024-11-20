@@ -43,9 +43,9 @@ async def _get_input_texts(
         input_texts = [input_texts]
     elif all(isinstance(i, int) for i in input_texts):
         # If it's a List[int], convert it to List[List[int]] by wrapping it in another list
-        input_texts = [input_texts]
+        input_texts = [input_texts]  # type: ignore
     elif isinstance(input_texts[0], list) and all(
-        isinstance(i, int) for sublist in input_texts for i in sublist
+        isinstance(i, int) for sublist in input_texts for i in sublist  # type: ignore
     ):
         # It's already a List[List[int]], so we leave it as is
         pass
@@ -54,7 +54,7 @@ async def _get_input_texts(
 
     if not all(i for i in input_texts):
         raise error_responses.ValidationTypeError("All inputs must not be empty")
-    return input_texts
+    return input_texts  # type: ignore
 
 
 async def _get_embedding_result(
