@@ -33,19 +33,27 @@ class SingleRateLimit(BaseModel):
 
 
 class ModelUsage(BaseModel):
-    model: str = Field("Model name")
-    full_model: str = Field("Full model name")
-    price_per_million_tokens: Optional[str] = Field("Price per one million tokens")
+    model: str = Field(description="Model name")
+    full_model: str = Field(description="Full model name")
+    price_per_million_tokens: Optional[str] = Field(
+        description="Price per one million tokens"
+    )
 
-    max_requests_per_day: Optional[int] = Field("Max requests allowed per day")
-    max_requests_per_minute: Optional[int] = Field("Max requests allowed per minute")
-    max_tokens_per_day: Optional[int] = Field("Max tokens allowed per day")
-    max_tokens_per_minute: Optional[int] = Field("Max tokens allowed per minute")
+    max_requests_per_day: Optional[int] = Field(
+        description="Max requests allowed per day"
+    )
+    max_requests_per_minute: Optional[int] = Field(
+        description="Max requests allowed per minute"
+    )
+    max_tokens_per_day: Optional[int] = Field(description="Max tokens allowed per day")
+    max_tokens_per_minute: Optional[int] = Field(
+        description="Max tokens allowed per minute"
+    )
 
-    requests_left_day: Optional[int] = Field("Requests left for the day")
-    requests_used_day: Optional[int] = Field("Requests used for the day")
-    tokens_left_day: Optional[int] = Field("Tokens left for the day")
-    tokens_used_day: Optional[int] = Field("Tokens used for the day")
+    requests_left_day: Optional[int] = Field(description="Requests left for the day")
+    requests_used_day: Optional[int] = Field(description="Requests used for the day")
+    tokens_left_day: Optional[int] = Field(description="Tokens left for the day")
+    tokens_used_day: Optional[int] = Field(description="Tokens used for the day")
 
 
 class RateLimitResponse(BaseModel):

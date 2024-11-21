@@ -125,7 +125,7 @@ class GetNodeStatsResponse(BaseModel):
     )
 
     completed_inferences: List[InferenceStats] = Field(
-        description="Last 10 processed inference calls", default=None
+        description="Last 10 processed inference calls", default=[]
     )
 
 
