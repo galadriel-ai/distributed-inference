@@ -16,4 +16,6 @@ async def execute(metrics_repository: MetricsRepository):
     node_status_gauge.clear()
     statuses: List[NodeStatusesByModel] = await metrics_repository.get_node_statuses()
     for status in statuses:
-        node_status_gauge.labels(status.status, status.model_name).set(status.count)
+        node_status_gauge.labels(status.status.value, status.model_name).set(
+            status.count
+        )

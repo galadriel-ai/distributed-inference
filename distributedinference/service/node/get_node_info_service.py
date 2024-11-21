@@ -1,4 +1,5 @@
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.entities import GetNodeInfoResponse
 
@@ -6,9 +7,7 @@ from distributedinference.service.node.entities import GetNodeInfoResponse
 async def execute(
     node_info: NodeInfo, repository: NodeRepository
 ) -> GetNodeInfoResponse:
-    connected_node_metrics = await repository.get_connected_node_metrics(
-        node_info.node_id
-    )
+    connected_node_metrics = await repository.get_node_metrics(node_info.node_id)
     return GetNodeInfoResponse(
         node_id=str(node_info.node_id),
         name_alias=node_info.name_alias,
@@ -21,7 +20,11 @@ async def execute(
         network_download_speed=node_info.network_download_speed,
         network_upload_speed=node_info.network_upload_speed,
         operating_system=node_info.operating_system,
-        status="online" if connected_node_metrics else "offline",
+        status=(
+            connected_node_metrics.status
+            if connected_node_metrics
+            else NodeStatus.STOPPED
+        ),
         run_duration_seconds=(
             0 if not connected_node_metrics else connected_node_metrics.current_uptime
         ),

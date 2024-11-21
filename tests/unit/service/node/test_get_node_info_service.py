@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from uuid import UUID
 
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node import get_node_info_service as service
 from distributedinference.service.node.entities import GetNodeInfoResponse
@@ -42,20 +43,21 @@ async def test_execute_success():
         network_download_speed=node_info.network_download_speed,
         network_upload_speed=node_info.network_upload_speed,
         operating_system=node_info.operating_system,
-        status="online",
+        status=NodeStatus.RUNNING,
         run_duration_seconds=1,
         node_created_at=created_at.timestamp(),
         version="1337",
     )
 
     mock_repository = AsyncMock(spec=NodeRepository)
-    mock_repository.get_connected_node_metrics.return_value = MagicMock(
+    mock_repository.get_node_metrics.return_value = MagicMock(
         requests_served=1,
         requests_successful=1,
         requests_failed=0,
         time_to_first_token=1.0,
         total_uptime=10,
         current_uptime=1,
+        status=NodeStatus.RUNNING,
     )
     response = await service.execute(node_info, mock_repository)
 
@@ -91,7 +93,7 @@ async def test_execute_success_node_offline():
         network_download_speed=node_info.network_download_speed,
         network_upload_speed=node_info.network_upload_speed,
         operating_system=node_info.operating_system,
-        status="offline",
+        status=NodeStatus.STOPPED,
         run_duration_seconds=0,
         node_created_at=created_at.timestamp(),
     )
@@ -99,7 +101,7 @@ async def test_execute_success_node_offline():
     service.time.time.return_value = 1338
 
     mock_repository = AsyncMock(spec=NodeRepository)
-    mock_repository.get_connected_node_metrics.return_value = None
+    mock_repository.get_node_metrics.return_value = None
 
     response = await service.execute(node_info, mock_repository)
 

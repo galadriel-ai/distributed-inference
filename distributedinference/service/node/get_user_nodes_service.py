@@ -1,6 +1,7 @@
 from typing import List
 from uuid import UUID
 
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -25,9 +26,7 @@ async def _format(
     result = []
     for node in nodes:
         # return metrics only if node is active
-        connected_node_metrics = await repository.get_connected_node_metrics(
-            node.node_id
-        )
+        connected_node_metrics = await repository.get_node_metrics(node.node_id)
         current_uptime = (
             0 if not connected_node_metrics else connected_node_metrics.current_uptime
         )
@@ -44,7 +43,11 @@ async def _format(
                 network_download_speed=node.network_download_speed,
                 network_upload_speed=node.network_upload_speed,
                 operating_system=node.operating_system,
-                status="online" if connected_node_metrics else "offline",
+                status=(
+                    connected_node_metrics.status
+                    if connected_node_metrics
+                    else NodeStatus.STOPPED
+                ),
                 run_duration_seconds=current_uptime,
                 total_uptime_seconds=node.uptime or 0,
                 requests_served=node.requests_served or 0,
