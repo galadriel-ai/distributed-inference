@@ -7,7 +7,6 @@ from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.node.entities import ListNodeRequestNode
 from distributedinference.service.node.entities import ListNodeResponse
-from distributedinference.service.node import get_node_status_description
 
 
 async def execute(
@@ -36,7 +35,6 @@ async def _format(
             if connected_node_metrics
             else NodeStatus.STOPPED
         )
-        status_description = get_node_status_description.execute(status)
         result.append(
             ListNodeRequestNode(
                 node_id=node.name,
@@ -51,7 +49,7 @@ async def _format(
                 network_upload_speed=node.network_upload_speed,
                 operating_system=node.operating_system,
                 status=status,
-                status_description=status_description,
+                status_description=status.description(),
                 run_duration_seconds=current_uptime,
                 total_uptime_seconds=node.uptime or 0,
                 requests_served=node.requests_served or 0,

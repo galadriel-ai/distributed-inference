@@ -34,6 +34,27 @@ class NodeStatus(Enum):
     def is_disabled(self):
         return self in [NodeStatus.RUNNING_DISABLED, NodeStatus.STOPPED_DISABLED]
 
+    def description(self):
+        description = "Unknown"
+        match self:
+            case NodeStatus.RUNNING:
+                description = "Running"
+            case NodeStatus.RUNNING_BENCHMARKING:
+                description = "Running - verifying performance"
+            case NodeStatus.RUNNING_DEGRADED:
+                description = "Running - performance degraded"
+            case NodeStatus.RUNNING_DISABLED:
+                description = "Running"
+            case NodeStatus.STOPPED:
+                description = "Stopped"
+            case NodeStatus.STOPPED_BENCHMARK_FAILED:
+                description = "Stopped"
+            case NodeStatus.STOPPED_DEGRADED:
+                description = "Stopped"
+            case NodeStatus.STOPPED_DISABLED:
+                description = "Stopped"
+        return description
+
 
 @dataclass
 class NodeMetricsIncrement:
