@@ -111,7 +111,9 @@ async def get_metrics(
         )
         if metrics.time_to_first_token:
             node_time_to_first_token_gauge.labels(
-                metrics.model_name, node_uid, metrics.status
+                metrics.model_name,
+                node_uid,
+                metrics.status.value if metrics.status else "STOPPED",
             ).set(metrics.time_to_first_token)
         if metrics.inference_tokens_per_second:
             node_inference_tokens_per_second_gauge.labels(
