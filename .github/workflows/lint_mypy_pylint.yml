@@ -50,6 +50,10 @@ jobs:
         run: |
           pyright distributedinference/ > mypy_pyright_outputs/pyright_output.txt || true
         continue-on-error: true
+      - name: Print pyright output
+        run: |
+          echo "=== pyright output ==="
+          cat mypy_pyright_outputs/pyright_output.txt
       - name: Count pyright errors
         id: pyright-count
         run: |
@@ -58,10 +62,6 @@ jobs:
           if [[ "$error_count" -gt 0 ]]; then
             echo "::warning::Found $error_count pyright errors."
           fi
-      - name: Print pyright output
-        run: |
-          echo "=== pyright output ==="
-          cat mypy_pyright_outputs/pyright_output.txt
       - name: Upload mypy and pyright outputs as artifact
         uses: actions/upload-artifact@v4
         with:
