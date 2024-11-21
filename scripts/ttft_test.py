@@ -97,7 +97,16 @@ class TimeTracker:
             duration = self.next_token_time - self.first_token_time
             if duration:
                 return self.usage.completion_tokens / duration
+
+        # If token has been received we should still return something
+        if self.first_token_time:
+            return 1.0
         return 0.0
+
+    def get_prompt_tokens(self) -> int:
+        if self.usage:
+            return self.usage.prompt_tokens
+        return 0
 
 
 def _is_chunk_with_tokens(chunk: Optional[ChatCompletionChunk]):
@@ -176,12 +185,31 @@ async def llm_inference(text: str, base_url: str, api_key: str, model: str):
 def append_output(tracker: TimeTracker):
     with open("output.txt", "a") as file:
         file.write(
-            f"{tracker.usage.prompt_tokens} tokens - {tracker.get_time_to_first_token()} seconds\n"
+            f"{tracker.get_prompt_tokens()} tokens - {tracker.get_time_to_first_token()} seconds\n"
         )
 
 
-async def main(base_url: str, api_key: str, model: str):
-    for i in range(1, 60):
+async def main(
+    base_url: str, api_key: str, model: str, concurrency: int, requests_count: int
+):
+    tasks = []
+    for i in range(concurrency):
+        task = asyncio.create_task(runnable(base_url, api_key, model, requests_count))
+        tasks.append(task)
+
+    results = await asyncio.gather(*tasks)
+    all_ttfts = []
+    for result in results:
+        all_ttfts += result
+    print(f"\n\nAll ttfts: {all_ttfts}")
+    print("  min:", min(all_ttfts))
+    print("  max:", max(all_ttfts))
+    print("  avg:", sum(all_ttfts) / len(all_ttfts))
+
+
+async def runnable(base_url: str, api_key: str, model: str, requests_count: int):
+    ttfts = []
+    for i in range(1, requests_count):
         text = get_long_text()
         n = i * 10000
         text = text[:n]
@@ -195,6 +223,8 @@ async def main(base_url: str, api_key: str, model: str):
         print("total time:", tracker.get_total_time())
         print("throughput:", tracker.get_throughput())
         append_output(tracker)
+        ttfts.append(tracker.get_time_to_first_token())
+    return ttfts
 
 
 if __name__ == "__main__":
@@ -208,11 +238,15 @@ if __name__ == "__main__":
         "--api-key", help="API key of the service, for example: gal-Xshqm..."
     )
     parser.add_argument("--model", help="Model name, for example: llama3.1-70b")
+    parser.add_argument("--concurrency", required=False, type=int, default=1)
+    parser.add_argument("--requests-count", required=False, type=int, default=10)
     args = parser.parse_args()
     asyncio.run(
         main(
             base_url=args.base_url,
             api_key=args.api_key,
             model=args.model,
+            concurrency=args.concurrency,
+            requests_count=args.requests_count,
         )
     )
