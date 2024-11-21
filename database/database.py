@@ -174,7 +174,7 @@ class NodeInfo(Base):
     cpu_model = Column(String(), nullable=True)
     cpu_count = Column(Integer(), nullable=True)  # Core count
     ram = Column(Integer(), nullable=True)  # RAM in MB
-    power_limit = Column(Integer(), nullable=True) # Max GPU power in Watts
+    power_limit = Column(Integer(), nullable=True)  # Max GPU power in Watts
     network_download_speed = Column(
         Float(), nullable=True
     )  # Network download speed in Mbps
