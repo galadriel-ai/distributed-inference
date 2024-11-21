@@ -49,8 +49,8 @@ async def test_handler_valid_response(health_check_protocol):
         "ram_percent": 50,
         "disk_percent": 50,
         "gpus": [
-            {"gpu_percent": 40, "vram_percent": 30},
-            {"gpu_percent": 60, "vram_percent": 20},
+            {"gpu_percent": 40, "vram_percent": 30, "power_percent": 40},
+            {"gpu_percent": 60, "vram_percent": 20, "power_percent": 60},
         ],
     }
 
