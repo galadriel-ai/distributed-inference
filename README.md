@@ -8,7 +8,6 @@ that interfaces to the consumer side to get the inference request and schedule
 it to the
 `galadriel-node`s in the Galadriel network.
 
-
 ## Requirements to run
 
 - python 3.12
