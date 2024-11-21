@@ -23,8 +23,7 @@ async def execute(
         network_download_speed=node_info.network_download_speed,
         network_upload_speed=node_info.network_upload_speed,
         operating_system=node_info.operating_system,
-        status=status,
-        status_description=status.description(),
+        status=status.description(),
         run_duration_seconds=(
             0 if not connected_node_metrics else connected_node_metrics.current_uptime
         ),
