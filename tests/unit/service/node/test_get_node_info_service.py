@@ -44,6 +44,7 @@ async def test_execute_success():
         network_upload_speed=node_info.network_upload_speed,
         operating_system=node_info.operating_system,
         status=NodeStatus.RUNNING,
+        status_description="Running",
         run_duration_seconds=1,
         node_created_at=created_at.timestamp(),
         version="1337",
@@ -94,6 +95,7 @@ async def test_execute_success_node_offline():
         network_upload_speed=node_info.network_upload_speed,
         operating_system=node_info.operating_system,
         status=NodeStatus.STOPPED,
+        status_description="Stopped",
         run_duration_seconds=0,
         node_created_at=created_at.timestamp(),
     )

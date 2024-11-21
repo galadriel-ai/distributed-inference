@@ -1,5 +1,4 @@
 from typing import List
-from typing import Literal
 from typing import Optional
 
 from pydantic import BaseModel
@@ -59,6 +58,7 @@ class NodeInfoRequest(BaseModel):
 class ListNodeRequestNode(NodeInfoRequest):
     name_alias: str = Field(description="User defined name for the Node")
     status: NodeStatus = Field(description="Node status")
+    status_description: str = Field(description="Node status description")
     run_duration_seconds: int = Field(
         description="Run duration in seconds since connecting", default=0
     )
@@ -88,6 +88,7 @@ class ListNodeResponse(ApiResponse):
 class GetNodeInfoResponse(NodeInfoRequest):
     name_alias: str = Field(description="User defined name for the node")
     status: NodeStatus = Field(description="Node status")
+    status_description: str = Field(description="Node status description")
     run_duration_seconds: Optional[int] = Field(
         description="Run duration in seconds since connecting", default=None
     )
