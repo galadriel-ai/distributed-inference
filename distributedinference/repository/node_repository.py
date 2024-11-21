@@ -926,6 +926,7 @@ class NodeRepository:
             "disk_percent": health.disk_percent,
             "gpu_percent": [gpu.gpu_percent for gpu in health.gpus],
             "vram_percent": [gpu.vram_percent for gpu in health.gpus],
+            "power_percent": [gpu.power_percent for gpu in health.gpus],
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }

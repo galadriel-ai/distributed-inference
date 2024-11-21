@@ -143,6 +143,7 @@ class NodeBenchmark:
 class NodeGPUHealth:
     gpu_percent: int
     vram_percent: int
+    power_percent: int
 
 
 @dataclass
