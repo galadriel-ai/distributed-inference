@@ -322,7 +322,7 @@ FROM node_metrics
 WHERE connected_at IS NOT NULL;
 """
 
-SQL_GET_CONNECTED_NODE_METRIC = """
+SQL_GET_NODE_METRICS = """
 SELECT
     node_info_id AS id,
     requests_served,
@@ -334,7 +334,7 @@ SELECT
     connected_at,
     status
 FROM node_metrics
-WHERE node_info_id = :id AND connected_at IS NOT NULL;
+WHERE node_info_id = :id;
 """
 
 SQL_GET_NODES_COUNT = """
@@ -574,13 +574,11 @@ class NodeRepository:
             result = await session.execute(sqlalchemy.text(SQL_GET_CONNECTED_NODE_IDS))
             return [row.node_info_id for row in result]
 
-    @async_timer("node_repository.get_connected_node_metrics", logger=logger)
-    async def get_connected_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
+    @async_timer("node_repository.get_node_metrics", logger=logger)
+    async def get_node_metrics(self, node_id: UUID) -> Optional[NodeMetrics]:
         async with self._session_provider_read.get() as session:
             data = {"id": node_id}
-            result = await session.execute(
-                sqlalchemy.text(SQL_GET_CONNECTED_NODE_METRIC), data
-            )
+            result = await session.execute(sqlalchemy.text(SQL_GET_NODE_METRICS), data)
             row = result.first()
             if row:
                 return NodeMetrics(
@@ -596,7 +594,7 @@ class NodeRepository:
                         if not row.connected_at
                         else int(time.time() - row.connected_at.timestamp())
                     ),
-                    status=row.status,
+                    status=NodeStatus(row.status),
                 )
         return None
 
@@ -627,7 +625,7 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
-                    status=row.status,
+                    status=NodeStatus(row.status),
                 )
             return result
 
@@ -653,7 +651,7 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
-                    status=row.status,
+                    status=NodeStatus(row.status),
                 )
             return result
 
