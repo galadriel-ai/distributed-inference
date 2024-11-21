@@ -12,8 +12,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Clear Cache
-        run: rm -rf ~/.cache/pip
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -34,7 +32,7 @@ jobs:
         run: mkdir -p mypy_pyright_outputs
       - name: Run mypy and save output
         run: |
-          mypy --show-error-codes --show-traceback distributedinference/ > mypy_pyright_outputs/mypy_output.txt
+          mypy distributedinference/ > mypy_pyright_outputs/mypy_output.txt
       - name: Count mypy errors
         id: mypy-count
         run: |
