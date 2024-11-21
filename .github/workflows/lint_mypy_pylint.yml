@@ -12,6 +12,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Clear Cache
+        run: rm -rf ~/.cache/pip
       - name: Cache pip
         uses: actions/cache@v4
         with:
