@@ -26,15 +26,9 @@ async def _format(
     result = []
     for node in nodes:
         # return metrics only if node is active
-        connected_node_metrics = await repository.get_node_metrics(node.node_id)
-        current_uptime = (
-            0 if not connected_node_metrics else connected_node_metrics.current_uptime
-        )
-        status = (
-            connected_node_metrics.status
-            if connected_node_metrics
-            else NodeStatus.STOPPED
-        )
+        node_metrics = await repository.get_node_metrics(node.node_id)
+        current_uptime = 0 if not node_metrics else node_metrics.current_uptime
+        status = node_metrics.status if node_metrics else NodeStatus.STOPPED
         result.append(
             ListNodeRequestNode(
                 node_id=node.name,
