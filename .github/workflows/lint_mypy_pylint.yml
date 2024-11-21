@@ -45,6 +45,7 @@ jobs:
           echo "Mypy error count: $error_count"
           if [[ "$error_count" -gt 0 ]]; then
             echo "::error::Found $error_count mypy errors."
+            exit 1
           fi
       - name: Run pyright and save output
         run: |
