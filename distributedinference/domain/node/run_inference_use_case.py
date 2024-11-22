@@ -258,7 +258,7 @@ class InferenceExecutor:
             self.metrics_increment.time_to_first_token = ttft
             # add TTFT in histogram
             node_time_to_first_token_histogram.labels(
-                request.model, node.uid, node.node_status
+                request.model, node.uid, node.node_status.value
             ).observe(ttft)
         # use completion tokens / time elapsed to focus on the model generation performance
         throughput = self.time_tracker.get_throughput()
