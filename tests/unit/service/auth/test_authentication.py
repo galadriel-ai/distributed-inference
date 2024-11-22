@@ -5,7 +5,9 @@ from uuid import UUID
 import pytest
 from uuid_extensions import uuid7
 
+from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
@@ -53,7 +55,7 @@ async def test_node_name_missing():
 
 async def test_node_not_found():
     mock_repository = AsyncMock(spec=NodeRepository)
-    mock_repository.get_node_info_by_name.return_value = None
+    mock_repository.get_full_node_info_by_name.return_value = None
 
     with pytest.raises(error_responses.NotFoundAPIError) as e:
         await authentication.validate_node_name(MagicMock(), None, AsyncMock())
@@ -62,14 +64,44 @@ async def test_node_not_found():
 
 async def test_node_success():
     mock_repository = AsyncMock(spec=NodeRepository)
+    node_info = FullNodeInfo(
+        node_id=UUID("9fe247c3-71ce-4abf-8e3f-24becfab50da"),
+        name="name",
+        name_alias="name_alias",
+        created_at=None,
+        specs=NodeSpecs(
+            gpu_model="NVIDIA GTX 1080",
+            vram=8,
+            gpu_count=1,
+            cpu_model="Intel i7",
+            cpu_count=8,
+            ram=16,
+            network_download_speed=1000,
+            network_upload_speed=1000,
+            operating_system="Linux",
+            version="0.0.1",
+        ),
+    )
+    mock_repository.get_full_node_info_by_name.return_value = node_info
+
+    response = await authentication.validate_node_name(
+        MagicMock(), "node name", mock_repository
+    )
+    assert response == node_info
+
+
+async def test_node_basic_success():
+    mock_repository = AsyncMock(spec=NodeRepository)
     node_info = NodeInfo(
         node_id=UUID("9fe247c3-71ce-4abf-8e3f-24becfab50da"),
         name="name",
         name_alias="name_alias",
+        created_at=None,
+        specs=None,
     )
     mock_repository.get_node_info_by_name.return_value = node_info
 
-    response = await authentication.validate_node_name(
+    response = await authentication.validate_node_name_basic(
         MagicMock(), "node name", mock_repository
     )
     assert response == node_info

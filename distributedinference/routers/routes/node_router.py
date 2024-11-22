@@ -92,7 +92,9 @@ async def get_info(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
-    node_info = await authentication.validate_node_name(user, node_id, node_repository)
+    node_info = await authentication.validate_node_name_basic(
+        user, node_id, node_repository
+    )
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.GET_NODE_INFO, {"node_id": node_id})
     )
@@ -115,7 +117,9 @@ async def get_stats(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
-    node_info = await authentication.validate_node_name(user, node_id, node_repository)
+    node_info = await authentication.validate_node_name_basic(
+        user, node_id, node_repository
+    )
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.GET_NODE_STATS, {"node_id": node_id})
     )
@@ -135,7 +139,7 @@ async def post_info(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
-    node_info = await authentication.validate_node_name(
+    node_info = await authentication.validate_node_name_basic(
         user, request.node_id, node_repository
     )
     analytics.track_event(
@@ -166,7 +170,9 @@ async def get_benchmark(
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
-    node_info = await authentication.validate_node_name(user, node_id, node_repository)
+    node_info = await authentication.validate_node_name_basic(
+        user, node_id, node_repository
+    )
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.GET_NODE_BENCHMARK, {"node_id": node_id})
     )

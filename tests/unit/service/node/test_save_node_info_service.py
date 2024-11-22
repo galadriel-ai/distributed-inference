@@ -3,7 +3,9 @@ from uuid import UUID
 
 from uuid_extensions import uuid7
 
+from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node import save_node_info_service as service
 from distributedinference.service.node.entities import PostNodeInfoRequest
@@ -28,20 +30,23 @@ async def test_execute_success():
         version="0.10.0",
     )
 
-    expected_node_info = NodeInfo(
+    expected_node_info = FullNodeInfo(
         node_id=NODE_UUID,
         name="name",
         name_alias="name_alias",
-        gpu_model=request.gpu_model,
-        vram=request.vram,
-        gpu_count=request.gpu_count,
-        cpu_model=request.cpu_model,
-        cpu_count=request.cpu_count,
-        ram=request.ram,
-        network_download_speed=request.network_download_speed,
-        network_upload_speed=request.network_upload_speed,
-        operating_system=request.operating_system,
-        version=request.version,
+        created_at=None,
+        specs=NodeSpecs(
+            gpu_model=request.gpu_model,
+            vram=request.vram,
+            gpu_count=request.gpu_count,
+            cpu_model=request.cpu_model,
+            cpu_count=request.cpu_count,
+            ram=request.ram,
+            network_download_speed=request.network_download_speed,
+            network_upload_speed=request.network_upload_speed,
+            operating_system=request.operating_system,
+            version=request.version,
+        ),
     )
 
     mock_repository = AsyncMock(spec=NodeRepository)
@@ -51,6 +56,8 @@ async def test_execute_success():
             node_id=NODE_UUID,
             name="name",
             name_alias="name_alias",
+            created_at=None,
+            specs=None,
         ),
         node_id,
         mock_repository,

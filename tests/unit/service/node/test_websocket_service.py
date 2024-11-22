@@ -1,10 +1,8 @@
-import time
 import uuid
 from unittest.mock import AsyncMock
 from unittest.mock import Mock
 from uuid import UUID
 
-import orjson
 import pytest
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
@@ -12,9 +10,10 @@ from fastapi import status
 from fastapi.exceptions import WebSocketException
 
 import settings
+from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeBenchmark
-from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
+from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
@@ -25,9 +24,29 @@ from distributedinference.service.node.protocol.ping_pong_protocol import (
 )
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
+
+def _get_node_specs() -> NodeSpecs:
+    return NodeSpecs(
+        cpu_model="mock_cpu_model",
+        cpu_count=1,
+        gpu_model="mock_gpu_model",
+        vram=2,
+        ram=3,
+        network_download_speed=100,
+        network_upload_speed=50,
+        operating_system="mock_operating_system",
+        gpu_count=1,
+        version="0.0.1",
+    )
+
+
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
-NODE_INFO = NodeInfo(
-    node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias", version="0.0.1"
+NODE_INFO = FullNodeInfo(
+    node_id=NODE_UUID,
+    name=str(NODE_UUID),
+    name_alias="name_alias",
+    created_at=None,
+    specs=_get_node_specs(),
 )
 
 
@@ -225,8 +244,12 @@ async def test_node_already_connected_with_other_worker():
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
     node_repository = AsyncMock(spec=NodeRepository)
-    node_info = NodeInfo(
-        node_id=NODE_UUID, name=str(NODE_UUID), name_alias="name_alias"
+    node_info = FullNodeInfo(
+        node_id=NODE_UUID,
+        name=str(NODE_UUID),
+        name_alias="name_alias",
+        created_at=None,
+        specs=_get_node_specs(),
     )
 
     node_metrics = NodeMetrics(is_active=True)
@@ -420,7 +443,7 @@ async def test_execute_protocols(node_repository: NodeRepository):
 
     # Check if add_node was called
     health_check_protocol.add_node.assert_called_once_with(
-        NODE_UUID, str(NODE_UUID), NODE_INFO.version, websocket
+        NODE_UUID, str(NODE_UUID), NODE_INFO.specs.version, websocket
     )
 
     # Check if remove_node was called

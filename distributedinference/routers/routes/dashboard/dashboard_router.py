@@ -171,7 +171,7 @@ async def update_node(
     user: User = Depends(authentication.validate_session_token),
     analytics=Depends(dependencies.get_analytics),
 ):
-    node_info = await authentication.validate_node_name(
+    node_info = await authentication.validate_node_name_basic(
         user, request.node_id, node_repository
     )
     analytics.track_event(

@@ -1,13 +1,12 @@
 from unittest.mock import AsyncMock
 from uuid import UUID
 
-import pytest
 from uuid_extensions import uuid7
 
+from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeBenchmark
-from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
-from distributedinference.service import error_responses
 from distributedinference.service.node import save_node_benchmark_service as service
 from distributedinference.service.node.entities import PostNodeBenchmarkRequest
 from distributedinference.service.node.entities import PostNodeBenchmarkResponse
@@ -15,12 +14,23 @@ from distributedinference.service.node.entities import PostNodeBenchmarkResponse
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
 
 
-def _get_node_info():
-    return NodeInfo(
+def _get_node_info() -> FullNodeInfo:
+    return FullNodeInfo(
         node_id=NODE_UUID,
         name="name",
         name_alias="name_alias",
-        gpu_model="NVIDIA GeForce RTX 4090",
+        created_at=None,
+        specs=NodeSpecs(
+            gpu_model="NVIDIA GeForce RTX 4090",
+            vram=8,
+            gpu_count=2,
+            cpu_model="Intel i7",
+            cpu_count=4,
+            ram=16,
+            network_download_speed=1000,
+            network_upload_speed=1000,
+            operating_system="Linux",
+        ),
     )
 
 
@@ -37,6 +47,7 @@ async def test_execute_success():
         model_name=request.model_name,
         benchmark_tokens_per_second=request.tokens_per_second,
         gpu_model="NVIDIA GeForce RTX 4090",
+        gpu_count=2,
     )
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
@@ -48,20 +59,3 @@ async def test_execute_success():
     )
 
     assert response == PostNodeBenchmarkResponse(response="OK")
-
-
-async def test_execute_invalid_input():
-    user_id = uuid7()
-    request = PostNodeBenchmarkRequest(
-        node_id=str(NODE_UUID),
-        model_name="mock_model",
-        tokens_per_second=1337.37,
-    )
-
-    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
-    node_info = _get_node_info()
-    node_info.gpu_model = None
-
-    with pytest.raises(error_responses.NotFoundAPIError) as e:
-        await service.execute(request, node_info, user_id, benchmark_repository)
-        assert e is not None

@@ -3,16 +3,19 @@ import time
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
-from uuid import UUID, uuid1
+from uuid import UUID
+from uuid import uuid1
 
 import pytest
 from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
+from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node.entities import NodeStatus
+from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
     SQL_INCREMENT_NODE_METRICS,
@@ -20,7 +23,6 @@ from distributedinference.repository.node_repository import (
 from distributedinference.repository.node_repository import (
     SQL_UPDATE_NODE_INFO,
 )
-from distributedinference.repository.connection import SessionProvider
 
 MAX_PARALLEL_REQUESTS = 10
 MAX_PARALLEL_DATACENTER_REQUESTS = 20
@@ -251,19 +253,23 @@ def test_select_node_does_not_skip_unhealthy_self_hosted_nodes(
 async def test_save_node_info(node_repository, session_provider):
     node_id = uuid7()
 
-    node_info = NodeInfo(
+    node_info = FullNodeInfo(
         name="name",
         name_alias="user alias",
         node_id=NODE_UUID,
-        gpu_model="NVIDIA GTX 1080",
-        vram=8,
-        gpu_count=1,
-        cpu_model="Intel i7",
-        cpu_count=8,
-        ram=16,
-        network_download_speed=1000,
-        network_upload_speed=1000,
-        operating_system="Linux",
+        created_at=None,
+        specs=NodeSpecs(
+            gpu_model="NVIDIA GTX 1080",
+            vram=8,
+            gpu_count=1,
+            cpu_model="Intel i7",
+            cpu_count=8,
+            ram=16,
+            network_download_speed=1000,
+            network_upload_speed=1000,
+            operating_system="Linux",
+            version="0.0.1",
+        ),
     )
 
     mock_session = AsyncMock()
@@ -278,15 +284,16 @@ async def test_save_node_info(node_repository, session_provider):
 
     data = args[1]
     assert data["user_profile_id"] == node_id
-    assert data["gpu_model"] == node_info.gpu_model
-    assert data["vram"] == node_info.vram
-    assert data["gpu_count"] == node_info.gpu_count
-    assert data["cpu_model"] == node_info.cpu_model
-    assert data["cpu_count"] == node_info.cpu_count
-    assert data["ram"] == node_info.ram
-    assert data["network_download_speed"] == node_info.network_download_speed
-    assert data["network_upload_speed"] == node_info.network_upload_speed
-    assert data["operating_system"] == node_info.operating_system
+    assert data["gpu_model"] == node_info.specs.gpu_model
+    assert data["vram"] == node_info.specs.vram
+    assert data["gpu_count"] == node_info.specs.gpu_count
+    assert data["cpu_model"] == node_info.specs.cpu_model
+    assert data["cpu_count"] == node_info.specs.cpu_count
+    assert data["ram"] == node_info.specs.ram
+    assert data["network_download_speed"] == node_info.specs.network_download_speed
+    assert data["network_upload_speed"] == node_info.specs.network_upload_speed
+    assert data["operating_system"] == node_info.specs.operating_system
+    assert data["version"] == node_info.specs.version
     assert "created_at" in data
     assert "last_updated_at" in data
 

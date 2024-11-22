@@ -6,6 +6,7 @@ from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.service import error_responses
@@ -13,7 +14,24 @@ from distributedinference.service.node import get_node_benchmark_service as serv
 from distributedinference.service.node.entities import GetNodeBenchmarkResponse
 
 NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
-NODE_INFO = NodeInfo(node_id=NODE_UUID, name="name", name_alias="name_alias")
+NODE_INFO = NodeInfo(
+    node_id=NODE_UUID,
+    name="name",
+    name_alias="name_alias",
+    created_at=None,
+    specs=NodeSpecs(
+        cpu_model="mock_cpu_model",
+        cpu_count=1,
+        gpu_model="mock_gpu_model",
+        vram=2,
+        ram=3,
+        network_download_speed=100,
+        network_upload_speed=50,
+        operating_system="mock_operating_system",
+        gpu_count=1,
+        version=None,
+    ),
+)
 
 
 async def test_execute_success():
