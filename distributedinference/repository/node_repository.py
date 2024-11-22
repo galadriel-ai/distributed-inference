@@ -584,19 +584,18 @@ class NodeRepository:
             row = result.first()
             if row:
                 return NodeMetrics(
+                    status=NodeStatus(row.status),
                     requests_served=utils.parse_int(row.requests_served),
                     requests_successful=utils.parse_int(row.requests_successful),
                     requests_failed=utils.parse_int(row.requests_failed),
                     time_to_first_token=row.time_to_first_token,
                     inference_tokens_per_second=row.inference_tokens_per_second,
-                    is_active=bool(row.connected_at),
                     total_uptime=utils.parse_int(row.uptime),
                     current_uptime=(
                         0
                         if not row.connected_at
                         else int(time.time() - row.connected_at.timestamp())
                     ),
-                    status=NodeStatus(row.status),
                 )
         return None
 
@@ -612,13 +611,13 @@ class NodeRepository:
             result = {}
             for row in rows:
                 result[row.node_info_id] = NodeMetrics(
+                    status=NodeStatus(row.status),
                     requests_served=row.requests_served,
                     requests_successful=row.requests_successful,
                     requests_failed=row.requests_failed,
                     time_to_first_token=row.time_to_first_token,
                     inference_tokens_per_second=row.inference_tokens_per_second,
                     rtt=row.rtt,
-                    is_active=bool(row.connected_at),
                     total_uptime=row.uptime,
                     current_uptime=(
                         0
@@ -627,7 +626,6 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
-                    status=NodeStatus(row.status),
                 )
             return result
 
@@ -638,13 +636,13 @@ class NodeRepository:
             result = {}
             for row in rows:
                 result[row.node_info_id] = NodeMetrics(
+                    status=NodeStatus(row.status),
                     requests_served=row.requests_served,
                     requests_successful=row.requests_successful,
                     requests_failed=row.requests_failed,
                     time_to_first_token=row.time_to_first_token,
                     inference_tokens_per_second=row.inference_tokens_per_second,
                     rtt=row.rtt,
-                    is_active=bool(row.connected_at),
                     total_uptime=row.uptime,
                     current_uptime=(
                         0
@@ -653,7 +651,6 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
-                    status=NodeStatus(row.status),
                 )
             return result
 

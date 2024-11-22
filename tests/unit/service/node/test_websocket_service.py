@@ -69,7 +69,7 @@ async def test_execute_node_no_model_header():
     )
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics(is_active=False)
+    node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
@@ -108,7 +108,7 @@ async def test_execute_node_no_benchmark():
     )
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics(is_active=False)
+    node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
@@ -147,7 +147,7 @@ async def test_execute_node_benchmark_too_low():
     )
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics(is_active=False)
+    node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
@@ -193,7 +193,7 @@ async def test_execute_node_benchmark_405B_enough():
     )
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics(is_active=False)
+    node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
@@ -252,7 +252,7 @@ async def test_node_already_connected_with_other_worker():
         specs=_get_node_specs(),
     )
 
-    node_metrics = NodeMetrics(is_active=True)
+    node_metrics = NodeMetrics(status=NodeStatus.RUNNING)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
@@ -299,7 +299,7 @@ async def test_execute_node_already_connected():
     )
     node_repository = AsyncMock(spec=NodeRepository)
 
-    node_metrics = NodeMetrics(is_active=False)
+    node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )

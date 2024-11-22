@@ -229,7 +229,7 @@ async def _check_before_connecting(
     node_metrics = await node_repository.get_node_metrics_by_ids([node_info.node_id])
     if (
         node_metrics.get(node_info.node_id)
-        and node_metrics[node_info.node_id].is_active
+        and node_metrics[node_info.node_id].status.is_active()
     ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,

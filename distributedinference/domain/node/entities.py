@@ -28,6 +28,13 @@ class NodeStatus(Enum):
     STOPPED_DEGRADED = "STOPPED_DEGRADED"
     STOPPED_DISABLED = "STOPPED_DISABLED"
 
+    def is_active(self):
+        return self in [
+            NodeStatus.RUNNING,
+            NodeStatus.RUNNING_DEGRADED,
+            NodeStatus.RUNNING_DISABLED,
+        ]
+
     def is_healthy(self):
         return self in [NodeStatus.RUNNING]
 
@@ -71,6 +78,7 @@ class NodeMetricsIncrement:
 
 @dataclass
 class NodeMetrics:
+    status: NodeStatus
     requests_served: int = 0
     requests_successful: int = 0
     requests_failed: int = 0
@@ -82,7 +90,6 @@ class NodeMetrics:
     current_uptime: int = 0
     gpu_model: Optional[str] = None
     model_name: Optional[str] = None
-    status: Optional[NodeStatus] = None
 
 
 @dataclass
