@@ -94,7 +94,7 @@ async def get_metrics(
     locally_connected_nodes = node_repository.get_locally_connected_nodes()
     for node in locally_connected_nodes:
         locally_connected_nodes_gauge.labels(
-            node.model, node.uid, node.node_status
+            node.model, node.uid, node.node_status.value
         ).inc()
 
     node_metrics = await node_repository.get_all_node_metrics()
