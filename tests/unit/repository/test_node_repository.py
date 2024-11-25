@@ -1,5 +1,6 @@
 import asyncio
 import time
+from datetime import datetime
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -257,7 +258,7 @@ async def test_save_node_info(node_repository, session_provider):
         name="name",
         name_alias="user alias",
         node_id=NODE_UUID,
-        created_at=None,
+        created_at=datetime(2020, 1, 1),
         specs=NodeSpecs(
             gpu_model="NVIDIA GTX 1080",
             vram=8,

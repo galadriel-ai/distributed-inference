@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from uuid import UUID
@@ -68,7 +69,7 @@ async def test_node_success():
         node_id=UUID("9fe247c3-71ce-4abf-8e3f-24becfab50da"),
         name="name",
         name_alias="name_alias",
-        created_at=None,
+        created_at=datetime(2021, 1, 1),
         specs=NodeSpecs(
             gpu_model="NVIDIA GTX 1080",
             vram=8,
@@ -96,7 +97,7 @@ async def test_node_basic_success():
         node_id=UUID("9fe247c3-71ce-4abf-8e3f-24becfab50da"),
         name="name",
         name_alias="name_alias",
-        created_at=None,
+        created_at=datetime(2022, 1, 1),
         specs=None,
     )
     mock_repository.get_node_info_by_name.return_value = node_info

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from unittest.mock import AsyncMock
 from unittest.mock import Mock
 from uuid import UUID
@@ -45,7 +46,7 @@ NODE_INFO = FullNodeInfo(
     node_id=NODE_UUID,
     name=str(NODE_UUID),
     name_alias="name_alias",
-    created_at=None,
+    created_at=datetime(2024, 1, 5),
     specs=_get_node_specs(),
 )
 
@@ -248,7 +249,7 @@ async def test_node_already_connected_with_other_worker():
         node_id=NODE_UUID,
         name=str(NODE_UUID),
         name_alias="name_alias",
-        created_at=None,
+        created_at=datetime(2024, 1, 5),
         specs=_get_node_specs(),
     )
 

@@ -111,7 +111,7 @@ class NodeInfo:
     node_id: UUID
     name: str
     name_alias: str
-    created_at: Optional[datetime]
+    created_at: datetime
     specs: Optional[NodeSpecs]
 
 

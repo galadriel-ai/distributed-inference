@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -34,7 +35,7 @@ async def test_execute_success():
         node_id=NODE_UUID,
         name="name",
         name_alias="name_alias",
-        created_at=None,
+        created_at=datetime(2020, 1, 1),
         specs=NodeSpecs(
             gpu_model=request.gpu_model,
             vram=request.vram,
@@ -56,7 +57,7 @@ async def test_execute_success():
             node_id=NODE_UUID,
             name="name",
             name_alias="name_alias",
-            created_at=None,
+            created_at=datetime(2020, 1, 1),
             specs=None,
         ),
         node_id,

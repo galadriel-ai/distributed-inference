@@ -26,7 +26,7 @@ def _request_to_node_info(
         node_id=node_info.node_id,
         name=node_info.name,
         name_alias=node_info.name_alias,
-        created_at=None,
+        created_at=node_info.created_at,
         specs=NodeSpecs(
             gpu_model=request.gpu_model,
             vram=request.vram,

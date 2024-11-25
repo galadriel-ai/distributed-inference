@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -18,7 +19,7 @@ NODE_INFO = NodeInfo(
     node_id=NODE_UUID,
     name="name",
     name_alias="name_alias",
-    created_at=None,
+    created_at=datetime(2023, 1, 1),
     specs=NodeSpecs(
         cpu_model="mock_cpu_model",
         cpu_count=1,

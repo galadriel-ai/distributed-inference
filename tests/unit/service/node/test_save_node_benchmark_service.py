@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -19,7 +20,7 @@ def _get_node_info() -> FullNodeInfo:
         node_id=NODE_UUID,
         name="name",
         name_alias="name_alias",
-        created_at=None,
+        created_at=datetime(2024, 1, 2),
         specs=NodeSpecs(
             gpu_model="NVIDIA GeForce RTX 4090",
             vram=8,
