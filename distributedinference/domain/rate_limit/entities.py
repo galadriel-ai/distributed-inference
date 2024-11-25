@@ -1,5 +1,6 @@
 from decimal import Decimal
 from dataclasses import dataclass
+from enum import Enum
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -57,9 +58,17 @@ class RateLimit:
     reset_tokens: Optional[int]
 
 
+class RateLimitReason(Enum):
+    RPM = "RPM"
+    RPD = "RPD"
+    TPM = "TPM"
+    TPD = "TPD"
+
+
 @dataclass
 class UserRateLimitResponse:
     rate_limited: bool
+    rate_limit_reason: Optional[RateLimitReason]
     retry_after: Optional[int]
 
     rate_limit_minute: RateLimit
