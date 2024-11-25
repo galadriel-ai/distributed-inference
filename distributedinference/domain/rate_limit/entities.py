@@ -67,7 +67,6 @@ class RateLimitReason(Enum):
 
 @dataclass
 class UserRateLimitResponse:
-    rate_limited: bool
     rate_limit_reason: Optional[RateLimitReason]
     retry_after: Optional[int]
 

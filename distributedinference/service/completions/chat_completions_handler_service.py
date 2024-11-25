@@ -63,18 +63,14 @@ async def execute(
         request.model, user, tokens_repository, rate_limit_repository
     )
     rate_limit_headers = rate_limit_to_headers(rate_limit_info)
-    if rate_limit_info.rate_limited:
+    if rate_limit_info.rate_limit_reason:
         analytics.track_event(
             user.uid,
             AnalyticsEvent(
                 EventName.USER_RATE_LIMITED,
                 {
-                    "model_id": request.model,
-                    "reason": (
-                        rate_limit_info.rate_limit_reason.value
-                        if rate_limit_info.rate_limit_reason
-                        else "Unknown"
-                    ),
+                    "model": request.model,
+                    "reason": rate_limit_info.rate_limit_reason.value,
                 },
             ),
         )

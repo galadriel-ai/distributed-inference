@@ -81,8 +81,6 @@ async def execute(
     else:
         rate_limit_reason = None
 
-    rate_limited = rate_limit_reason is not None
-
     retry_after = max(
         filter(
             None,
@@ -97,7 +95,6 @@ async def execute(
     )
 
     return UserRateLimitResponse(
-        rate_limited=rate_limited,
         rate_limit_reason=rate_limit_reason,
         retry_after=retry_after,
         rate_limit_minute=RateLimit(

@@ -10,6 +10,7 @@ import pytest
 from uuid_extensions import uuid7
 
 from distributedinference.domain.rate_limit import rate_limit_use_case as use_case
+from distributedinference.domain.rate_limit.entities import RateLimitReason
 from distributedinference.domain.rate_limit.entities import RateLimitResult
 from distributedinference.domain.rate_limit.entities import UsageLimits
 from distributedinference.domain.rate_limit.entities import UsageTier
@@ -90,7 +91,7 @@ async def test_rate_limit_not_exceeded(
         "model", user, mock_tokens_repository, mock_rate_limit_repository
     )
 
-    assert result.rate_limited is False
+    assert result.rate_limit_reason is None
     assert result.retry_after is None
     assert result.rate_limit_day.remaining_requests == 123
     assert result.rate_limit_day.remaining_tokens == 123
@@ -125,7 +126,7 @@ async def test_rate_limit_exceeded_by_requests_per_minute(
                 )
             else:
                 result = RateLimitResult(
-                    rate_limited=True,
+                    rate_limited=RateLimitReason.RPM,
                     retry_after=30,
                     remaining=0,
                     usage_count=200,
@@ -142,7 +143,7 @@ async def test_rate_limit_exceeded_by_requests_per_minute(
         "model", user, mock_tokens_repository, mock_rate_limit_repository
     )
 
-    assert result.rate_limited is True
+    assert result.rate_limit_reason is RateLimitReason.RPM
     assert result.retry_after == 30  # Retry after 30 seconds for minute-level limit
     assert result.rate_limit_minute.remaining_requests == 0
     assert result.rate_limit_day.remaining_requests == 123
@@ -167,7 +168,7 @@ async def test_rate_limit_exceeded_by_requests_per_day(
                 )
             else:
                 result = RateLimitResult(
-                    rate_limited=True,
+                    rate_limited=RateLimitReason.RPD,
                     retry_after=68400,
                     remaining=0,
                     usage_count=200,
@@ -184,7 +185,7 @@ async def test_rate_limit_exceeded_by_requests_per_day(
         "model", user, mock_tokens_repository, mock_rate_limit_repository
     )
 
-    assert result.rate_limited is True
+    assert result.rate_limit_reason is RateLimitReason.RPD
     assert result.retry_after == 68400  # Retry after 19h for day-level limit
     assert result.rate_limit_day.remaining_requests == 0  # No more requests available
     assert result.rate_limit_minute.remaining_requests == 123
@@ -209,7 +210,7 @@ async def test_rate_limit_exceeded_by_tokens_per_minute(
                 )
             else:
                 result = RateLimitResult(
-                    rate_limited=True,
+                    rate_limited=RateLimitReason.TPM,
                     retry_after=30,
                     remaining=0,
                     usage_count=200,
@@ -225,7 +226,7 @@ async def test_rate_limit_exceeded_by_tokens_per_minute(
         "model", user, mock_tokens_repository, mock_rate_limit_repository
     )
 
-    assert result.rate_limited is True
+    assert result.rate_limit_reason is RateLimitReason.TPM
     assert (
         result.retry_after == 30
     )  # Retry after remaining 30 seconds for the minute-level token limit
@@ -252,7 +253,7 @@ async def test_rate_limit_exceeded_by_tokens_per_day(
                 )
             else:
                 result = RateLimitResult(
-                    rate_limited=True,
+                    rate_limited=RateLimitReason.TPD,
                     retry_after=68400,
                     remaining=0,
                     usage_count=200,
@@ -268,7 +269,7 @@ async def test_rate_limit_exceeded_by_tokens_per_day(
         "model", user, mock_tokens_repository, mock_rate_limit_repository
     )
 
-    assert result.rate_limited is True
+    assert result.rate_limit_reason is RateLimitReason.TPD
     assert result.retry_after == 68400  # Retry after 19h for day-level token limit
     assert result.rate_limit_day.remaining_tokens == 0  # No more tokens available
     assert result.rate_limit_minute.remaining_tokens == 123
@@ -298,7 +299,7 @@ async def test_no_rate_limit_on_unlimited_tier(
         "model", user, mock_tokens_repository, mock_rate_limit_repository
     )
 
-    assert result.rate_limited is False
+    assert result.rate_limit_reason is None
     assert result.retry_after is None
     assert result.rate_limit_minute.remaining_requests is None
     assert result.rate_limit_minute.remaining_tokens is None

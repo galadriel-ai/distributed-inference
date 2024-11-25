@@ -25,7 +25,6 @@ REQUESTED_MODEL = "llama3.1:70b"
 async def test_execute_no_rate_limit():
     # Mock the check_rate_limit function to simulate no rate limit
     rate_limit_result = UserRateLimitResponse(
-        rate_limited=False,
         rate_limit_reason=None,
         retry_after=None,
         rate_limit_minute=RateLimit(
@@ -80,7 +79,6 @@ async def test_execute_no_rate_limit():
 
 async def test_execute_no_rate_limit_stream():
     rate_limit_result = UserRateLimitResponse(
-        rate_limited=False,
         rate_limit_reason=None,
         retry_after=None,
         rate_limit_minute=RateLimit(
@@ -136,7 +134,6 @@ async def test_execute_no_rate_limit_stream():
 
 async def test_execute_rate_limited():
     rate_limit_result = UserRateLimitResponse(
-        rate_limited=True,
         rate_limit_reason=RateLimitReason.RPM,
         retry_after=30,
         rate_limit_minute=RateLimit(
