@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from typing import Dict
 from typing import Optional
 from uuid import UUID
 
@@ -19,6 +20,7 @@ from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import FullNodeInfo
+from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.user.entities import User
@@ -226,10 +228,14 @@ async def _check_before_connecting(
     benchmark_repository: BenchmarkRepository,
     user: User,
 ):
-    node_metrics = await node_repository.get_node_metrics_by_ids([node_info.node_id])
+    node_metrics: Dict[UUID, NodeMetrics] = (
+        await node_repository.get_node_metrics_by_ids([node_info.node_id])
+    )
     if (
         node_metrics.get(node_info.node_id)
-        and node_metrics[node_info.node_id].status.is_active()
+        # TODO: this should check `node_metrics[node_info.node_id].status.is_active()`
+        #  but this can lead to faulty results apparently
+        and node_metrics[node_info.node_id].is_active
     ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,

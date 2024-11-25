@@ -626,6 +626,7 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
+                    is_active=bool(row.connected_at),
                 )
             return result
 
