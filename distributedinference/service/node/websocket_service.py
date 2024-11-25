@@ -43,6 +43,7 @@ async def execute(
     user: User,
     node_info: FullNodeInfo,
     model_name: Optional[str],
+    image_generation_model_name: Optional[str],
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
     analytics: Analytics,
@@ -54,7 +55,12 @@ async def execute(
     await websocket.accept()
 
     await _check_before_connecting(
-        model_name, node_info, node_repository, benchmark_repository, user
+        model_name,
+        image_generation_model_name,
+        node_info,
+        node_repository,
+        benchmark_repository,
+        user,
     )
     formatted_model_name: str = model_name or ""
 
@@ -73,6 +79,7 @@ async def execute(
         uid=node_uid,
         user_id=user.uid,
         model=formatted_model_name,
+        image_generation_model=image_generation_model_name,
         vram=node_info.specs.vram,
         connected_at=int(time.time()),
         websocket=websocket,
@@ -110,9 +117,12 @@ async def execute(
     health_check_protocol: HealthCheckProtocol = protocol_handler.get(
         HealthCheckProtocol.PROTOCOL_NAME
     )
-    health_check_protocol.add_node(
-        node_info.node_id, node_info.name, node_info.specs.version, websocket
-    )
+    # Skip health check for image generation models
+    if node.image_generation_model is None:
+
+        health_check_protocol.add_node(
+            node_info.node_id, node_info.name, node_info.specs.version, websocket
+        )
     try:
         while True:
             data = await websocket.receive_text()
@@ -223,6 +233,7 @@ async def _get_new_node_stopped_status(
 
 async def _check_before_connecting(
     model_name: Optional[str],
+    image_generation_model_name: Optional[str],
     node_info: FullNodeInfo,
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
@@ -241,6 +252,10 @@ async def _check_before_connecting(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="A existing connection has already been established",
         )
+    # Skip benchmarking check for image generation models
+    if image_generation_model_name:
+        return
+
     if not model_name:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'

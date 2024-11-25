@@ -6,6 +6,9 @@ from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
+from distributedinference.service.middleware.image_encoding_middleware import (
+    ImageEncodingMiddleware,
+)
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies

@@ -163,6 +163,7 @@ class ConnectedNode:
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
     node_status: NodeStatus
+    image_generation_model: Optional[str] = None
     is_self_hosted: bool = False
     version: Optional[Version] = None
 

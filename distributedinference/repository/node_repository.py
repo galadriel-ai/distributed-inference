@@ -9,6 +9,10 @@ from typing import List
 from typing import Optional
 from uuid import UUID
 
+from distributedinference.service.images.entities import (
+    ImageGenerationWebsocketRequest,
+    ImageGenerationWebsocketResponse,
+)
 import sqlalchemy
 from fastapi import status as http_status
 from openai.types.chat import ChatCompletionChunk
@@ -549,6 +553,21 @@ class NodeRepository:
 
         return random.choice(eligible_nodes)
 
+    def select_image_generation_node(self, model: str) -> Optional[ConnectedNode]:
+        if not self._connected_nodes:
+            return None
+
+        eligible_nodes = [
+            node
+            for node in self._connected_nodes.values()
+            if node.image_generation_model == model and self._can_handle_new_request(node)
+        ]
+
+        if not eligible_nodes:
+            return None
+
+        return random.choice(eligible_nodes)
+
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
         if not node.is_self_hosted and not node.node_status.is_healthy():
             return False
@@ -941,6 +960,16 @@ class NodeRepository:
             return True
         return False
 
+    async def send_image_generation_request(
+        self, node_id: UUID, request: ImageGenerationWebsocketRequest
+    ) -> bool:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            connected_node.request_incoming_queues[request.request_id] = asyncio.Queue()
+            await connected_node.websocket.send_json(asdict(request))
+            return True
+        return False
+
     async def receive_for_request(
         self, node_id: UUID, request_id: str
     ) -> Optional[InferenceResponse]:
@@ -967,6 +996,26 @@ class NodeRepository:
                 )
             except Exception:
                 logger.warning(f"Failed to parse chunk, request_id={request_id}")
+                return None
+        return None
+
+    async def receive_for_image_generation_request(
+        self, node_id: UUID, request_id: str
+    ) -> Optional[ImageGenerationWebsocketResponse]:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            data = await connected_node.request_incoming_queues[request_id].get()
+            try:
+                return ImageGenerationWebsocketResponse(
+                    node_id=node_id,
+                    request_id=data["request_id"],
+                    images=data["images"],
+                )
+            except Exception:
+                logger.warning(
+                    f"Failed to parse image generation response, request_id={request_id}"
+                )
+                logger.debug(f"Received data: {data}")
                 return None
         return None
 

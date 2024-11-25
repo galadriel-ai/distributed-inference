@@ -1,0 +1,138 @@
+import time
+from typing import AsyncGenerator
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import UUID, uuid1
+from packaging.version import Version
+
+import pytest
+
+from distributedinference.domain.node.entities import ConnectedNode, InferenceResponse, NodeStatus
+from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.service.images import images_generations_service as service
+from distributedinference.service.images.entities import (
+    ImageGenerationRequest,
+    ImageEditRequest,
+    ImageGenerationWebsocketRequest,
+    ImageGenerationWebsocketResponse,
+)
+from openai.types.images_response import ImagesResponse, Image
+
+USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
+MOCK_UUID = UUID("a2e3db51-7a7f-473c-8cd5-390e7ed1e1c7")
+
+
+def setup():
+    service.uuid7 = MagicMock()
+    service.uuid7.return_value = MOCK_UUID
+    service._select_node = MagicMock()
+    service._decode_b64_and_upload_to_gcs = MagicMock()
+
+
+@pytest.fixture
+def node_repository():
+    return AsyncMock(NodeRepository)
+
+
+@pytest.fixture
+def image_generation_request():
+    return ImageGenerationRequest(
+        prompt="A beautiful sunset over the ocean.",
+        model="image-generator-v1.0",
+        n=1,
+        quality="standard",
+        response_format="url",
+    )
+
+
+@pytest.fixture
+def image_edit_request():
+    return ImageEditRequest(
+        prompt="A beautiful sunset over the ocean.",
+        model="image-generator-v1.0",
+        image="base64encodedimage",
+        n=1,
+        response_format="url",
+    )
+
+
+@pytest.fixture
+def node_repository():
+    return AsyncMock(NodeRepository)
+
+
+def create_mock_node():
+    return ConnectedNode(
+        uid=UUID("6b1f4b1e-0b1b-4b1b-8b1b-1b1f4b1e0b1c"),
+        user_id=UUID("6b1f4b1e-0b1b-4b1b-8b1b-1b1f4b1e0b1d"),
+        model="model-1",
+        vram=16000,
+        connected_at=int(time.time()),
+        websocket=MagicMock(),
+        request_incoming_queues={},
+        node_status=NodeStatus.RUNNING_DEGRADED,
+        version=Version("1.0.0"),
+    )
+
+
+@pytest.mark.asyncio
+async def test_execute_image_generation_request(node_repository, image_generation_request):
+    mock_node = create_mock_node()
+    service._select_node = MagicMock(return_value=mock_node)
+
+    expected_b64_image = "base64encodedimage"
+    mock_image_websocket_response = ImageGenerationWebsocketResponse(
+        node_id=mock_node.uid, request_id=MOCK_UUID, images=[expected_b64_image]
+    )
+
+    node_repository.receive_for_image_generation_request = AsyncMock(
+        return_value=mock_image_websocket_response
+    )
+
+    response = await service.execute(image_generation_request, node_repository)
+
+    assert isinstance(response, ImagesResponse)
+    assert len(response.data) == 1
+    assert response.data[0].b64_json == expected_b64_image
+
+
+@pytest.mark.asyncio
+async def test_execute_image_edit_request(node_repository, image_edit_request):
+    mock_node = create_mock_node()
+    service._select_node = MagicMock(return_value=mock_node)
+
+    expected_b64_image = "base64encodedimage"
+    mock_image_websocket_response = ImageGenerationWebsocketResponse(
+        node_id=mock_node.uid, request_id=MOCK_UUID, images=[expected_b64_image]
+    )
+
+    node_repository.receive_for_image_generation_request = AsyncMock(
+        return_value=mock_image_websocket_response
+    )
+    response = await service.execute(image_edit_request, node_repository)
+
+    assert isinstance(response, ImagesResponse)
+    assert len(response.data) == 1
+    assert response.data[0].b64_json == expected_b64_image
+
+
+@patch("distributedinference.service.images.images_generations_service._select_node")
+@pytest.mark.asyncio
+async def test_execute_no_available_nodes(
+    mock_select_node, node_repository, image_generation_request
+):
+    mock_select_node.return_value = None
+
+    with pytest.raises(service.error_responses.NoAvailableInferenceNodesError):
+        await service.execute(image_generation_request, node_repository)
+
+
+@patch("distributedinference.service.images.images_generations_service._select_node")
+@pytest.mark.asyncio
+async def test_execute_internal_server_error(
+    mock_select_node, node_repository, image_generation_request
+):
+    mock_select_node.return_value = AsyncMock()
+    node_repository.receive_for_image_generation_request.return_value = None
+
+    with pytest.raises(service.error_responses.InternalServerAPIError):
+        await service.execute(image_generation_request, node_repository)
