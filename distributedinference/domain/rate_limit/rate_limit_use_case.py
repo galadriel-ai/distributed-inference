@@ -2,6 +2,7 @@ import settings
 from distributedinference import api_logger
 from distributedinference.domain.rate_limit import check_limit_use_case
 from distributedinference.domain.rate_limit.entities import RateLimit
+from distributedinference.domain.rate_limit.entities import RateLimitReason
 from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
@@ -69,14 +70,17 @@ async def execute(
     )
 
     # Determine overall rate limit status and retry_after time
-    rate_limited = any(
-        [
-            request_min_result.rate_limited,
-            request_day_result.rate_limited,
-            tokens_min_result.rate_limited,
-            tokens_day_result.rate_limited,
-        ]
-    )
+    if request_min_result.rate_limited:
+        rate_limit_reason = RateLimitReason.RPM
+    elif request_day_result.rate_limited:
+        rate_limit_reason = RateLimitReason.RPD
+    elif tokens_min_result.rate_limited:
+        rate_limit_reason = RateLimitReason.TPM
+    elif tokens_day_result.rate_limited:
+        rate_limit_reason = RateLimitReason.TPD
+    else:
+        rate_limit_reason = None
+
     retry_after = max(
         filter(
             None,
@@ -91,7 +95,7 @@ async def execute(
     )
 
     return UserRateLimitResponse(
-        rate_limited=rate_limited,
+        rate_limit_reason=rate_limit_reason,
         retry_after=retry_after,
         rate_limit_minute=RateLimit(
             max_requests=usage_limits.max_requests_per_minute,

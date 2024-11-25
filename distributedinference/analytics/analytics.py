@@ -26,6 +26,7 @@ class EventName(Enum):
 
     USER_EXECUTED_INFERENCE_REQUEST = "user_executed_inference_request"
     USER_NODE_SELECTED_FOR_INFERENCE = "user_node_selected_for_inference"
+    USER_RATE_LIMITED = "user_rate_limited"
 
     WS_NODE_CONNECTED = "ws_node_connected"
     WS_NODE_DISCONNECTED = "ws_node_disconnected"
