@@ -7,6 +7,7 @@ import pytest
 from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node_stats.entities import NodeStats
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
@@ -22,6 +23,19 @@ NODE_INFO = NodeInfo(
     node_id=NODE_UUID,
     name="name",
     name_alias="name_alias",
+    created_at=datetime(2024, 1, 1),
+    specs=NodeSpecs(
+        cpu_model="mock_cpu_model",
+        cpu_count=1,
+        gpu_model="mock_gpu_model",
+        vram=2,
+        ram=3,
+        network_download_speed=100,
+        network_upload_speed=50,
+        operating_system="mock_operating_system",
+        gpu_count=1,
+        version="0.0.1",
+    ),
 )
 
 
@@ -69,7 +83,7 @@ async def test_success():
         total_tokens=3,
         created_at=created_at,
     )
-    mock_tokens_repository.get_user_latest_usage_tokens.return_value = [usage_tokens]
+    mock_tokens_repository.get_node_latest_usage_tokens.return_value = [usage_tokens]
     mock_tokens_repository.get_latest_count_by_time_and_node.return_value = 321
 
     response = await service.execute(

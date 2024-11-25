@@ -29,8 +29,8 @@ async def execute(
     if node_stats.average_time_to_first_token:
         average_time_to_first_token = node_stats.average_time_to_first_token
 
-    usage_tokens = await tokens_repository.get_user_latest_usage_tokens(
-        user.uid, node_info.node_id, INFERENCES_COUNT
+    usage_tokens = await tokens_repository.get_node_latest_usage_tokens(
+        node_info.node_id, INFERENCES_COUNT
     )
 
     return GetNodeStatsResponse(

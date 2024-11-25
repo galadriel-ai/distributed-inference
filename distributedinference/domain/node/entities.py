@@ -28,6 +28,13 @@ class NodeStatus(Enum):
     STOPPED_DEGRADED = "STOPPED_DEGRADED"
     STOPPED_DISABLED = "STOPPED_DISABLED"
 
+    def is_active(self):
+        return self in [
+            NodeStatus.RUNNING,
+            NodeStatus.RUNNING_DEGRADED,
+            NodeStatus.RUNNING_DISABLED,
+        ]
+
     def is_healthy(self):
         return self in [NodeStatus.RUNNING]
 
@@ -71,6 +78,7 @@ class NodeMetricsIncrement:
 
 @dataclass
 class NodeMetrics:
+    status: NodeStatus
     requests_served: int = 0
     requests_successful: int = 0
     requests_failed: int = 0
@@ -82,7 +90,20 @@ class NodeMetrics:
     current_uptime: int = 0
     gpu_model: Optional[str] = None
     model_name: Optional[str] = None
-    status: Optional[NodeStatus] = None
+
+
+@dataclass
+class NodeSpecs:
+    cpu_model: str
+    cpu_count: int
+    gpu_model: str
+    vram: int
+    ram: int
+    network_download_speed: float
+    network_upload_speed: float
+    operating_system: str
+    gpu_count: Optional[int]
+    version: Optional[str] = None
 
 
 @dataclass
@@ -90,17 +111,13 @@ class NodeInfo:
     node_id: UUID
     name: str
     name_alias: str
-    cpu_model: Optional[str] = None
-    cpu_count: Optional[int] = None
-    gpu_model: Optional[str] = None
-    gpu_count: Optional[int] = None
-    vram: Optional[int] = None
-    ram: Optional[int] = None
-    network_download_speed: Optional[float] = None
-    network_upload_speed: Optional[float] = None
-    operating_system: Optional[str] = None
-    version: Optional[str] = None
-    created_at: Optional[datetime] = None
+    created_at: datetime
+    specs: Optional[NodeSpecs]
+
+
+@dataclass
+class FullNodeInfo(NodeInfo):
+    specs: NodeSpecs
 
 
 @dataclass

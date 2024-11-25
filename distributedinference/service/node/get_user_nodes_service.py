@@ -33,15 +33,19 @@ async def _format(
             ListNodeRequestNode(
                 node_id=node.name,
                 name_alias=node.name_alias,
-                gpu_model=node.gpu_model,
-                vram=node.vram,
-                gpu_count=node.gpu_count,
-                cpu_model=node.cpu_model,
-                cpu_count=node.cpu_count,
-                ram=node.ram,
-                network_download_speed=node.network_download_speed,
-                network_upload_speed=node.network_upload_speed,
-                operating_system=node.operating_system,
+                gpu_model=node.specs.gpu_model if node.specs else None,
+                vram=node.specs.vram if node.specs else None,
+                gpu_count=node.specs.gpu_count if node.specs else None,
+                cpu_model=node.specs.cpu_model if node.specs else None,
+                cpu_count=node.specs.cpu_count if node.specs else None,
+                ram=node.specs.ram if node.specs else None,
+                network_download_speed=(
+                    node.specs.network_download_speed if node.specs else None
+                ),
+                network_upload_speed=(
+                    node.specs.network_upload_speed if node.specs else None
+                ),
+                operating_system=node.specs.operating_system if node.specs else None,
                 status=status.description(),
                 run_duration_seconds=current_uptime,
                 total_uptime_seconds=node.uptime or 0,

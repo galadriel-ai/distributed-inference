@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -13,6 +14,8 @@ def _get_node_info():
         node_id=UUID("06720980-3d82-784d-8000-3150ecf8faed"),
         name="name",
         name_alias="alias",
+        created_at=datetime(2024, 1, 4),
+        specs=None,
     )
 
 

@@ -144,8 +144,18 @@ class GetUserAggregatedStatsResponse(BaseModel):
     )
 
 
-class PostNodeInfoRequest(NodeInfoRequest):
-    pass
+class PostNodeInfoRequest(BaseModel):
+    node_id: str = Field(description="Unique ID of the Node")
+    gpu_model: str = Field(description="GPU model")
+    vram: int = Field(description="VRAM in MB")
+    gpu_count: int = Field(description="GPU count")
+    cpu_model: str = Field(description="CPU model")
+    cpu_count: int = Field(description="CPU cores count")
+    ram: int = Field(description="RAM in MB")
+    network_download_speed: float = Field(description="Network download speed in Mbps")
+    network_upload_speed: float = Field(description="Network upload speed in Mbps")
+    operating_system: str = Field(description="Operating system")
+    version: Optional[str] = Field(description="Node version", default=None)
 
 
 class PostNodeInfoResponse(ApiResponse):

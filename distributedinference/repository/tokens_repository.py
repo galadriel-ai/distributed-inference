@@ -38,7 +38,7 @@ VALUES (
 );
 """
 
-SQL_GET_USER_LATEST_USAGE_TOKENS = """
+SQL_GET_NODE_LATEST_USAGE_TOKENS = """
 SELECT
     consumer_user_profile_id,
     producer_node_info_id,
@@ -189,15 +189,15 @@ class TokensRepository:
             logger.debug("tokens_repository.insert_usage_tokens done()")
 
     # pylint: disable=W0613
-    @async_timer("tokens_repository.get_user_latest_usage_tokens", logger=logger)
-    async def get_user_latest_usage_tokens(
-        self, user_id: UUID, node_id: UUID, count: int
+    @async_timer("tokens_repository.get_node_latest_usage_tokens", logger=logger)
+    async def get_node_latest_usage_tokens(
+        self, node_id: UUID, count: int
     ) -> List[TimedUsageTokens]:
         data = {"producer_node_info_id": node_id, "count": count}
         tokens = []
         async with self._session_provider_read.get() as session:
             rows = await session.execute(
-                sqlalchemy.text(SQL_GET_USER_LATEST_USAGE_TOKENS), data
+                sqlalchemy.text(SQL_GET_NODE_LATEST_USAGE_TOKENS), data
             )
             for row in rows:
                 tokens.append(

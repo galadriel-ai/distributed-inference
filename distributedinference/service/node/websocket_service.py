@@ -1,5 +1,5 @@
-from datetime import datetime
 import time
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -13,14 +13,12 @@ from packaging.version import Version
 
 import settings
 from distributedinference import api_logger
-from distributedinference.analytics.analytics import (
-    Analytics,
-    AnalyticsEvent,
-    EventName,
-)
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import NodeInfo
+from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.user.entities import User
@@ -41,7 +39,7 @@ logger = api_logger.get()
 async def execute(
     websocket: WebSocket,
     user: User,
-    node_info: NodeInfo,
+    node_info: FullNodeInfo,
     model_name: Optional[str],
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
@@ -73,20 +71,20 @@ async def execute(
         uid=node_uid,
         user_id=user.uid,
         model=formatted_model_name,
-        vram=node_info.vram or 0,
+        vram=node_info.specs.vram,
         connected_at=int(time.time()),
         websocket=websocket,
         request_incoming_queues={},
         is_self_hosted=user.is_self_hosted_nodes_provider(),
         node_status=node_status,
-        version=Version(node_info.version) if node_info.version else None,
+        version=Version(node_info.specs.version) if node_info.specs.version else None,
     )
     logger.info(f"Node {node_uid} connected")
     analytics.track_event(
         user.uid,
         AnalyticsEvent(
             EventName.WS_NODE_CONNECTED,
-            {"node_id": node.uid, "node_version": node_info.version},
+            {"node_id": node.uid, "node_version": node_info.specs.version},
         ),
     )
 
@@ -111,7 +109,7 @@ async def execute(
         HealthCheckProtocol.PROTOCOL_NAME
     )
     health_check_protocol.add_node(
-        node_info.node_id, node_info.name, node_info.version, websocket
+        node_info.node_id, node_info.name, node_info.specs.version, websocket
     )
     try:
         while True:
@@ -191,7 +189,7 @@ async def execute(
 async def _websocket_error(
     analytics: Analytics,
     node: ConnectedNode,
-    node_info: NodeInfo,
+    node_info: FullNodeInfo,
     node_repository: NodeRepository,
     node_uid: UUID,
     ping_pong_protocol: PingPongProtocol,
@@ -223,7 +221,7 @@ async def _get_new_node_stopped_status(
 
 async def _check_before_connecting(
     model_name: Optional[str],
-    node_info: NodeInfo,
+    node_info: FullNodeInfo,
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
     user: User,
@@ -231,7 +229,7 @@ async def _check_before_connecting(
     node_metrics = await node_repository.get_node_metrics_by_ids([node_info.node_id])
     if (
         node_metrics.get(node_info.node_id)
-        and node_metrics[node_info.node_id].is_active
+        and node_metrics[node_info.node_id].status.is_active()
     ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
