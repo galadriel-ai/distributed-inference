@@ -6,7 +6,11 @@ from packaging.version import Version
 
 import pytest
 
-from distributedinference.domain.node.entities import ConnectedNode, InferenceResponse, NodeStatus
+from distributedinference.domain.node.entities import (
+    ConnectedNode,
+    InferenceResponse,
+    NodeStatus,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.images import images_generations_service as service
 from distributedinference.service.images.entities import (
@@ -75,7 +79,9 @@ def create_mock_node():
 
 
 @pytest.mark.asyncio
-async def test_execute_image_generation_request(node_repository, image_generation_request):
+async def test_execute_image_generation_request(
+    node_repository, image_generation_request
+):
     mock_node = create_mock_node()
     service._select_node = MagicMock(return_value=mock_node)
 

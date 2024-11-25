@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Literal, Optional
+from uuid import UUID
 from pydantic import BaseModel
 from pydantic import Field
 
@@ -102,6 +103,6 @@ class ImageGenerationWebsocketRequest:
 
 @dataclass
 class ImageGenerationWebsocketResponse:
-    node_id: str = Field(description="The node ID that processed the request")
+    node_id: UUID = Field(description="The node ID that processed the request")
     request_id: str = Field(description="Unique ID for the request")
     images: List[str] = Field(description="Base64 encoded images as output")

@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import asyncio
 import random
 import time
@@ -8,16 +9,15 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
-
-from distributedinference.service.images.entities import (
-    ImageGenerationWebsocketRequest,
-    ImageGenerationWebsocketResponse,
-)
 import sqlalchemy
 from fastapi import status as http_status
 from openai.types.chat import ChatCompletionChunk
 from uuid_extensions import uuid7
 
+from distributedinference.service.images.entities import (
+    ImageGenerationWebsocketRequest,
+    ImageGenerationWebsocketResponse,
+)
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import FullNodeInfo
@@ -560,7 +560,8 @@ class NodeRepository:
         eligible_nodes = [
             node
             for node in self._connected_nodes.values()
-            if node.image_generation_model == model and self._can_handle_new_request(node)
+            if node.image_generation_model == model
+            and self._can_handle_new_request(node)
         ]
 
         if not eligible_nodes:

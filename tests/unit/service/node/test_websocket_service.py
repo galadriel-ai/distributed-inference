@@ -481,7 +481,9 @@ async def test_execute_node_image_generation_model():
     node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
-    node_repository.get_node_metrics_by_ids = AsyncMock(return_value={NODE_UUID: node_metrics})
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
     node_repository.register_node = Mock(return_value=True)
 
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)

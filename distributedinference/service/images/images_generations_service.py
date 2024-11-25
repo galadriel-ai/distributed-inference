@@ -8,7 +8,9 @@ from uuid_extensions import uuid7
 
 from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
-from distributedinference.repository.metrics_queue_repository import MetricsQueueRepository
+from distributedinference.repository.metrics_queue_repository import (
+    MetricsQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
@@ -49,7 +51,9 @@ async def execute(
     else:
         raise ValueError("Invalid request type for image generation")
 
-    logger.info(f"Executing image generation service request: {websocket_request.request_id}")
+    logger.info(
+        f"Executing image generation service request: {websocket_request.request_id}"
+    )
 
     node = _select_node(node_repository, request.model)
     if node:

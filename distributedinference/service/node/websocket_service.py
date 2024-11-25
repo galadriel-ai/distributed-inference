@@ -37,7 +37,7 @@ from distributedinference.service.node.protocol.protocol_handler import Protocol
 logger = api_logger.get()
 
 
-# pylint: disable=R0913, R0914
+# pylint: disable=R0912, R0913, R0914
 async def execute(
     websocket: WebSocket,
     user: User,
