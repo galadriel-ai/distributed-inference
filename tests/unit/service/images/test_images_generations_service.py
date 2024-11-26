@@ -23,6 +23,7 @@ from openai.types.images_response import ImagesResponse, Image
 
 USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
 MOCK_UUID = UUID("a2e3db51-7a7f-473c-8cd5-390e7ed1e1c7")
+REQUEST_ID = str(uuid1())
 
 
 def setup():
@@ -87,7 +88,7 @@ async def test_execute_image_generation_request(
 
     expected_b64_image = "base64encodedimage"
     mock_image_websocket_response = ImageGenerationWebsocketResponse(
-        node_id=mock_node.uid, request_id=MOCK_UUID, images=[expected_b64_image]
+        node_id=mock_node.uid, request_id=REQUEST_ID, images=[expected_b64_image]
     )
 
     node_repository.receive_for_image_generation_request = AsyncMock(
@@ -108,7 +109,7 @@ async def test_execute_image_edit_request(node_repository, image_edit_request):
 
     expected_b64_image = "base64encodedimage"
     mock_image_websocket_response = ImageGenerationWebsocketResponse(
-        node_id=mock_node.uid, request_id=MOCK_UUID, images=[expected_b64_image]
+        node_id=mock_node.uid, request_id=REQUEST_ID, images=[expected_b64_image]
     )
 
     node_repository.receive_for_image_generation_request = AsyncMock(
