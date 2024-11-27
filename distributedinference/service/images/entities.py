@@ -102,3 +102,4 @@ class ImageGenerationWebsocketResponse(BaseModel):
     node_id: UUID = Field(description="The node ID that processed the request")
     request_id: str = Field(description="Unique ID for the request")
     images: List[str] = Field(description="Base64 encoded images as output")
+    error: Optional[str] = Field(description="Error message if the request failed")

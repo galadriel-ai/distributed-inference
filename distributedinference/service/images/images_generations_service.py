@@ -59,9 +59,9 @@ async def execute(
     response = await node_repository.receive_for_image_generation_request(
         node.uid, websocket_request.request_id
     )
-    if not response:
+    if not response or response.error is not None:
         logger.error(
-            f"Image generation service request {websocket_request.request_id} failed with error response"
+            f"Image generation service request {websocket_request.request_id} failed with error response: {response.error if response else "no response"}"
         )
         raise error_responses.InternalServerAPIError()
 

@@ -996,6 +996,7 @@ class NodeRepository:
                     node_id=node_id,
                     request_id=data["request_id"],
                     images=data["images"],
+                    error=data["error"],
                 )
             except Exception:
                 logger.warning(
