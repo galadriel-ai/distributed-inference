@@ -256,3 +256,17 @@ class UnsupportedModelError(APIErrorResponse):
 
     def to_message(self) -> str:
         return f"Your requested model {self.model_name} is currently not supported."
+
+
+class UnsupportedRequestParameterError(APIErrorResponse):
+    def __init__(self, message: str):
+        self.message = message
+
+    def to_status_code(self) -> int:
+        return status.HTTP_400_BAD_REQUEST
+
+    def to_code(self) -> str:
+        return "unsupported_request_parameter"
+
+    def to_message(self) -> str:
+        return f"Unsupported request parameter: {self.message}"
