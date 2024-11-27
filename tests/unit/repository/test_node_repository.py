@@ -266,6 +266,7 @@ async def test_save_node_info(node_repository, session_provider):
             cpu_model="Intel i7",
             cpu_count=8,
             ram=16,
+            power_limit=350,
             network_download_speed=1000,
             network_upload_speed=1000,
             operating_system="Linux",
@@ -291,6 +292,7 @@ async def test_save_node_info(node_repository, session_provider):
     assert data["cpu_model"] == node_info.specs.cpu_model
     assert data["cpu_count"] == node_info.specs.cpu_count
     assert data["ram"] == node_info.specs.ram
+    assert data["power_limit"] == node_info.specs.power_limit
     assert data["network_download_speed"] == node_info.specs.network_download_speed
     assert data["network_upload_speed"] == node_info.specs.network_upload_speed
     assert data["operating_system"] == node_info.specs.operating_system

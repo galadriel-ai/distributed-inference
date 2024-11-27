@@ -77,6 +77,7 @@ async def test_node_success():
             cpu_model="Intel i7",
             cpu_count=8,
             ram=16,
+            power_limit=350,
             network_download_speed=1000,
             network_upload_speed=1000,
             operating_system="Linux",

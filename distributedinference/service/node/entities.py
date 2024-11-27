@@ -44,6 +44,9 @@ class NodeInfoRequest(BaseModel):
     cpu_model: Optional[str] = Field(description="CPU model", default=None)
     cpu_count: Optional[int] = Field(description="CPU cores count", default=None)
     ram: Optional[int] = Field(description="RAM in MB", default=None)
+    power_limit: Optional[int] = Field(
+        description="GPU power limit in Watts", default=None
+    )
     network_download_speed: Optional[float] = Field(
         description="Network download speed in Mbps", default=None
     )
@@ -152,6 +155,7 @@ class PostNodeInfoRequest(BaseModel):
     cpu_model: str = Field(description="CPU model")
     cpu_count: int = Field(description="CPU cores count")
     ram: int = Field(description="RAM in MB")
+    power_limit: Optional[int] = Field(description="Power limit in Watts", default=None)
     network_download_speed: float = Field(description="Network download speed in Mbps")
     network_upload_speed: float = Field(description="Network upload speed in Mbps")
     operating_system: str = Field(description="Operating system")
