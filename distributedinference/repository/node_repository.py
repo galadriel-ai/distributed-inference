@@ -261,6 +261,7 @@ SELECT
     cpu_model,
     cpu_count,
     ram,
+    power_limit,
     network_download_speed,
     network_upload_speed,
     operating_system,
