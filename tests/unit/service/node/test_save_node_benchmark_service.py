@@ -28,7 +28,6 @@ def _get_node_info() -> FullNodeInfo:
             cpu_model="Intel i7",
             cpu_count=4,
             ram=16,
-            power_limit=350,
             network_download_speed=1000,
             network_upload_speed=1000,
             operating_system="Linux",
