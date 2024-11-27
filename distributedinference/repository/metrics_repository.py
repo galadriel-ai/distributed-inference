@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from typing import List
+from typing import Tuple
+from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
@@ -8,6 +10,7 @@ from distributedinference import api_logger
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.tokens_repository import TotalTokensResponse
 from distributedinference.utils.timer import async_timer
 
 logger = api_logger.get()
@@ -32,22 +35,14 @@ LEFT JOIN node_benchmark nb on ni.id = nb.node_id AND nm.model_name = nb.model_n
 WHERE nm.status::text LIKE 'RUNNING%';
 """
 
-SQL_GET_TOTAL_TOKENS_BY_NODE_IDS = """
-SELECT
-    producer_node_info_id,
-    model_name,
-    SUM(total_tokens) AS total_tokens
-FROM usage_tokens
-WHERE producer_node_info_id = ANY(:node_ids)
-GROUP BY producer_node_info_id, model_name;
-"""
-
 SQL_GET_ALL_NODE_TOTAL_TOKENS = """
 SELECT
     producer_node_info_id,
     model_name,
-    SUM(total_tokens) AS total_tokens
+    SUM(total_tokens) AS total_tokens,
+    MAX(id) AS max_id
 FROM usage_tokens
+WHERE (:last_id IS NULL OR id > :last_id)
 GROUP BY producer_node_info_id, model_name;
 """
 
@@ -125,8 +120,11 @@ class MetricsRepository:
         return tokens
 
     @async_timer("metrics_repository.get_all_nodes_total_tokens", logger=logger)
-    async def get_all_nodes_total_tokens(self) -> List[NodeModelTotalTokens]:
+    async def get_all_nodes_total_tokens(
+        self, start_from_id: Optional[UUID] = None
+    ) -> TotalTokensResponse:
         tokens = []
+        max_id = start_from_id
         async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_ALL_NODE_TOTAL_TOKENS))
             for row in rows:
@@ -137,4 +135,6 @@ class MetricsRepository:
                         total_tokens=row.total_tokens,
                     )
                 )
-        return tokens
+                if max_id is None or row.max_id > max_id:
+                    max_id = row.max_id
+        return TotalTokensResponse(usage=tokens, last_id=max_id)

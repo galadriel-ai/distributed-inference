@@ -1,4 +1,6 @@
 from typing import List
+from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -76,6 +78,8 @@ node_costs_gauge = Gauge(
     "node_costs", "Node GPU 1h rent costs per model", ["model_name"]
 )
 
+node_tokens_last_id = None
+
 
 @router.get("", include_in_schema=False)
 async def get_metrics(
@@ -84,6 +88,7 @@ async def get_metrics(
         dependencies.get_metrics_repository
     ),
 ):
+    global node_tokens_last_id
     registry = _get_registry()
     _clear()
 
@@ -122,7 +127,9 @@ async def get_metrics(
         if metrics.rtt:
             node_rtt_gauge.labels(node_uid).set(metrics.rtt)
 
-    await _set_node_tokens(metrics_repository)
+    node_tokens_last_id = await _set_node_tokens(
+        metrics_repository, node_tokens_last_id
+    )
     await _set_node_costs(nodes)
     await sql_engine_metrics.execute()
     await node_status_metrics.execute(metrics_repository)
@@ -153,14 +160,23 @@ def _clear():
 
 
 async def _set_node_tokens(
-    metrics_repository: MetricsRepository,
-):
-    node_usage_total_tokens = await metrics_repository.get_all_nodes_total_tokens()
+    metrics_repository: MetricsRepository, start_from_id: Optional[UUID] = None
+) -> Optional[UUID]:
+    node_usage_total_tokens = await metrics_repository.get_all_nodes_total_tokens(
+        start_from_id=start_from_id
+    )
 
-    for usage in node_usage_total_tokens:
-        node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(
-            usage.total_tokens
-        )
+    for usage in node_usage_total_tokens.usage:
+        # we're incrementing the gauge with the new values
+        if start_from_id:
+            node_tokens_gauge.labels(usage.model_name, usage.node_uid).inc(
+                usage.total_tokens
+            )
+        else:
+            node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(
+                usage.total_tokens
+            )
+    return node_usage_total_tokens.last_id
 
 
 async def _set_node_costs(nodes: List[NodeBenchmark]):

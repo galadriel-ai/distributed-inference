@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from datetime import datetime
 from typing import List
+from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
@@ -178,6 +179,19 @@ class UsageTokens:
 @dataclass
 class TimedUsageTokens(UsageTokens):
     created_at: datetime
+
+
+@dataclass
+class UsageNodeModelTotalTokens:
+    model_name: str
+    node_uid: UUID
+    total_tokens: int
+
+
+@dataclass
+class TotalTokensResponse:
+    usage: List[UsageNodeModelTotalTokens]
+    last_id: Optional[UUID]
 
 
 @dataclass
