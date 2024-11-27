@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -25,7 +25,7 @@ class HealthCheckRequest(BaseModel):
 class HealthCheckGPUUtilization(BaseModel):
     gpu_percent: int = Field(description="GPU utilization, percent")
     vram_percent: int = Field(description="VRAM utilization, percent")
-    power_percent: Optional[int] = Field(description="Power utilization, percent", default=None)
+    power_percent: int = Field(description="Power utilization, percent")
 
 
 class HealthCheckResponse(BaseModel):
