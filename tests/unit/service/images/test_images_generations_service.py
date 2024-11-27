@@ -95,7 +95,10 @@ async def test_execute_image_generation_request(
 
     expected_b64_image = "base64encodedimage"
     mock_image_websocket_response = ImageGenerationWebsocketResponse(
-        node_id=mock_node.uid, request_id=REQUEST_ID, images=[expected_b64_image], error=None
+        node_id=mock_node.uid,
+        request_id=REQUEST_ID,
+        images=[expected_b64_image],
+        error=None,
     )
 
     node_repository.receive_for_image_generation_request = AsyncMock(
@@ -124,7 +127,10 @@ async def test_execute_image_edit_request(
 
     expected_b64_image = "base64encodedimage"
     mock_image_websocket_response = ImageGenerationWebsocketResponse(
-        node_id=mock_node.uid, request_id=REQUEST_ID, images=[expected_b64_image], error=None
+        node_id=mock_node.uid,
+        request_id=REQUEST_ID,
+        images=[expected_b64_image],
+        error=None,
     )
 
     node_repository.receive_for_image_generation_request = AsyncMock(
