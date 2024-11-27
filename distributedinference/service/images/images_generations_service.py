@@ -48,7 +48,9 @@ async def execute(
     else:
         raise ValueError("Invalid request type for image generation")
 
-    logger.info(f"Executing image generation service request: {websocket_request.request_id}")
+    logger.info(
+        f"Executing image generation service request: {websocket_request.request_id}"
+    )
 
     node = _select_node(node_repository, request.model)
     if not node:

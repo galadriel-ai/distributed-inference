@@ -56,7 +56,9 @@ async def execute(
 
     # By default, the model type is LLM to support backward compatibility
     enum_model_type = (
-        ModelType.DIFFUSION if model_type and model_type.upper() == "DIFFUSION" else ModelType.LLM
+        ModelType.DIFFUSION
+        if model_type and model_type.upper() == "DIFFUSION"
+        else ModelType.LLM
     )
 
     await _check_before_connecting(

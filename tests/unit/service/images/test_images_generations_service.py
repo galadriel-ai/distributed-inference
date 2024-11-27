@@ -106,7 +106,9 @@ async def test_execute_image_generation_request(
         return_value="https://example.com/image.png"
     )
 
-    response = await service.execute(image_generation_request, node_repository, gsc_client)
+    response = await service.execute(
+        image_generation_request, node_repository, gsc_client
+    )
 
     assert isinstance(response, ImagesResponse)
     assert len(response.data) == 1
@@ -114,7 +116,9 @@ async def test_execute_image_generation_request(
 
 
 @pytest.mark.asyncio
-async def test_execute_image_edit_request(node_repository, image_edit_request, gsc_client):
+async def test_execute_image_edit_request(
+    node_repository, image_edit_request, gsc_client
+):
     mock_node = create_mock_node()
     service._select_node = MagicMock(return_value=mock_node)
 
@@ -137,7 +141,9 @@ async def test_execute_image_edit_request(node_repository, image_edit_request, g
 
 
 @pytest.mark.asyncio
-async def test_execute_no_available_nodes(node_repository, image_generation_request, gsc_client):
+async def test_execute_no_available_nodes(
+    node_repository, image_generation_request, gsc_client
+):
     service._select_node = MagicMock(return_value=None)
 
     with pytest.raises(service.error_responses.NoAvailableInferenceNodesError):
@@ -145,7 +151,9 @@ async def test_execute_no_available_nodes(node_repository, image_generation_requ
 
 
 @pytest.mark.asyncio
-async def test_execute_internal_server_error(node_repository, image_generation_request, gsc_client):
+async def test_execute_internal_server_error(
+    node_repository, image_generation_request, gsc_client
+):
     service._select_node = MagicMock(return_value=create_mock_node())
     node_repository.receive_for_image_generation_request.return_value = None
 

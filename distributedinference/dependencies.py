@@ -105,6 +105,7 @@ def init_globals():
         )
     _google_cloud_storage_client = GoogleCloudStorage()
 
+
 def get_node_repository() -> NodeRepository:
     return _node_repository_instance
 

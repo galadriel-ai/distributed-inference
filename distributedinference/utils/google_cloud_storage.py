@@ -12,13 +12,17 @@ class GoogleCloudStorage:
         else:
             self.client = None
 
-    async def decode_b64_and_upload_to_gcs(self, request_id: str, image_b64: str) -> str:
+    async def decode_b64_and_upload_to_gcs(
+        self, request_id: str, image_b64: str
+    ) -> str:
         if not self.client:
             # TODO probably save it locally and return the path?
             return image_b64
         image_bytes = base64.b64decode(image_b64)
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, self._upload_to_gcs, request_id, image_bytes)
+        return await loop.run_in_executor(
+            None, self._upload_to_gcs, request_id, image_bytes
+        )
 
     def _upload_to_gcs(self, request_id: str, image_bytes: bytes) -> str:
         bucket = self.client.bucket(settings.GCS_BUCKET_NAME)

@@ -39,10 +39,14 @@ async def generations(
     user: User = Depends(authentication.validate_api_key_header),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
-    gcs_client: GoogleCloudStorage = Depends(dependencies.get_google_cloud_storage_client),
+    gcs_client: GoogleCloudStorage = Depends(
+        dependencies.get_google_cloud_storage_client
+    ),
 ):
     analytics.track_event(user.uid, AnalyticsEvent(EventName.IMAGE_GENERATION, {}))
-    return await images_generations_service.execute(request, node_repository, gcs_client)
+    return await images_generations_service.execute(
+        request, node_repository, gcs_client
+    )
 
 
 @router.post(
@@ -77,7 +81,9 @@ async def edits(
     api_user: User = Depends(authentication.validate_api_key_header),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
-    gcs_client: GoogleCloudStorage = Depends(dependencies.get_google_cloud_storage_client),
+    gcs_client: GoogleCloudStorage = Depends(
+        dependencies.get_google_cloud_storage_client
+    ),
 ):
     analytics.track_event(api_user.uid, AnalyticsEvent(EventName.IMAGE_EDIT, {}))
     image_bytes = await image.read()
