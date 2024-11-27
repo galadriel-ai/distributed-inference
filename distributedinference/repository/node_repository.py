@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import asyncio
 import random
 import time
@@ -929,7 +931,7 @@ class NodeRepository:
             "disk_percent": health.disk_percent,
             "gpu_percent": [gpu.gpu_percent for gpu in health.gpus],
             "vram_percent": [gpu.vram_percent for gpu in health.gpus],
-            "power_percent": [gpu.power_percent for gpu in health.gpus],
+            "power_percent": _get_healthcheck_power_percent(health),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -998,3 +1000,9 @@ class NodeRepository:
                 version=row.version,
             )
         return specs
+
+
+def _get_healthcheck_power_percent(health: NodeHealth):
+    if not health.gpus or health.gpus[0].power_percent is None:
+        return []
+    return [gpu.power_percent for gpu in health.gpus]
