@@ -13,7 +13,10 @@ from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.auth import authentication
-from distributedinference.service.images import images_generations_service
+from distributedinference.service.images import (
+    images_edits_handler_service,
+    images_generations_handler_service,
+)
 from distributedinference.service.images.entities import (
     ImageEditRequest,
     ImageGenerationRequest,
@@ -44,7 +47,7 @@ async def generations(
     ),
 ):
     analytics.track_event(user.uid, AnalyticsEvent(EventName.IMAGE_GENERATION, {}))
-    return await images_generations_service.execute(
+    return await images_generations_handler_service.execute(
         request, node_repository, gcs_client
     )
 
@@ -97,7 +100,7 @@ async def edits(
         size=size,
         user=user,
     )
-    return await images_generations_service.execute(
+    return await images_edits_handler_service.execute(
         request,
         node_repository,
         gcs_client,

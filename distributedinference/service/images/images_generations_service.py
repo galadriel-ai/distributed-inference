@@ -1,4 +1,3 @@
-import base64
 from typing import Optional, Union
 from openai.types.images_response import ImagesResponse
 from openai.types.image import Image
@@ -6,10 +5,6 @@ from distributedinference.domain.node.entities import ConnectedNode
 from uuid_extensions import uuid7
 
 from distributedinference import api_logger
-from distributedinference.analytics.analytics import Analytics
-from distributedinference.repository.metrics_queue_repository import (
-    MetricsQueueRepository,
-)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
@@ -96,7 +91,4 @@ def _select_node(
     node_repository: NodeRepository,
     request_model: str,
 ) -> Optional[ConnectedNode]:
-    node = node_repository.select_node(request_model)
-    if not node:
-        return None
-    return node
+    return node_repository.select_node(request_model)
