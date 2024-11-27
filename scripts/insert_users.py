@@ -2,6 +2,7 @@ import asyncio
 
 from uuid_extensions import uuid7
 
+from database.database import FREE_TIER_UUID
 from distributedinference.domain.user.entities import User
 from distributedinference.repository import connection
 from distributedinference.repository.user_repository import UserRepository
@@ -13,6 +14,7 @@ USERS = [
             uid=uuid7(),
             name="gpu user",
             email="gpu@user.com",
+            usage_tier_id=FREE_TIER_UUID,
         ),
     ),
     (
@@ -21,6 +23,7 @@ USERS = [
             uid=uuid7(),
             name="consumer user",
             email="consumer@user.com",
+            usage_tier_id=FREE_TIER_UUID,
         ),
     ),
 ]
@@ -28,14 +31,15 @@ USERS = [
 
 async def main():
     connection.init_defaults()
-    repo = UserRepository(connection.get_session_provider())
+    repo = UserRepository(
+        connection.get_session_provider(), connection.get_session_provider_read()
+    )
 
     print(f"Inserting {len(USERS)} users.")
     for api_key, user in USERS:
         user = await _insert_user(repo, user)
         await _insert_api_key(user, api_key, repo)
-        read_repo = UserRepository(connection.get_session_provider())
-        inserted_user = await read_repo.get_user_by_api_key(api_key)
+        inserted_user = await repo.get_user_by_api_key(api_key)
         print(f"  Inserted user {inserted_user} with api_key='{api_key}'")
 
 
