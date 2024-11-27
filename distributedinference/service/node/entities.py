@@ -44,9 +44,7 @@ class NodeInfoRequest(BaseModel):
     cpu_model: Optional[str] = Field(description="CPU model", default=None)
     cpu_count: Optional[int] = Field(description="CPU cores count", default=None)
     ram: Optional[int] = Field(description="RAM in MB", default=None)
-    power_limit: Optional[int] = Field(
-        description="GPU power limit in Watts", default=None
-    )
+    power_limit: Optional[int] = Field(description="GPU power limit in Watts", default=None)
     network_download_speed: Optional[float] = Field(
         description="Network download speed in Mbps", default=None
     )
