@@ -510,7 +510,7 @@ async def test_execute_node_image_generation_model():
         user,
         NODE_INFO,
         "model",
-        "image_generation_model",
+        "DIFFUSION",
         node_repository,
         benchmark_repository,
         Mock(),

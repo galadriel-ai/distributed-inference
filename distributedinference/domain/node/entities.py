@@ -153,6 +153,11 @@ class NodeHealth:
     gpus: List[NodeGPUHealth]
 
 
+class ModelType(Enum):
+    LLM = 1
+    DIFFUSION = 2
+
+
 @dataclass
 class ConnectedNode:
     uid: UUID
@@ -163,7 +168,7 @@ class ConnectedNode:
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
     node_status: NodeStatus
-    image_generation_model: Optional[str] = None
+    model_type: ModelType = ModelType.LLM
     is_self_hosted: bool = False
     version: Optional[Version] = None
 

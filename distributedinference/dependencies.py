@@ -24,6 +24,7 @@ from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
+from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 
 _node_repository_instance: NodeRepository
 _node_stats_repository_instance: NodeStatsRepository
@@ -39,6 +40,7 @@ _analytics: Analytics
 _protocol_handler: ProtocolHandler
 
 _grafana_api_repository: GrafanaApiRepository
+_google_cloud_storage_client: GoogleCloudStorage
 
 
 # pylint: disable=W0603
@@ -56,6 +58,7 @@ def init_globals():
     global _analytics
     global _protocol_handler
     global _grafana_api_repository
+    global _google_cloud_storage_client
     _node_repository_instance = NodeRepository(
         get_session_provider(),
         get_session_provider_read(),
@@ -100,7 +103,7 @@ def init_globals():
         _grafana_api_repository = GrafanaApiRepository(
             settings.GRAFANA_API_BASE_URL, settings.GRAFANA_API_KEY
         )
-
+    _google_cloud_storage_client = GoogleCloudStorage()
 
 def get_node_repository() -> NodeRepository:
     return _node_repository_instance
@@ -156,3 +159,7 @@ def get_rate_limit_repository() -> RateLimitRepository:
 
 def get_billing_repository() -> BillingRepository:
     return _billing_repository
+
+
+def get_google_cloud_storage_client() -> GoogleCloudStorage:
+    return _google_cloud_storage_client

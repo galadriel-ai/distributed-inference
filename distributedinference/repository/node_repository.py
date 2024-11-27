@@ -9,8 +9,9 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
-import sqlalchemy
+from fastapi.encoders import jsonable_encoder
 from fastapi import status as http_status
+import sqlalchemy
 from openai.types.chat import ChatCompletionChunk
 from uuid_extensions import uuid7
 
@@ -553,22 +554,6 @@ class NodeRepository:
 
         return random.choice(eligible_nodes)
 
-    def select_image_generation_node(self, model: str) -> Optional[ConnectedNode]:
-        if not self._connected_nodes:
-            return None
-
-        eligible_nodes = [
-            node
-            for node in self._connected_nodes.values()
-            if node.image_generation_model == model
-            and self._can_handle_new_request(node)
-        ]
-
-        if not eligible_nodes:
-            return None
-
-        return random.choice(eligible_nodes)
-
     def _can_handle_new_request(self, node: ConnectedNode) -> bool:
         if not node.is_self_hosted and not node.node_status.is_healthy():
             return False
@@ -967,7 +952,7 @@ class NodeRepository:
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
             connected_node.request_incoming_queues[request.request_id] = asyncio.Queue()
-            await connected_node.websocket.send_json(asdict(request))
+            await connected_node.websocket.send_json(jsonable_encoder(request))
             return True
         return False
 

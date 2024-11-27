@@ -21,6 +21,8 @@ from distributedinference.service.images.entities import (
 )
 from openai.types.images_response import ImagesResponse, Image
 
+from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
+
 USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
 MOCK_UUID = UUID("a2e3db51-7a7f-473c-8cd5-390e7ed1e1c7")
 REQUEST_ID = str(uuid1())
@@ -65,6 +67,11 @@ def node_repository():
     return AsyncMock(NodeRepository)
 
 
+@pytest.fixture
+def gsc_client():
+    return AsyncMock(GoogleCloudStorage)
+
+
 def create_mock_node():
     return ConnectedNode(
         uid=UUID("6b1f4b1e-0b1b-4b1b-8b1b-1b1f4b1e0b1c"),
@@ -81,7 +88,7 @@ def create_mock_node():
 
 @pytest.mark.asyncio
 async def test_execute_image_generation_request(
-    node_repository, image_generation_request
+    node_repository, image_generation_request, gsc_client
 ):
     mock_node = create_mock_node()
     service._select_node = MagicMock(return_value=mock_node)
@@ -95,15 +102,19 @@ async def test_execute_image_generation_request(
         return_value=mock_image_websocket_response
     )
 
-    response = await service.execute(image_generation_request, node_repository)
+    gsc_client.decode_b64_and_upload_to_gcs = AsyncMock(
+        return_value="https://example.com/image.png"
+    )
+
+    response = await service.execute(image_generation_request, node_repository, gsc_client)
 
     assert isinstance(response, ImagesResponse)
     assert len(response.data) == 1
-    assert response.data[0].b64_json == expected_b64_image
+    assert response.data[0].url == "https://example.com/image.png"
 
 
 @pytest.mark.asyncio
-async def test_execute_image_edit_request(node_repository, image_edit_request):
+async def test_execute_image_edit_request(node_repository, image_edit_request, gsc_client):
     mock_node = create_mock_node()
     service._select_node = MagicMock(return_value=mock_node)
 
@@ -115,31 +126,32 @@ async def test_execute_image_edit_request(node_repository, image_edit_request):
     node_repository.receive_for_image_generation_request = AsyncMock(
         return_value=mock_image_websocket_response
     )
-    response = await service.execute(image_edit_request, node_repository)
+    gsc_client.decode_b64_and_upload_to_gcs = AsyncMock(
+        return_value="https://example.com/image.png"
+    )
+    response = await service.execute(image_edit_request, node_repository, gsc_client)
 
     assert isinstance(response, ImagesResponse)
     assert len(response.data) == 1
-    assert response.data[0].b64_json == expected_b64_image
+    assert response.data[0].url == "https://example.com/image.png"
 
 
-@patch("distributedinference.service.images.images_generations_service._select_node")
 @pytest.mark.asyncio
-async def test_execute_no_available_nodes(
-    mock_select_node, node_repository, image_generation_request
-):
-    mock_select_node.return_value = None
+async def test_execute_no_available_nodes(node_repository, image_generation_request, gsc_client):
+    service._select_node = MagicMock(return_value=None)
 
     with pytest.raises(service.error_responses.NoAvailableInferenceNodesError):
-        await service.execute(image_generation_request, node_repository)
+        await service.execute(image_generation_request, node_repository, gsc_client)
 
 
-@patch("distributedinference.service.images.images_generations_service._select_node")
 @pytest.mark.asyncio
-async def test_execute_internal_server_error(
-    mock_select_node, node_repository, image_generation_request
-):
-    mock_select_node.return_value = AsyncMock()
+async def test_execute_internal_server_error(node_repository, image_generation_request, gsc_client):
+    service._select_node = MagicMock(return_value=create_mock_node())
     node_repository.receive_for_image_generation_request.return_value = None
 
+    gsc_client.decode_b64_and_upload_to_gcs = AsyncMock(
+        side_effect=Exception("Failed to upload image to GCS")
+    )
+
     with pytest.raises(service.error_responses.InternalServerAPIError):
-        await service.execute(image_generation_request, node_repository)
+        await service.execute(image_generation_request, node_repository, gsc_client)
