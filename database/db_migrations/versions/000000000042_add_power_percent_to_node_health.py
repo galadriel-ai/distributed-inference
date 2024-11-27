@@ -1,7 +1,7 @@
 """Add power_percent to node health
 
-Revision ID: 000000000043
-Revises: 000000000042
+Revision ID: 000000000042
+Revises: 000000000041
 Create Date: 2024-11-21 13:29:11.196013
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "000000000043"
-down_revision = "000000000042"
+revision = "000000000042"
+down_revision = "000000000041"
 branch_labels = None
 depends_on = None
 
