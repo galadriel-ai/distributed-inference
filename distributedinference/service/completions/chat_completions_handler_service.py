@@ -45,19 +45,8 @@ async def execute(
     metrics_queue_repository: MetricsQueueRepository,
     analytics: Analytics,
 ) -> Union[StreamingResponse, ChatCompletion]:
-    request.model = _match_model_name(request.model)
-    if request.model not in settings.SUPPORTED_MODELS:
-        raise error_responses.UnsupportedModelError(model_name=request.model)
-    _check_max_tokens(request)
 
-    if request.model not in settings.MODELS_SUPPORTING_TOOLS:
-        # Required to ensure the dict value does not get set at all
-        # in request.to_openai_chat_completion()
-        request.tool_choice = None
-        if request.tools:
-            raise error_responses.ValidationTypeError(
-                "The given model does not support tools"
-            )
+    _request_checks(request)
 
     rate_limit_info = await rate_limit_use_case.execute(
         request.model, user, tokens_repository, rate_limit_repository
@@ -151,3 +140,30 @@ def _check_max_tokens(request: ChatCompletionRequest) -> None:
             f"The given max_tokens exceeds the maximum the model supports: {max_supported_tokens}"
         )
     return None
+
+
+# Reject the request if the response_format.type is json_object
+# Reason: existing bug of vllm https://github.com/vllm-project/vllm/issues/4070
+def _check_response_format(request: ChatCompletionRequest) -> None:
+    if request.response_format and request.response_format.type == "json_object":
+        raise error_responses.UnsupportedRequestParameterError(
+            "The given response_format is not supported. Please use 'json_schema' instead"
+        )
+
+
+def _request_checks(request: ChatCompletionRequest) -> None:
+    request.model = _match_model_name(request.model)
+    if request.model not in settings.SUPPORTED_MODELS:
+        raise error_responses.UnsupportedModelError(model_name=request.model)
+    _check_max_tokens(request)
+
+    if request.model not in settings.MODELS_SUPPORTING_TOOLS:
+        # Required to ensure the dict value does not get set at all
+        # in request.to_openai_chat_completion()
+        request.tool_choice = None
+        if request.tools:
+            raise error_responses.ValidationTypeError(
+                "The given model does not support tools"
+            )
+
+    _check_response_format(request)

@@ -29,6 +29,7 @@ def _request_to_node_info(
         created_at=node_info.created_at,
         specs=NodeSpecs(
             gpu_model=request.gpu_model,
+            power_limit=request.power_limit,
             vram=request.vram,
             gpu_count=request.gpu_count,
             cpu_model=request.cpu_model,

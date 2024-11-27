@@ -33,6 +33,7 @@ def _get_node_specs() -> NodeSpecs:
         gpu_model="mock_gpu_model",
         vram=2,
         ram=3,
+        power_limit=350,
         network_download_speed=100,
         network_upload_speed=50,
         operating_system="mock_operating_system",

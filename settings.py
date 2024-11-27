@@ -50,6 +50,9 @@ SUPPORTED_MODELS = {
     "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4": {
         "benchmark_required": False,
     },
+    "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16": {
+        "benchmark_required": False,
+    },
 }
 if not is_production():
     SUPPORTED_MODELS["hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4"] = {
@@ -64,6 +67,9 @@ MODEL_NAME_MAPPING = {
     "llama3.1-70b": "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
     "llama3.1:405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
     "llama3.1-405b": "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
+    "mistral-nemo": "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16",
+    "mistral-nemo:12b": "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16",
+    "mistral-nemo-12b": "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16",
 }
 MODEL_MAX_TOKENS_MAPPING = {
     "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8": 8192,
@@ -71,11 +77,13 @@ MODEL_MAX_TOKENS_MAPPING = {
     "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16": 131072,
     "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4": 131072,
     "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4": 8192,
+    "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16": 128000,
 }
 MODELS_SUPPORTING_TOOLS = [
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
     "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",
     "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4",
+    "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16",
 ]
 
 # Rough estimate for 70% of lowest 3090 GPU node benchmark test
