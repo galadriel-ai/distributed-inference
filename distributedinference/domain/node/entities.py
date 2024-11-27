@@ -99,7 +99,7 @@ class NodeSpecs:
     gpu_model: str
     vram: int
     ram: int
-    power_limit: int
+    power_limit: Optional[int]
     network_download_speed: float
     network_upload_speed: float
     operating_system: str
