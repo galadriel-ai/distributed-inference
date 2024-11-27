@@ -172,9 +172,7 @@ class HealthCheckProtocol:
             disk_percent=response.disk_percent,
             gpus=[
                 NodeGPUHealth(
-                    gpu_percent=gpu.gpu_percent,
-                    vram_percent=gpu.vram_percent,
-                    power_percent=gpu.power_percent,
+                    gpu_percent=gpu.gpu_percent, vram_percent=gpu.vram_percent
                 )
                 for gpu in response.gpus
             ],
