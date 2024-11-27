@@ -904,7 +904,7 @@ class NodeRepository:
                 for row in rows
             ]
 
-    @async_timer("node_repository.save_node_health", logger=logger)
+    @async_timer("node_repository.get_node_status", logger=logger)
     async def get_node_status(self, node_id: UUID) -> Optional[NodeStatus]:
         data = {"node_id": node_id}
         async with self._session_provider_read.get() as session:
