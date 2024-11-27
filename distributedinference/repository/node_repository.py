@@ -67,6 +67,7 @@ SELECT
     ni.cpu_model,
     ni.cpu_count,
     ni.ram,
+    ni.power_limit,
     ni.network_download_speed,
     ni.network_upload_speed,
     ni.operating_system,
@@ -379,6 +380,7 @@ INSERT INTO node_health (
     disk_percent,
     gpu_percent,
     vram_percent,
+    power_percent,
     created_at,
     last_updated_at
 )
@@ -390,6 +392,7 @@ VALUES (
     :disk_percent,
     :gpu_percent,
     :vram_percent,
+    :power_percent,
     :created_at,
     :last_updated_at
 );
