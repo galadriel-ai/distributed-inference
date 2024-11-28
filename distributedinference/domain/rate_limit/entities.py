@@ -48,6 +48,23 @@ class RateLimitResult:
     usage_count: Optional[int]
 
 
+class RateLimitReason(Enum):
+    RPM = "RPM"
+    RPD = "RPD"
+    TPM = "TPM"
+    TPD = "TPD"
+
+
+@dataclass
+class DailyRateLimitResult:
+    rate_limit_reason: Optional[RateLimitReason]
+    retry_after: Optional[int]
+    requests_remaining: Optional[int]
+    tokens_remaining: Optional[int]
+    requests_count: Optional[int]
+    tokens_count: Optional[int]
+
+
 @dataclass
 class RateLimit:
     max_requests: Optional[int]
@@ -56,13 +73,6 @@ class RateLimit:
     remaining_tokens: Optional[int]
     reset_requests: Optional[int]
     reset_tokens: Optional[int]
-
-
-class RateLimitReason(Enum):
-    RPM = "RPM"
-    RPD = "RPD"
-    TPM = "TPM"
-    TPD = "TPD"
 
 
 @dataclass
