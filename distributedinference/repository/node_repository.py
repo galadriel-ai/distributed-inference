@@ -1,5 +1,4 @@
 # pylint: disable=too-many-lines
-
 import asyncio
 import random
 import time
@@ -10,12 +9,16 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
-
-import sqlalchemy
+from fastapi.encoders import jsonable_encoder
 from fastapi import status as http_status
+import sqlalchemy
 from openai.types.chat import ChatCompletionChunk
 from uuid_extensions import uuid7
 
+from distributedinference.service.images.entities import (
+    ImageGenerationWebsocketRequest,
+    ImageGenerationWebsocketResponse,
+)
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import FullNodeInfo
@@ -950,6 +953,16 @@ class NodeRepository:
             return True
         return False
 
+    async def send_image_generation_request(
+        self, node_id: UUID, request: ImageGenerationWebsocketRequest
+    ) -> bool:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            connected_node.request_incoming_queues[request.request_id] = asyncio.Queue()
+            await connected_node.websocket.send_json(jsonable_encoder(request))
+            return True
+        return False
+
     async def receive_for_request(
         self, node_id: UUID, request_id: str
     ) -> Optional[InferenceResponse]:
@@ -976,6 +989,27 @@ class NodeRepository:
                 )
             except Exception:
                 logger.warning(f"Failed to parse chunk, request_id={request_id}")
+                return None
+        return None
+
+    async def receive_for_image_generation_request(
+        self, node_id: UUID, request_id: str
+    ) -> Optional[ImageGenerationWebsocketResponse]:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            data = await connected_node.request_incoming_queues[request_id].get()
+            try:
+                return ImageGenerationWebsocketResponse(
+                    node_id=node_id,
+                    request_id=data["request_id"],
+                    images=data["images"],
+                    error=data["error"],
+                )
+            except Exception:
+                logger.warning(
+                    f"Failed to parse image generation response, request_id={request_id}"
+                )
+                logger.debug(f"Received data: {data}")
                 return None
         return None
 

@@ -88,6 +88,7 @@ async def test_execute_node_no_model_header():
             user,
             NODE_INFO,
             None,
+            None,
             node_repository,
             benchmark_repository,
             Mock(),
@@ -127,6 +128,7 @@ async def test_execute_node_no_benchmark():
             user,
             NODE_INFO,
             "model",
+            None,
             node_repository,
             benchmark_repository,
             Mock(),
@@ -173,6 +175,7 @@ async def test_execute_node_benchmark_too_low():
             user,
             NODE_INFO,
             "model",
+            None,
             node_repository,
             benchmark_repository,
             Mock(),
@@ -225,6 +228,7 @@ async def test_execute_node_benchmark_405B_enough():
             user,
             NODE_INFO,
             model_name,
+            None,
             node_repository,
             benchmark_repository,
             Mock(),
@@ -279,6 +283,7 @@ async def test_node_already_connected_with_other_worker():
             user,
             node_info,
             "model",
+            None,
             node_repository,
             benchmark_repository,
             Mock(),
@@ -326,6 +331,7 @@ async def test_execute_node_already_connected():
             user,
             NODE_INFO,
             "model",
+            None,
             node_repository,
             benchmark_repository,
             Mock(),
@@ -369,6 +375,7 @@ async def test_execute_websocket_disconnect(node_repository: NodeRepository):
         user,
         NODE_INFO,
         "model",
+        None,
         node_repository,
         benchmark_repository,
         Mock(),
@@ -429,6 +436,7 @@ async def test_execute_protocols(node_repository: NodeRepository):
         user,
         NODE_INFO,
         "model",
+        None,
         node_repository,
         benchmark_repository,
         Mock(),
@@ -459,3 +467,59 @@ async def test_execute_protocols(node_repository: NodeRepository):
     node_repository.update_node_to_disconnected.assert_called_once_with(
         NODE_UUID, NodeStatus.STOPPED
     )
+
+
+async def test_execute_node_image_generation_model():
+    websocket = AsyncMock(spec=WebSocket)
+    websocket.receive_text = AsyncMock()
+
+    user = User(
+        uid=uuid.uuid4(),
+        name="test_name",
+        email="test_user_email",
+        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
+    )
+    node_repository = AsyncMock(spec=NodeRepository)
+
+    node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
+    node_repository.get_node_metrics_by_ids = AsyncMock(
+        return_value={NODE_UUID: node_metrics}
+    )
+    node_repository.register_node = Mock(return_value=True)
+
+    ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
+    ping_pong_protocol.add_node = Mock()
+    ping_pong_protocol.remove_node = AsyncMock()
+    health_check_protocol = AsyncMock(spec=PingPongProtocol)
+    health_check_protocol.add_node = Mock()
+    health_check_protocol.remove_node = AsyncMock()
+    protocol_handler = AsyncMock(spec=ProtocolHandler)
+    protocol_handler.get = Mock(side_effect=[ping_pong_protocol, health_check_protocol])
+
+    benchmark_repository = AsyncMock(spec=BenchmarkRepository)
+    benchmark_repository.get_node_benchmark = AsyncMock(
+        return_value=NodeBenchmark(
+            node_id=NODE_UUID,
+            model_name="model",
+            benchmark_tokens_per_second=10000,
+            gpu_model="NVIDIA GeForce RTX 4090",
+        )
+    )
+
+    await websocket_service.execute(
+        websocket,
+        user,
+        NODE_INFO,
+        "model",
+        "DIFFUSION",
+        node_repository,
+        benchmark_repository,
+        Mock(),
+        protocol_handler,
+    )
+
+    websocket.accept.assert_called_once()
+    node_repository.register_node.assert_called_once()
+    node_repository.set_node_connection_timestamp.assert_called_once()
+    ping_pong_protocol.add_node.assert_called_once()
+    health_check_protocol.add_node.assert_not_called()

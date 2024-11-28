@@ -74,6 +74,7 @@ async def websocket_endpoint(
         user,
         node_info,
         websocket.headers.get("Model"),
+        websocket.headers.get("Model-Type"),
         node_repository,
         benchmark_repository,
         analytics,
