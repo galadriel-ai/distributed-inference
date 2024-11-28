@@ -8,46 +8,25 @@ from distributedinference import api_logger
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service import error_responses
-from distributedinference.service.images.entities import (
-    ImageEditRequest,
-    ImageGenerationRequest,
-    ImageGenerationWebsocketRequest,
-)
+from distributedinference.service.images.entities import ImageGenerationWebsocketRequest
+
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 
 logger = api_logger.get()
 
 
 async def execute(
-    request: Union[ImageGenerationRequest, ImageEditRequest],
+    websocket_request: ImageGenerationWebsocketRequest,
+    model: str,
+    response_format: str,
     node_repository: NodeRepository,
     gcs_client: GoogleCloudStorage,
 ) -> ImagesResponse:
-    websocket_request = None
-    if isinstance(request, ImageGenerationRequest):
-        websocket_request = ImageGenerationWebsocketRequest(
-            request_id=str(uuid7()),
-            prompt=request.prompt,
-            image=None,
-            n=request.n,
-            size=request.size,
-        )
-    elif isinstance(request, ImageEditRequest):
-        websocket_request = ImageGenerationWebsocketRequest(
-            request_id=str(uuid7()),
-            prompt=request.prompt,
-            image=request.image,
-            n=request.n,
-            size=request.size,
-        )
-    else:
-        raise ValueError("Invalid request type for image generation")
-
     logger.info(
         f"Executing image generation service request: {websocket_request.request_id}"
     )
 
-    node = _select_node(node_repository, request.model)
+    node = _select_node(node_repository, model)
     if not node:
         logger.error(
             f"No available nodes to process the image generation request {websocket_request.request_id}"
@@ -67,7 +46,7 @@ async def execute(
 
     logger.info(f"Image generation service request: {response} received")
     # Return base64 encoded images if it is requested
-    if request.response_format == "b64_json":
+    if response_format == "b64_json":
         return ImagesResponse(
             created=len(response.images),
             data=[Image(b64_json=image) for image in response.images],

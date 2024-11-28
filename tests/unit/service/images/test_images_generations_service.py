@@ -8,11 +8,18 @@ import pytest
 
 from distributedinference.domain.node.entities import (
     ConnectedNode,
-    InferenceResponse,
     NodeStatus,
 )
 from distributedinference.repository.node_repository import NodeRepository
-from distributedinference.service.images import images_generations_service as service
+from distributedinference.service.images import (
+    images_generations_handler_service as generation_handler_service,
+)
+from distributedinference.service.images import (
+    images_edits_handler_service as edit_handler_service,
+)
+from distributedinference.service.images import (
+    images_generations_service as generation_service,
+)
 from distributedinference.service.images.entities import (
     ImageGenerationRequest,
     ImageEditRequest,
@@ -91,7 +98,7 @@ async def test_execute_image_generation_request(
     node_repository, image_generation_request, gsc_client
 ):
     mock_node = create_mock_node()
-    service._select_node = MagicMock(return_value=mock_node)
+    generation_service._select_node = MagicMock(return_value=mock_node)
 
     expected_b64_image = "base64encodedimage"
     mock_image_websocket_response = ImageGenerationWebsocketResponse(
@@ -109,7 +116,7 @@ async def test_execute_image_generation_request(
         return_value="https://example.com/image.png"
     )
 
-    response = await service.execute(
+    response = await generation_handler_service.execute(
         image_generation_request, node_repository, gsc_client
     )
 
@@ -123,7 +130,7 @@ async def test_execute_image_edit_request(
     node_repository, image_edit_request, gsc_client
 ):
     mock_node = create_mock_node()
-    service._select_node = MagicMock(return_value=mock_node)
+    generation_service._select_node = MagicMock(return_value=mock_node)
 
     expected_b64_image = "base64encodedimage"
     mock_image_websocket_response = ImageGenerationWebsocketResponse(
@@ -139,7 +146,9 @@ async def test_execute_image_edit_request(
     gsc_client.decode_b64_and_upload_to_gcs = AsyncMock(
         return_value="https://example.com/image.png"
     )
-    response = await service.execute(image_edit_request, node_repository, gsc_client)
+    response = await edit_handler_service.execute(
+        image_edit_request, node_repository, gsc_client
+    )
 
     assert isinstance(response, ImagesResponse)
     assert len(response.data) == 1
@@ -150,22 +159,28 @@ async def test_execute_image_edit_request(
 async def test_execute_no_available_nodes(
     node_repository, image_generation_request, gsc_client
 ):
-    service._select_node = MagicMock(return_value=None)
+    generation_service._select_node = MagicMock(return_value=None)
 
-    with pytest.raises(service.error_responses.NoAvailableInferenceNodesError):
-        await service.execute(image_generation_request, node_repository, gsc_client)
+    with pytest.raises(
+        generation_service.error_responses.NoAvailableInferenceNodesError
+    ):
+        await generation_handler_service.execute(
+            image_generation_request, node_repository, gsc_client
+        )
 
 
 @pytest.mark.asyncio
 async def test_execute_internal_server_error(
     node_repository, image_generation_request, gsc_client
 ):
-    service._select_node = MagicMock(return_value=create_mock_node())
+    generation_service._select_node = MagicMock(return_value=create_mock_node())
     node_repository.receive_for_image_generation_request.return_value = None
 
     gsc_client.decode_b64_and_upload_to_gcs = AsyncMock(
         side_effect=Exception("Failed to upload image to GCS")
     )
 
-    with pytest.raises(service.error_responses.InternalServerAPIError):
-        await service.execute(image_generation_request, node_repository, gsc_client)
+    with pytest.raises(generation_service.error_responses.InternalServerAPIError):
+        await generation_handler_service.execute(
+            image_generation_request, node_repository, gsc_client
+        )
