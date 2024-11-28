@@ -11,12 +11,12 @@ from distributedinference.repository.tokens_repository import TokensRepository
 async def execute(
     repository: TokensRepository,
     model: str,
-    request_limit_value: Optional[int],
-    token_limit_value: Optional[int],
+    max_requests_per_day: Optional[int],
+    max_tokens_per_day: Optional[int],
     user_id: UUID,
 ) -> DailyRateLimitResult:
     usage = await repository.get_daily_usage(user_id, model)
-    if not (request_limit_value or token_limit_value):
+    if not (max_requests_per_day or max_tokens_per_day):
         return DailyRateLimitResult(
             rate_limit_reason=None,
             retry_after=None,
@@ -25,29 +25,29 @@ async def execute(
             requests_count=usage.total_requests_count,
             tokens_count=usage.total_tokens_count,
         )
-    if usage.total_requests_count >= request_limit_value:
+    if usage.total_requests_count >= max_requests_per_day:
         return DailyRateLimitResult(
             rate_limit_reason=RateLimitReason.RPD,
             retry_after=_seconds_until_utc_midnight(),
             requests_remaining=0,
-            tokens_remaining=token_limit_value - usage.total_tokens_count,
+            tokens_remaining=max_tokens_per_day - usage.total_tokens_count,
             requests_count=usage.total_requests_count,
             tokens_count=usage.total_tokens_count,
         )
-    elif usage.total_tokens_count >= token_limit_value:
+    elif usage.total_tokens_count >= max_tokens_per_day:
         return DailyRateLimitResult(
             rate_limit_reason=RateLimitReason.TPD,
             retry_after=_seconds_until_utc_midnight(),
-            requests_remaining=0,
-            tokens_remaining=token_limit_value - usage.total_tokens_count,
+            requests_remaining=max_requests_per_day - usage.total_requests_count,
+            tokens_remaining=0,
             requests_count=usage.total_requests_count,
             tokens_count=usage.total_tokens_count,
         )
     return DailyRateLimitResult(
         rate_limit_reason=None,
         retry_after=None,
-        requests_remaining=request_limit_value - usage.total_requests_count,
-        tokens_remaining=token_limit_value - usage.total_tokens_count,
+        requests_remaining=max_requests_per_day - usage.total_requests_count,
+        tokens_remaining=max_tokens_per_day - usage.total_tokens_count,
         requests_count=usage.total_requests_count,
         tokens_count=usage.total_tokens_count,
     )

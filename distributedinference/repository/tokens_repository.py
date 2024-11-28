@@ -386,18 +386,11 @@ class TokensRepository:
                 data,
             )
             row = result.first()
-            if row:
-                return DailyUserModelUsage(
-                    model_name=row.model_name,
-                    total_tokens_count=row.tokens_consumed or 0,
-                    total_requests_count=row.requests_count or 0,
-                    date=row.usage_date,
-                )
             return DailyUserModelUsage(
-                model_name=model,
-                total_tokens_count=0,
-                total_requests_count=0,
-                date=date.today(),
+                model_name=row.model_name if row else model,
+                total_tokens_count=row.tokens_consumed if row else 0,
+                total_requests_count=row.requests_count if row else 0,
+                date=row.usage_date if row else date.today(),
             )
 
     @async_timer("tokens_repository.update_daily_usage", logger=logger)
