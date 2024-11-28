@@ -293,7 +293,7 @@ class InferenceExecutor:
         )
         await self.tokens_repository.increment_daily_usage(
             user_profile_id=user_uid,
-            model_name=request.model,
+            model=request.model,
             tokens_to_add=usage.total_tokens,
         )
 

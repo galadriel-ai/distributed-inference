@@ -124,6 +124,7 @@ GROUP BY model_name;
 
 SQL_GET_USER_MODEL_DAILY_USAGE = """
 SELECT
+    model_name,
     tokens_consumed,
     requests_count,
     usage_date
@@ -141,14 +142,18 @@ INSERT INTO user_model_usage_24h (
     model_name,
     usage_date,
     tokens_consumed,
-    requests_count
+    requests_count,
+    created_at,
+    last_updated_at
 )
 VALUES (
     :user_profile_id,
     :model_name,
     :usage_date,
     :tokens_to_add,
-    :requests_to_add
+    :requests_to_add,
+    :created_at,
+    :last_updated_at
 )
 ON CONFLICT (user_profile_id, model_name, usage_date)
 DO UPDATE SET
@@ -401,30 +406,19 @@ class TokensRepository:
         user_profile_id: UUID,
         model: str,
         tokens_to_add: int,
-    ) -> DailyUserModelUsage:
+    ) -> None:
         data = {
             "user_profile_id": user_profile_id,
             "model_name": model,
-            "tokens_consumed": tokens_to_add,
-            "requests_count": 1,
+            "tokens_to_add": tokens_to_add,
+            "requests_to_add": 1,
             "usage_date": date.today(),
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
         }
-        async with self._session_provider_read.get() as session:
-            result = await session.execute(
+        async with self._session_provider.get() as session:
+            await session.execute(
                 sqlalchemy.text(SQL_INCREMENT_USER_MODEL_DAILY_USAGE),
                 data,
             )
-            row = result.first()
-            if row:
-                return DailyUserModelUsage(
-                    model_name=row.model_name,
-                    total_tokens_count=row.tokens_consumed or 0,
-                    total_requests_count=row.requests_count or 0,
-                    date=row.usage_date,
-                )
-            return DailyUserModelUsage(
-                model_name=model,
-                total_tokens_count=0,
-                total_requests_count=0,
-                date=date.today(),
-            )
+            await session.commit()
