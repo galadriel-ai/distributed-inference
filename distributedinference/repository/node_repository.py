@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import asyncio
 import random
 import time
@@ -8,12 +9,16 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
-
-import sqlalchemy
+from fastapi.encoders import jsonable_encoder
 from fastapi import status as http_status
+import sqlalchemy
 from openai.types.chat import ChatCompletionChunk
 from uuid_extensions import uuid7
 
+from distributedinference.service.images.entities import (
+    ImageGenerationWebsocketRequest,
+    ImageGenerationWebsocketResponse,
+)
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import FullNodeInfo
@@ -67,6 +72,7 @@ SELECT
     ni.cpu_model,
     ni.cpu_count,
     ni.ram,
+    ni.power_limit,
     ni.network_download_speed,
     ni.network_upload_speed,
     ni.operating_system,
@@ -258,6 +264,7 @@ SELECT
     cpu_model,
     cpu_count,
     ram,
+    power_limit,
     network_download_speed,
     network_upload_speed,
     operating_system,
@@ -279,6 +286,7 @@ SET
     cpu_model = :cpu_model,
     cpu_count = :cpu_count,
     ram = :ram,
+    power_limit = :power_limit,
     network_download_speed = :network_download_speed,
     network_upload_speed = :network_upload_speed,
     operating_system = :operating_system,
@@ -378,6 +386,7 @@ INSERT INTO node_health (
     disk_percent,
     gpu_percent,
     vram_percent,
+    power_percent,
     created_at,
     last_updated_at
 )
@@ -389,6 +398,7 @@ VALUES (
     :disk_percent,
     :gpu_percent,
     :vram_percent,
+    :power_percent,
     :created_at,
     :last_updated_at
 );
@@ -805,6 +815,7 @@ class NodeRepository:
             "cpu_model": node_info.specs.cpu_model,
             "cpu_count": node_info.specs.cpu_count,
             "ram": node_info.specs.ram,
+            "power_limit": node_info.specs.power_limit,
             "network_download_speed": node_info.specs.network_download_speed,
             "network_upload_speed": node_info.specs.network_upload_speed,
             "operating_system": node_info.specs.operating_system,
@@ -904,7 +915,7 @@ class NodeRepository:
                 for row in rows
             ]
 
-    @async_timer("node_repository.save_node_health", logger=logger)
+    @async_timer("node_repository.get_node_status", logger=logger)
     async def get_node_status(self, node_id: UUID) -> Optional[NodeStatus]:
         data = {"node_id": node_id}
         async with self._session_provider_read.get() as session:
@@ -924,6 +935,7 @@ class NodeRepository:
             "disk_percent": health.disk_percent,
             "gpu_percent": [gpu.gpu_percent for gpu in health.gpus],
             "vram_percent": [gpu.vram_percent for gpu in health.gpus],
+            "power_percent": _get_healthcheck_power_percent(health),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -938,6 +950,16 @@ class NodeRepository:
             connected_node = self._connected_nodes[node_id]
             connected_node.request_incoming_queues[request.id] = asyncio.Queue()
             await connected_node.websocket.send_json(asdict(request))
+            return True
+        return False
+
+    async def send_image_generation_request(
+        self, node_id: UUID, request: ImageGenerationWebsocketRequest
+    ) -> bool:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            connected_node.request_incoming_queues[request.request_id] = asyncio.Queue()
+            await connected_node.websocket.send_json(jsonable_encoder(request))
             return True
         return False
 
@@ -970,6 +992,27 @@ class NodeRepository:
                 return None
         return None
 
+    async def receive_for_image_generation_request(
+        self, node_id: UUID, request_id: str
+    ) -> Optional[ImageGenerationWebsocketResponse]:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            data = await connected_node.request_incoming_queues[request_id].get()
+            try:
+                return ImageGenerationWebsocketResponse(
+                    node_id=node_id,
+                    request_id=data["request_id"],
+                    images=data["images"],
+                    error=data["error"],
+                )
+            except Exception:
+                logger.warning(
+                    f"Failed to parse image generation response, request_id={request_id}"
+                )
+                logger.debug(f"Received data: {data}")
+                return None
+        return None
+
     async def cleanup_request(self, node_id: UUID, request_id: str):
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
@@ -984,6 +1027,7 @@ class NodeRepository:
                 gpu_model=row.gpu_model,
                 vram=row.vram,
                 ram=row.ram,
+                power_limit=row.power_limit,
                 network_download_speed=row.network_download_speed,
                 network_upload_speed=row.network_upload_speed,
                 operating_system=row.operating_system,
@@ -991,3 +1035,9 @@ class NodeRepository:
                 version=row.version,
             )
         return specs
+
+
+def _get_healthcheck_power_percent(health: NodeHealth):
+    if not health.gpus or health.gpus[0].power_percent is None:
+        return []
+    return [gpu.power_percent for gpu in health.gpus]

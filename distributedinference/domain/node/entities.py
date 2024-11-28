@@ -99,6 +99,7 @@ class NodeSpecs:
     gpu_model: str
     vram: int
     ram: int
+    power_limit: Optional[int]
     network_download_speed: float
     network_upload_speed: float
     operating_system: str
@@ -142,6 +143,7 @@ class NodeBenchmark:
 class NodeGPUHealth:
     gpu_percent: int
     vram_percent: int
+    power_percent: Optional[int]
 
 
 @dataclass
@@ -151,6 +153,11 @@ class NodeHealth:
     ram_percent: int
     disk_percent: int
     gpus: List[NodeGPUHealth]
+
+
+class ModelType(Enum):
+    LLM = 1
+    DIFFUSION = 2
 
 
 @dataclass
@@ -163,6 +170,7 @@ class ConnectedNode:
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
     node_status: NodeStatus
+    model_type: ModelType = ModelType.LLM
     is_self_hosted: bool = False
     version: Optional[Version] = None
 

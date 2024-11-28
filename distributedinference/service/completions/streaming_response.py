@@ -1,5 +1,5 @@
 import json
-from collections.abc import AsyncIterator
+from typing import AsyncIterator
 
 from fastapi.responses import StreamingResponse
 from starlette.types import Send

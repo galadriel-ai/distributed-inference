@@ -315,6 +315,20 @@ def test_model_name_translation_exact_model():
     assert actual_exact_name == expected_exact_name
 
 
+def test_check_response_format():
+    request = ChatCompletionRequest(
+        messages=[Message(content="content", role="role")],
+        model="llama3.1:70b",
+        stream=False,
+        tools=None,
+        response_format={"type": "json_object"},
+    )
+
+    with pytest.raises(error_responses.UnsupportedRequestParameterError) as e:
+        service._check_response_format(request)
+        assert e is not None
+
+
 def test_model_max_context_handling():
     for model in settings.SUPPORTED_MODELS:
         service._check_max_tokens(

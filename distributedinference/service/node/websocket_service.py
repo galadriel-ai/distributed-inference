@@ -18,7 +18,7 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.node import node_status_transition
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import ConnectedNode, ModelType
 from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import NodeStatus
@@ -37,12 +37,13 @@ from distributedinference.service.node.protocol.protocol_handler import Protocol
 logger = api_logger.get()
 
 
-# pylint: disable=R0913, R0914
+# pylint: disable=R0912, R0913, R0914
 async def execute(
     websocket: WebSocket,
     user: User,
     node_info: FullNodeInfo,
     model_name: Optional[str],
+    model_type: Optional[str],
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
     analytics: Analytics,
@@ -53,8 +54,20 @@ async def execute(
     )
     await websocket.accept()
 
+    # By default, the model type is LLM to support backward compatibility
+    enum_model_type = (
+        ModelType.DIFFUSION
+        if model_type and model_type.upper() == "DIFFUSION"
+        else ModelType.LLM
+    )
+
     await _check_before_connecting(
-        model_name, node_info, node_repository, benchmark_repository, user
+        model_name,
+        enum_model_type,
+        node_info,
+        node_repository,
+        benchmark_repository,
+        user,
     )
     formatted_model_name: str = model_name or ""
 
@@ -73,6 +86,7 @@ async def execute(
         uid=node_uid,
         user_id=user.uid,
         model=formatted_model_name,
+        model_type=enum_model_type,
         vram=node_info.specs.vram,
         connected_at=int(time.time()),
         websocket=websocket,
@@ -110,9 +124,11 @@ async def execute(
     health_check_protocol: HealthCheckProtocol = protocol_handler.get(
         HealthCheckProtocol.PROTOCOL_NAME
     )
-    health_check_protocol.add_node(
-        node_info.node_id, node_info.name, node_info.specs.version, websocket
-    )
+    # Skip health check for image generation models
+    if node.model_type is ModelType.LLM:
+        health_check_protocol.add_node(
+            node_info.node_id, node_info.name, node_info.specs.version, websocket
+        )
     try:
         while True:
             data = await websocket.receive_text()
@@ -223,6 +239,7 @@ async def _get_new_node_stopped_status(
 
 async def _check_before_connecting(
     model_name: Optional[str],
+    enum_model_type: ModelType,
     node_info: FullNodeInfo,
     node_repository: NodeRepository,
     benchmark_repository: BenchmarkRepository,
@@ -241,6 +258,10 @@ async def _check_before_connecting(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="A existing connection has already been established",
         )
+    # Skip benchmarking check for diffusion models
+    if enum_model_type is ModelType.DIFFUSION:
+        return
+
     if not model_name:
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION, reason='No "Model" header provided'
