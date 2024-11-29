@@ -3,9 +3,11 @@ from typing import Optional
 from openai.types.images_response import ImagesResponse
 from openai.types.image import Image
 
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import (
+    ConnectedNode,
+    ImageGenerationWebsocketRequest,
+)
 from distributedinference.service import error_responses
-from distributedinference.service.images.entities import ImageGenerationWebsocketRequest
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 from distributedinference import api_logger
 from distributedinference.repository.node_repository import NodeRepository
@@ -34,7 +36,7 @@ async def execute(
     )
     if not response or response.error is not None:
         logger.error(
-            f"Image generation service request {websocket_request.request_id} failed with error response: {response.error if response else "no response"}"
+            f"Image generation service request {websocket_request.request_id} failed with error response: {response.error if response else 'no response'}"
         )
         raise error_responses.InternalServerAPIError()
 

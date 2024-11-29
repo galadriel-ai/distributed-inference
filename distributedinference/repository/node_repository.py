@@ -15,12 +15,12 @@ import sqlalchemy
 from openai.types.chat import ChatCompletionChunk
 from uuid_extensions import uuid7
 
-from distributedinference.service.images.entities import (
+from distributedinference import api_logger
+from distributedinference.domain.node.entities import (
+    ConnectedNode,
     ImageGenerationWebsocketRequest,
     ImageGenerationWebsocketResponse,
 )
-from distributedinference import api_logger
-from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes

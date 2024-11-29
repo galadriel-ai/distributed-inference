@@ -12,6 +12,7 @@ from fastapi import WebSocket
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat import CompletionCreateParams
 from packaging.version import Version
+from pydantic import BaseModel, Field
 
 from distributedinference.service import error_responses
 
@@ -256,3 +257,19 @@ class CheckHealthResponse:
     node_id: UUID
     is_healthy: bool
     error: Optional[InferenceError] = None
+
+
+# The websocket request for image generations and edits
+class ImageGenerationWebsocketRequest(BaseModel):
+    request_id: str = Field(description="A unique identifier for the request")
+    prompt: str = Field(description="Prompt for the image generation")
+    image: Optional[str] = Field(description="Base64 encoded image as input")
+    n: int = Field(description="Number of images to generate")
+    size: Optional[str] = Field(description="The size of the generated images.")
+
+
+class ImageGenerationWebsocketResponse(BaseModel):
+    node_id: UUID = Field(description="The node ID that processed the request")
+    request_id: str = Field(description="Unique ID for the request")
+    images: List[str] = Field(description="Base64 encoded images as output")
+    error: Optional[str] = Field(description="Error message if the request failed")

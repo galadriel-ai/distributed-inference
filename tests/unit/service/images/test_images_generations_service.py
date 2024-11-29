@@ -8,6 +8,7 @@ import pytest
 from distributedinference.domain.node import run_images_generation_use_case
 from distributedinference.domain.node.entities import (
     ConnectedNode,
+    ImageGenerationWebsocketResponse,
     NodeStatus,
 )
 from distributedinference.repository.node_repository import NodeRepository
@@ -24,7 +25,6 @@ from distributedinference.service.images import (
 from distributedinference.service.images.entities import (
     ImageGenerationRequest,
     ImageEditRequest,
-    ImageGenerationWebsocketResponse,
 )
 from openai.types.images_response import ImagesResponse
 
