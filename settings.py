@@ -170,7 +170,7 @@ TOGETHER_AI_API_KEY = os.getenv("TOGETHER_AI_API_KEY", None)
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY", None)
 
-GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "gs://galadriel-imagegen-us")
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "galadriel-imagegen-us")
 
 SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID")
 SLACK_OAUTH_TOKEN = os.getenv("SLACK_OAUTH_TOKEN")

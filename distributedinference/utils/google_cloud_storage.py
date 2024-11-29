@@ -1,14 +1,20 @@
 import asyncio
 import base64
 from google.cloud import storage
+from distributedinference import api_logger
 import settings
 
+logger = api_logger.get()
 
 # pylint: disable=too-few-public-methods
 class GoogleCloudStorage:
     def __init__(self):
         if settings.is_production():
-            self.client = storage.Client()
+            try:
+                self.client = storage.Client()
+            except Exception as e:
+                logger.error(f"Error initializing Google Cloud Storage client: {e}")
+                self.client = None
         else:
             self.client = None
 
