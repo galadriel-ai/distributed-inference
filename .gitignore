@@ -15,3 +15,6 @@ prometheus
 tests/reports/
 
 scripts/openapi.json
+
+# google cloud credentials
+sidekik-ai-7191fc59c17c.json
