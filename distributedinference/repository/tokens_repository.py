@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date
 from datetime import datetime
 from typing import List
 from uuid import UUID
@@ -10,7 +11,7 @@ from distributedinference import api_logger
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import historic_uuid
 from distributedinference.repository.utils import historic_uuid_seconds
-from distributedinference.repository.utils import utcnow
+from distributedinference.repository.utils import utcnow, utctoday
 from distributedinference.utils.timer import async_timer
 
 SQL_INSERT_USAGE_TOKENS = """
@@ -121,6 +122,46 @@ WHERE
 GROUP BY model_name;
 """
 
+SQL_GET_USER_MODEL_DAILY_USAGE = """
+SELECT
+    model_name,
+    tokens_consumed,
+    requests_count,
+    usage_date
+FROM
+    user_model_usage_24h
+WHERE
+    user_profile_id = :user_profile_id
+    AND model_name = :model_name
+    AND usage_date = CURRENT_DATE;
+"""
+
+SQL_INCREMENT_USER_MODEL_DAILY_USAGE = """
+INSERT INTO user_model_usage_24h (
+    user_profile_id,
+    model_name,
+    usage_date,
+    tokens_consumed,
+    requests_count,
+    created_at,
+    last_updated_at
+)
+VALUES (
+    :user_profile_id,
+    :model_name,
+    :usage_date,
+    :tokens_to_add,
+    :requests_to_add,
+    :created_at,
+    :last_updated_at
+)
+ON CONFLICT (user_profile_id, model_name, usage_date)
+DO UPDATE SET
+    tokens_consumed = user_model_usage_24h.tokens_consumed + EXCLUDED.tokens_consumed,
+    requests_count = user_model_usage_24h.requests_count + EXCLUDED.requests_count,
+    last_updated_at = NOW();
+"""
+
 logger = api_logger.get()
 
 
@@ -140,17 +181,18 @@ class TimedUsageTokens(UsageTokens):
 
 
 @dataclass
-class UsageNodeModelTotalTokens:
-    model_name: str
-    node_uid: UUID
-    total_tokens: int
-
-
-@dataclass
 class UsageInformation:
     count: int
     oldest_usage_id: UUID
     oldest_usage_created_at: datetime
+
+
+@dataclass
+class DailyUserModelUsage:
+    model_name: str
+    total_requests_count: int
+    total_tokens_count: int
+    date: date
 
 
 @dataclass
@@ -332,3 +374,44 @@ class TokensRepository:
                     )
                 )
         return results
+
+    @async_timer("tokens_repository.get_daily_usage", logger=logger)
+    async def get_daily_usage(
+        self, user_profile_id: UUID, model: str
+    ) -> DailyUserModelUsage:
+        data = {"user_profile_id": user_profile_id, "model_name": model}
+        async with self._session_provider_read.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_USER_MODEL_DAILY_USAGE),
+                data,
+            )
+            row = result.first()
+            return DailyUserModelUsage(
+                model_name=row.model_name if row else model,
+                total_tokens_count=row.tokens_consumed if row else 0,
+                total_requests_count=row.requests_count if row else 0,
+                date=row.usage_date if row else utctoday(),
+            )
+
+    @async_timer("tokens_repository.update_daily_usage", logger=logger)
+    async def increment_daily_usage(
+        self,
+        user_profile_id: UUID,
+        model: str,
+        tokens_to_add: int,
+    ) -> None:
+        data = {
+            "user_profile_id": user_profile_id,
+            "model_name": model,
+            "tokens_to_add": tokens_to_add,
+            "requests_to_add": 1,
+            "usage_date": utctoday(),
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(
+                sqlalchemy.text(SQL_INCREMENT_USER_MODEL_DAILY_USAGE),
+                data,
+            )
+            await session.commit()
