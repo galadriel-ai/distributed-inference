@@ -22,7 +22,6 @@ async def test_no_limit():
         None,
         mock_usage_function,
         USER_ID,
-        60,
     )
     assert result == RateLimitResult(
         rate_limited=False,
@@ -38,7 +37,6 @@ async def test_under_usage_max():
         2000,
         mock_usage_function,
         USER_ID,
-        60,
     )
     assert result == RateLimitResult(
         rate_limited=False,
@@ -54,7 +52,6 @@ async def test_over_usage_max():
         1000,
         mock_usage_function,
         USER_ID,
-        60,
     )
     assert result == RateLimitResult(
         rate_limited=True,

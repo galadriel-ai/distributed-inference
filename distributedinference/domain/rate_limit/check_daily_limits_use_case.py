@@ -30,7 +30,7 @@ async def execute(
             rate_limit_reason=RateLimitReason.RPD,
             retry_after=_seconds_until_utc_midnight(),
             requests_remaining=0,
-            tokens_remaining=max_tokens_per_day - usage.total_tokens_count,
+            tokens_remaining=max(max_tokens_per_day - usage.total_tokens_count, 0),
             requests_count=usage.total_requests_count,
             tokens_count=usage.total_tokens_count,
         )
@@ -38,7 +38,9 @@ async def execute(
         return DailyRateLimitResult(
             rate_limit_reason=RateLimitReason.TPD,
             retry_after=_seconds_until_utc_midnight(),
-            requests_remaining=max_requests_per_day - usage.total_requests_count,
+            requests_remaining=max(
+                max_requests_per_day - usage.total_requests_count, 0
+            ),
             tokens_remaining=0,
             requests_count=usage.total_requests_count,
             tokens_count=usage.total_tokens_count,

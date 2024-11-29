@@ -8,15 +8,16 @@ from uuid import UUID
 from distributedinference.domain.rate_limit.entities import RateLimitResult
 from distributedinference.repository.tokens_repository import UsageInformation
 
+SECONDS = 60
+
 
 async def execute(
     model: str,
     limit_value: Optional[int],
     usage_function: Callable[[UUID, str, int], Awaitable[UsageInformation]],
     user_id: UUID,
-    seconds: int,
 ) -> RateLimitResult:
-    usage = await usage_function(user_id, model, seconds)
+    usage = await usage_function(user_id, model, SECONDS)
     if not limit_value:
         return RateLimitResult(
             rate_limited=False,
@@ -26,7 +27,7 @@ async def execute(
         )
     if usage.count >= limit_value:
         time_to_reset = max(
-            seconds - _elapsed_seconds(usage.oldest_usage_created_at), 0
+            SECONDS - _elapsed_seconds(usage.oldest_usage_created_at), 0
         )
         return RateLimitResult(
             rate_limited=True,

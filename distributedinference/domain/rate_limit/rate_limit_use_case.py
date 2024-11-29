@@ -46,14 +46,12 @@ async def execute(
         usage_limits.max_requests_per_minute,
         tokens_repository.get_requests_usage_by_time_and_consumer,
         user.uid,
-        SECONDS_IN_A_MINUTE,
     )
     tokens_min_result = await check_limit_use_case.execute(
         model,
         usage_limits.max_tokens_per_minute,
         tokens_repository.get_tokens_usage_by_time_and_consumer,
         user.uid,
-        SECONDS_IN_A_MINUTE,
     )
     day_rate_limit_result = await check_daily_limits_use_case.execute(
         tokens_repository,
