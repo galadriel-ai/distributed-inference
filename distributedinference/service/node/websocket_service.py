@@ -37,7 +37,7 @@ from distributedinference.service.node.protocol.protocol_handler import Protocol
 logger = api_logger.get()
 
 
-# pylint: disable=R0912, R0913, R0914
+# pylint: disable=R0912, R0913, R0914, R0915
 async def execute(
     websocket: WebSocket,
     user: User,
@@ -76,6 +76,9 @@ async def execute(
     node_status = await node_status_transition.execute(
         node_repository, node_uid, NodeStatusEvent.START
     )
+    # TODO: override the node_status to RUNNING for image generation models
+    if enum_model_type is ModelType.DIFFUSION:
+        node_status = NodeStatus.RUNNING
     await node_repository.set_node_connection_timestamp(
         node_uid,
         formatted_model_name,
@@ -124,7 +127,7 @@ async def execute(
     health_check_protocol: HealthCheckProtocol = protocol_handler.get(
         HealthCheckProtocol.PROTOCOL_NAME
     )
-    # Skip health check for image generation models
+    # TODO: Skip health check for image generation models
     if node.model_type is ModelType.LLM:
         health_check_protocol.add_node(
             node_info.node_id, node_info.name, node_info.specs.version, websocket
