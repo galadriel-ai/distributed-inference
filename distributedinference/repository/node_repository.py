@@ -20,7 +20,7 @@ from distributedinference.service.images.entities import (
     ImageGenerationWebsocketResponse,
 )
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import ConnectedNode, ModelType
+from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
@@ -670,7 +670,7 @@ class NodeRepository:
         return [
             node
             for node in self._connected_nodes.values()
-            if not node.node_status.is_healthy() and node.model_type == ModelType.LLM
+            if not node.node_status.is_healthy()
         ]
 
     def get_locally_connected_nodes(self) -> List[ConnectedNode]:
