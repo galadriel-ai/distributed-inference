@@ -11,7 +11,7 @@ from distributedinference import api_logger
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import historic_uuid
 from distributedinference.repository.utils import historic_uuid_seconds
-from distributedinference.repository.utils import utcnow
+from distributedinference.repository.utils import utcnow, utctoday
 from distributedinference.utils.timer import async_timer
 
 SQL_INSERT_USAGE_TOKENS = """
@@ -390,7 +390,7 @@ class TokensRepository:
                 model_name=row.model_name if row else model,
                 total_tokens_count=row.tokens_consumed if row else 0,
                 total_requests_count=row.requests_count if row else 0,
-                date=row.usage_date if row else date.today(),
+                date=row.usage_date if row else utctoday(),
             )
 
     @async_timer("tokens_repository.update_daily_usage", logger=logger)
@@ -405,7 +405,7 @@ class TokensRepository:
             "model_name": model,
             "tokens_to_add": tokens_to_add,
             "requests_to_add": 1,
-            "usage_date": date.today(),
+            "usage_date": utctoday(),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }

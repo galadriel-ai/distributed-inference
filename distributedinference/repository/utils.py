@@ -1,4 +1,5 @@
 import time
+from datetime import date
 from datetime import datetime
 from datetime import timezone
 from typing import Optional
@@ -12,6 +13,10 @@ def utcnow() -> datetime:
     utc = datetime.now(timezone.utc)
     utc_without_tz = utc.replace(tzinfo=None)
     return utc_without_tz
+
+
+def utctoday() -> date:
+    return datetime.now(timezone.utc).date()
 
 
 def historic_uuid(hours_back: int) -> UUID:

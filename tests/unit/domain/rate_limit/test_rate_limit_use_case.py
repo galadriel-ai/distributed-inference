@@ -2,14 +2,12 @@ from decimal import Decimal
 from datetime import date
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from unittest.mock import patch
 from uuid import UUID
 
 import pytest
 from uuid_extensions import uuid7
 
 from distributedinference.domain.rate_limit import rate_limit_use_case as use_case
-from distributedinference.domain.rate_limit.entities import DailyRateLimitResult
 from distributedinference.domain.rate_limit.entities import RateLimitReason
 from distributedinference.domain.rate_limit.entities import RateLimitResult
 from distributedinference.domain.rate_limit.entities import UsageLimits
@@ -18,6 +16,7 @@ from distributedinference.repository.rate_limit_repository import RateLimitRepos
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import DailyUserModelUsage
 from distributedinference.repository.tokens_repository import UsageInformation
+from distributedinference.repository.utils import utctoday
 
 
 @pytest.fixture
@@ -72,7 +71,7 @@ async def test_rate_limit_not_exceeded(
         total_requests_count=0,
         total_tokens_count=0,
         model_name="model",
-        date=date.today(),
+        date=utctoday(),
     )
 
     result = await use_case.execute(
@@ -95,7 +94,7 @@ async def test_rate_limit_exceeded_by_requests_per_minute(
         total_requests_count=0,
         total_tokens_count=0,
         model_name="model",
-        date=date.today(),
+        date=utctoday(),
     )
 
     use_case.check_limit_use_case = AsyncMock()
@@ -151,7 +150,7 @@ async def test_rate_limit_exceeded_by_requests_per_day(
         total_requests_count=100,
         total_tokens_count=100,
         model_name="model",
-        date=date.today(),
+        date=utctoday(),
     )
 
     class UsageMock:
@@ -202,7 +201,7 @@ async def test_rate_limit_exceeded_by_tokens_per_minute(
         total_requests_count=0,
         total_tokens_count=900,
         model_name="model",
-        date=date.today(),
+        date=utctoday(),
     )
 
     class UsageMock:
@@ -251,7 +250,7 @@ async def test_rate_limit_exceeded_by_tokens_per_day(
         total_requests_count=1,
         total_tokens_count=10000,
         model_name="model",
-        date=date.today(),
+        date=utctoday(),
     )
 
     class UsageMock:
