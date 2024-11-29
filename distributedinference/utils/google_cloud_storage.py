@@ -6,6 +6,7 @@ import settings
 
 logger = api_logger.get()
 
+
 # pylint: disable=too-few-public-methods
 class GoogleCloudStorage:
     def __init__(self):
