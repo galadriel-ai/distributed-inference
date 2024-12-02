@@ -21,6 +21,7 @@ INSERT INTO user_profile (
     email,
     authentication_id,
     is_password_set,
+    terms_of_service_agreement_at,
     created_at,
     last_updated_at
 )
@@ -31,6 +32,7 @@ VALUES (
     :email,
     :authentication_id,
     :is_password_set,
+    :terms_of_service_agreement_at,
     :created_at,
     :last_updated_at
 );
@@ -147,6 +149,7 @@ class UserRepository:
             "email": user.email,
             "authentication_id": user.authentication_id,
             "is_password_set": is_password_set,
+            "terms_of_service_agreement_at": utcnow(),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
