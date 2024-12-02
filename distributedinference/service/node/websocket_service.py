@@ -73,8 +73,11 @@ async def execute(
 
     node_uid = node_info.node_id
     connect_time = time.time()
+    skip_benchmarking = False
+    if enum_model_type is ModelType.DIFFUSION:
+        skip_benchmarking = True
     node_status = await node_status_transition.execute(
-        node_repository, node_uid, NodeStatusEvent.START
+        node_repository, node_uid, NodeStatusEvent.START, skip_benchmarking
     )
     await node_repository.set_node_connection_timestamp(
         node_uid,

@@ -2,7 +2,7 @@ from enum import Enum
 from uuid import UUID
 
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import ModelType, NodeStatus
+from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
 
@@ -47,14 +47,18 @@ logger = api_logger.get()
 
 
 async def execute(
-    node_repository: NodeRepository, node_id: UUID, event: NodeStatusEvent
+    node_repository: NodeRepository,
+    node_id: UUID,
+    event: NodeStatusEvent,
+    skip_benchmarking: bool = False,
 ) -> NodeStatus:
     status = await node_repository.get_node_status(node_id=node_id)
 
     # TODO: what if status in incorrect state?
     if event == event.START:
-        if node_repository.get_node_model_type(node_id) is ModelType.DIFFUSION:
-            logger.info(f"Node {node_id} is a diffusion node, skipping benchmarking")
+        # TODO: skip_benchmarking is a temp feature for image generation nodes only
+        if skip_benchmarking:
+            logger.info(f"Node {node_id} is skipping benchmarking")
             return NodeStatus.RUNNING
         status = START_TRANSITIONS.get(status)
         if not status:

@@ -104,3 +104,12 @@ async def test_transitions():
         result = await node_status_transition.execute(node_repository, NODE_ID, event)
         print(f"UnitTest, event: {event}, status: {status}, expected: {expected}")
         assert result == expected
+
+
+async def test_skip_benchmarking():
+    node_repository = _get_node_repository(None)
+    result = await node_status_transition.execute(
+        node_repository, NODE_ID, NodeStatusEvent.START, skip_benchmarking=True
+    )
+    print(f"UnitTest, skip_benchmarking: {result}")
+    assert result == NodeStatus.RUNNING
