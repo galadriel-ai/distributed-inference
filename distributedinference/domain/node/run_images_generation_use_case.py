@@ -53,10 +53,10 @@ async def execute(
         data=[
             Image(
                 url=await gcs_client.decode_b64_and_upload_to_gcs(
-                    websocket_request.request_id, image
+                    websocket_request.request_id, idx, image
                 )
             )
-            for image in response.images
+            for idx, image in enumerate(response.images)
         ],
     )
 
