@@ -1,7 +1,7 @@
 """Add user_profile table terms_of_service_agreement_at optional datetime column
 
-Revision ID: 000000000042
-Revises: 000000000041
+Revision ID: 000000000045
+Revises: 000000000044
 Create Date: 2024-11-26 15:05:31.972289
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "000000000042"
-down_revision = "000000000041"
+revision = "000000000045"
+down_revision = "000000000044"
 branch_labels = None
 depends_on = None
 
