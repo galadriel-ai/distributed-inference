@@ -2,7 +2,7 @@ from enum import Enum
 from uuid import UUID
 
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import NodeStatus
+from distributedinference.domain.node.entities import ModelType, NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
 
@@ -53,6 +53,9 @@ async def execute(
 
     # TODO: what if status in incorrect state?
     if event == event.START:
+        if node_repository.get_node_model_type(node_id) is ModelType.DIFFUSION:
+            logger.info(f"Node {node_id} is a diffusion node, skipping benchmarking")
+            return NodeStatus.RUNNING
         status = START_TRANSITIONS.get(status)
         if not status:
             _print_error(status, event)

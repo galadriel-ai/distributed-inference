@@ -76,9 +76,6 @@ async def execute(
     node_status = await node_status_transition.execute(
         node_repository, node_uid, NodeStatusEvent.START
     )
-    # TODO: override the node_status to RUNNING for image generation models
-    if enum_model_type is ModelType.DIFFUSION:
-        node_status = NodeStatus.RUNNING
     await node_repository.set_node_connection_timestamp(
         node_uid,
         formatted_model_name,
