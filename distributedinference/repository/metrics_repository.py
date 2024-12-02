@@ -8,7 +8,6 @@ from distributedinference import api_logger
 from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.connection import SessionProvider
-from distributedinference.repository.tokens_repository import UsageNodeModelTotalTokens
 from distributedinference.utils.timer import async_timer
 
 logger = api_logger.get()
@@ -60,6 +59,13 @@ class NodeStatusesByModel:
     count: int
 
 
+@dataclass
+class NodeModelTotalTokens:
+    model_name: str
+    node_uid: UUID
+    total_tokens: int
+
+
 class MetricsRepository:
 
     def __init__(
@@ -101,7 +107,7 @@ class MetricsRepository:
     @async_timer("metrics_repository.get_total_tokens_by_node_ids", logger=logger)
     async def get_total_tokens_by_node_ids(
         self, node_ids: List[UUID]
-    ) -> List[UsageNodeModelTotalTokens]:
+    ) -> List[NodeModelTotalTokens]:
         data = {"node_ids": node_ids}
         tokens = []
         async with self._session_provider_read.get() as session:
@@ -110,7 +116,7 @@ class MetricsRepository:
             )
             for row in rows:
                 tokens.append(
-                    UsageNodeModelTotalTokens(
+                    NodeModelTotalTokens(
                         node_uid=row.producer_node_info_id,
                         model_name=row.model_name,
                         total_tokens=row.total_tokens,
@@ -119,13 +125,13 @@ class MetricsRepository:
         return tokens
 
     @async_timer("metrics_repository.get_all_nodes_total_tokens", logger=logger)
-    async def get_all_nodes_total_tokens(self) -> List[UsageNodeModelTotalTokens]:
+    async def get_all_nodes_total_tokens(self) -> List[NodeModelTotalTokens]:
         tokens = []
         async with self._session_provider_read.get() as session:
             rows = await session.execute(sqlalchemy.text(SQL_GET_ALL_NODE_TOTAL_TOKENS))
             for row in rows:
                 tokens.append(
-                    UsageNodeModelTotalTokens(
+                    NodeModelTotalTokens(
                         node_uid=row.producer_node_info_id,
                         model_name=row.model_name,
                         total_tokens=row.total_tokens,

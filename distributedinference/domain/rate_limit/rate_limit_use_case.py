@@ -1,6 +1,7 @@
 import settings
 from distributedinference import api_logger
 from distributedinference.domain.rate_limit import check_limit_use_case
+from distributedinference.domain.rate_limit import check_daily_limits_use_case
 from distributedinference.domain.rate_limit.entities import RateLimit
 from distributedinference.domain.rate_limit.entities import RateLimitReason
 from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
@@ -45,39 +46,28 @@ async def execute(
         usage_limits.max_requests_per_minute,
         tokens_repository.get_requests_usage_by_time_and_consumer,
         user.uid,
-        SECONDS_IN_A_MINUTE,
-    )
-    request_day_result = await check_limit_use_case.execute(
-        model,
-        usage_limits.max_requests_per_day,
-        tokens_repository.get_requests_usage_by_time_and_consumer,
-        user.uid,
-        SECONDS_IN_A_DAY,
     )
     tokens_min_result = await check_limit_use_case.execute(
         model,
         usage_limits.max_tokens_per_minute,
         tokens_repository.get_tokens_usage_by_time_and_consumer,
         user.uid,
-        SECONDS_IN_A_MINUTE,
     )
-    tokens_day_result = await check_limit_use_case.execute(
+    day_rate_limit_result = await check_daily_limits_use_case.execute(
+        tokens_repository,
         model,
+        usage_limits.max_requests_per_day,
         usage_limits.max_tokens_per_day,
-        tokens_repository.get_tokens_usage_by_time_and_consumer,
         user.uid,
-        SECONDS_IN_A_DAY,
     )
 
     # Determine overall rate limit status and retry_after time
-    if request_min_result.rate_limited:
+    if day_rate_limit_result.rate_limit_reason:
+        rate_limit_reason = day_rate_limit_result.rate_limit_reason
+    elif request_min_result.rate_limited:
         rate_limit_reason = RateLimitReason.RPM
-    elif request_day_result.rate_limited:
-        rate_limit_reason = RateLimitReason.RPD
     elif tokens_min_result.rate_limited:
         rate_limit_reason = RateLimitReason.TPM
-    elif tokens_day_result.rate_limited:
-        rate_limit_reason = RateLimitReason.TPD
     else:
         rate_limit_reason = None
 
@@ -86,9 +76,8 @@ async def execute(
             None,
             [
                 request_min_result.retry_after,
-                request_day_result.retry_after,
                 tokens_min_result.retry_after,
-                tokens_day_result.retry_after,
+                day_rate_limit_result.retry_after,
             ],
         ),
         default=None,
@@ -109,8 +98,8 @@ async def execute(
         rate_limit_day=RateLimit(
             max_requests=usage_limits.max_requests_per_day,
             max_tokens=usage_limits.max_tokens_per_day,
-            remaining_requests=request_day_result.remaining,
-            remaining_tokens=tokens_day_result.remaining,
+            remaining_requests=day_rate_limit_result.requests_remaining,
+            remaining_tokens=day_rate_limit_result.tokens_remaining,
             # TODO figure out how to calculate these
             reset_requests=RESET_REQUESTS,
             reset_tokens=RESET_TOKENS,

@@ -14,7 +14,9 @@ from distributedinference.domain.rate_limit.entities import UserUsageLimitsRespo
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.billing_repository import BillingRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
+from distributedinference.repository.tokens_repository import DailyUserModelUsage
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.utils import utctoday
 from distributedinference.service import error_responses
 
 PAID_TIER = UUID("0671b61e-518d-7541-8000-49c7ae6bed1b")
@@ -44,16 +46,13 @@ async def test_error():
 
 
 async def test_success():
-    use_case.check_limit_use_case = AsyncMock()
-    use_case.check_limit_use_case.execute.return_value = RateLimitResult(
-        rate_limited=False,
-        retry_after=None,
-        remaining=22,
-        usage_count=11,
-    )
-
     tokens_repository = AsyncMock(spec=TokensRepository)
-
+    tokens_repository.get_daily_usage.return_value = DailyUserModelUsage(
+        total_requests_count=1,
+        total_tokens_count=121,
+        model_name="model",
+        date=utctoday(),
+    )
     rate_limit_repository = AsyncMock(spec=RateLimitRepository)
     rate_limit_repository.get_usage_tier_info.return_value = UsageTier(
         id=PAID_TIER,
@@ -88,10 +87,10 @@ async def test_success():
                 max_tokens_per_day=200,
                 max_requests_per_minute=10,
                 max_requests_per_day=100,
-                requests_left_day=22,
-                requests_usage_day=11,
-                tokens_left_day=22,
-                tokens_usage_day=11,
+                requests_left_day=99,
+                requests_usage_day=1,
+                tokens_left_day=79,
+                tokens_usage_day=121,
                 price_per_million_tokens=Decimal("0.002"),
             )
         ],

@@ -1,9 +1,7 @@
 from decimal import Decimal
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import date
 from unittest.mock import AsyncMock
-from unittest.mock import patch
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
@@ -13,11 +11,12 @@ from distributedinference.domain.rate_limit import rate_limit_use_case as use_ca
 from distributedinference.domain.rate_limit.entities import RateLimitReason
 from distributedinference.domain.rate_limit.entities import RateLimitResult
 from distributedinference.domain.rate_limit.entities import UsageLimits
-from distributedinference.domain.rate_limit.entities import UsageTier
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.tokens_repository import DailyUserModelUsage
 from distributedinference.repository.tokens_repository import UsageInformation
+from distributedinference.repository.utils import utctoday
 
 
 @pytest.fixture
@@ -25,6 +24,7 @@ def mock_tokens_repository():
     repository = AsyncMock(TokensRepository)
     repository.get_requests_usage_by_time_and_consumer = AsyncMock()
     repository.get_tokens_usage_by_time_and_consumer = AsyncMock()
+    repository.get_daily_usage = AsyncMock()
     return repository
 
 
@@ -53,18 +53,7 @@ def usage_limits():
         max_requests_per_day=100,
         max_tokens_per_minute=1000,
         max_tokens_per_day=10000,
-    )
-
-
-@pytest.fixture
-def usage_limits():
-    return UsageLimits(
-        model="model",
-        max_requests_per_minute=3,
-        max_requests_per_day=100,
-        max_tokens_per_minute=1000,
-        max_tokens_per_day=10000,
-        price_per_million_tokens=None,
+        price_per_million_tokens=Decimal("1"),
     )
 
 
@@ -78,13 +67,11 @@ async def test_rate_limit_not_exceeded(
     mock_tokens_repository.get_tokens_usage_by_time_and_consumer.return_value = (
         UsageInformation(count=0, oldest_usage_id=None, oldest_usage_created_at=None)
     )
-
-    use_case.check_limit_use_case = AsyncMock()
-    use_case.check_limit_use_case.execute.return_value = RateLimitResult(
-        rate_limited=False,
-        retry_after=None,
-        remaining=123,
-        usage_count=67,
+    mock_tokens_repository.get_daily_usage.return_value = DailyUserModelUsage(
+        total_requests_count=0,
+        total_tokens_count=0,
+        model_name="model",
+        date=utctoday(),
     )
 
     result = await use_case.execute(
@@ -93,16 +80,22 @@ async def test_rate_limit_not_exceeded(
 
     assert result.rate_limit_reason is None
     assert result.retry_after is None
-    assert result.rate_limit_day.remaining_requests == 123
-    assert result.rate_limit_day.remaining_tokens == 123
-    assert result.rate_limit_minute.remaining_requests == 123
-    assert result.rate_limit_minute.remaining_tokens == 123
+    assert result.rate_limit_day.remaining_requests == 100
+    assert result.rate_limit_day.remaining_tokens == 10000
+    assert result.rate_limit_minute.remaining_requests == 3
+    assert result.rate_limit_minute.remaining_tokens == 1000
 
 
 async def test_rate_limit_exceeded_by_requests_per_minute(
     mock_tokens_repository, mock_rate_limit_repository, user, usage_limits
 ):
     mock_rate_limit_repository.get_usage_limits_for_model.return_value = usage_limits
+    mock_tokens_repository.get_daily_usage.return_value = DailyUserModelUsage(
+        total_requests_count=0,
+        total_tokens_count=0,
+        model_name="model",
+        date=utctoday(),
+    )
 
     use_case.check_limit_use_case = AsyncMock()
     use_case.check_limit_use_case.execute.side_effect = RateLimitResult(
@@ -146,13 +139,19 @@ async def test_rate_limit_exceeded_by_requests_per_minute(
     assert result.rate_limit_reason is RateLimitReason.RPM
     assert result.retry_after == 30  # Retry after 30 seconds for minute-level limit
     assert result.rate_limit_minute.remaining_requests == 0
-    assert result.rate_limit_day.remaining_requests == 123
+    assert result.rate_limit_day.remaining_requests == 100
 
 
 async def test_rate_limit_exceeded_by_requests_per_day(
     mock_tokens_repository, mock_rate_limit_repository, user, usage_limits
 ):
-    mock_rate_limit_repository.get_usage_tier.return_value = usage_limits
+    mock_rate_limit_repository.get_usage_limits_for_model.return_value = usage_limits
+    mock_tokens_repository.get_daily_usage.return_value = DailyUserModelUsage(
+        total_requests_count=100,
+        total_tokens_count=100,
+        model_name="model",
+        date=utctoday(),
+    )
 
     class UsageMock:
 
@@ -192,16 +191,25 @@ async def test_rate_limit_exceeded_by_requests_per_day(
 
 
 async def test_rate_limit_exceeded_by_tokens_per_minute(
-    mock_tokens_repository, mock_rate_limit_repository, user, usage_limits
+    mock_tokens_repository,
+    mock_rate_limit_repository,
+    user,
+    usage_limits,
 ):
-    mock_rate_limit_repository.get_usage_tier.return_value = usage_limits
+    mock_rate_limit_repository.get_usage_limits_for_model.return_value = usage_limits
+    mock_tokens_repository.get_daily_usage.return_value = DailyUserModelUsage(
+        total_requests_count=0,
+        total_tokens_count=900,
+        model_name="model",
+        date=utctoday(),
+    )
 
     class UsageMock:
 
         count = 0
 
         async def usage_function(self, *args, **kwargs):
-            if self.count != 2:
+            if self.count != 1:
                 result = RateLimitResult(
                     rate_limited=False,
                     retry_after=None,
@@ -231,13 +239,19 @@ async def test_rate_limit_exceeded_by_tokens_per_minute(
         result.retry_after == 30
     )  # Retry after remaining 30 seconds for the minute-level token limit
     assert result.rate_limit_minute.remaining_tokens == 0
-    assert result.rate_limit_day.remaining_tokens == 123
+    assert result.rate_limit_day.remaining_tokens == 9100
 
 
 async def test_rate_limit_exceeded_by_tokens_per_day(
     mock_tokens_repository, mock_rate_limit_repository, user, usage_limits
 ):
-    mock_rate_limit_repository.get_usage_tier.return_value = usage_limits
+    mock_rate_limit_repository.get_usage_limits_for_model.return_value = usage_limits
+    mock_tokens_repository.get_daily_usage.return_value = DailyUserModelUsage(
+        total_requests_count=1,
+        total_tokens_count=10000,
+        model_name="model",
+        date=utctoday(),
+    )
 
     class UsageMock:
 
@@ -265,12 +279,15 @@ async def test_rate_limit_exceeded_by_tokens_per_day(
 
     use_case.check_limit_use_case = AsyncMock()
     use_case.check_limit_use_case.execute.side_effect = usage_mock.usage_function
+    use_case.check_daily_limits_use_case._seconds_until_utc_midnight = MagicMock(
+        return_value=4200
+    )
     result = await use_case.execute(
         "model", user, mock_tokens_repository, mock_rate_limit_repository
     )
 
     assert result.rate_limit_reason is RateLimitReason.TPD
-    assert result.retry_after == 68400  # Retry after 19h for day-level token limit
+    assert result.retry_after == 4200  # Retry after 1h10m for day-level token limit
     assert result.rate_limit_day.remaining_tokens == 0  # No more tokens available
     assert result.rate_limit_minute.remaining_tokens == 123
 

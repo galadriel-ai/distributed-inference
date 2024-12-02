@@ -224,6 +224,31 @@ async def test_keeps_tools_from_input():
     )
 
     service.chat_completions_service = AsyncMock()
+    # save the original implementation
+    rate_limit_use_case_original = service.rate_limit_use_case
+    service.rate_limit_use_case = AsyncMock()
+    service.rate_limit_use_case.execute = AsyncMock(
+        return_value=UserRateLimitResponse(
+            rate_limit_reason=None,
+            retry_after=None,
+            rate_limit_minute=RateLimit(
+                max_requests=100,
+                max_tokens=10000,
+                remaining_requests=999,
+                remaining_tokens=9999,
+                reset_requests=60,
+                reset_tokens=60,
+            ),
+            rate_limit_day=RateLimit(
+                max_requests=100,
+                max_tokens=10000,
+                remaining_requests=999,
+                remaining_tokens=9999,
+                reset_requests=60,
+                reset_tokens=60,
+            ),
+        )
+    )
     await service.execute(
         request=request,
         response=MagicMock(),
@@ -247,6 +272,8 @@ async def test_keeps_tools_from_input():
         ],
         tool_choice=None,
     )
+    # restore the original implementation
+    service.rate_limit_use_case = rate_limit_use_case_original
 
 
 async def test_model_not_supported():
@@ -313,6 +340,20 @@ def test_model_name_translation_exact_model():
     expected_exact_name = "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16"
     actual_exact_name = service._match_model_name(user_input)
     assert actual_exact_name == expected_exact_name
+
+
+def test_check_response_format():
+    request = ChatCompletionRequest(
+        messages=[Message(content="content", role="role")],
+        model="llama3.1:70b",
+        stream=False,
+        tools=None,
+        response_format={"type": "json_object"},
+    )
+
+    with pytest.raises(error_responses.UnsupportedRequestParameterError) as e:
+        service._check_response_format(request)
+        assert e is not None
 
 
 def test_model_max_context_handling():

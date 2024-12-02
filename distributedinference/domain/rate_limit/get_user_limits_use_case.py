@@ -1,5 +1,6 @@
 import settings
 from distributedinference.domain.rate_limit import check_limit_use_case
+from distributedinference.domain.rate_limit import check_daily_limits_use_case
 from distributedinference.domain.rate_limit.entities import UserUsage
 from distributedinference.domain.rate_limit.entities import UserUsageLimitsResponse
 from distributedinference.domain.user.entities import User
@@ -30,19 +31,12 @@ async def execute(
 
     usages = []
     for limit in limits:
-        request_day_result = await check_limit_use_case.execute(
+        day_limits = await check_daily_limits_use_case.execute(
+            tokens_repository,
             limit.model,
             limit.max_requests_per_day,
-            tokens_repository.get_requests_usage_by_time_and_consumer,
-            user.uid,
-            SECONDS_IN_A_DAY,
-        )
-        tokens_day_result = await check_limit_use_case.execute(
-            limit.model,
             limit.max_tokens_per_day,
-            tokens_repository.get_tokens_usage_by_time_and_consumer,
             user.uid,
-            SECONDS_IN_A_DAY,
         )
         usages.append(
             UserUsage(
@@ -51,10 +45,10 @@ async def execute(
                 max_tokens_per_day=limit.max_tokens_per_day,
                 max_requests_per_minute=limit.max_requests_per_minute,
                 max_requests_per_day=limit.max_requests_per_day,
-                requests_left_day=request_day_result.remaining,
-                requests_usage_day=request_day_result.usage_count,
-                tokens_left_day=tokens_day_result.remaining,
-                tokens_usage_day=tokens_day_result.usage_count,
+                requests_left_day=day_limits.requests_remaining,
+                requests_usage_day=day_limits.requests_count,
+                tokens_left_day=day_limits.tokens_remaining,
+                tokens_usage_day=day_limits.tokens_count,
                 price_per_million_tokens=limit.price_per_million_tokens,
             )
         )

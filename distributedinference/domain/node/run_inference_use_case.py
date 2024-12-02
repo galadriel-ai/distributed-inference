@@ -291,6 +291,11 @@ class InferenceExecutor:
                 total_tokens=usage.total_tokens,
             )
         )
+        await self.tokens_repository.increment_daily_usage(
+            user_profile_id=user_uid,
+            model=request.model,
+            tokens_to_add=usage.total_tokens,
+        )
 
     async def _mark_node_as_unhealthy(self, node: ConnectedNode) -> None:
         if not self.is_node_marked_as_unhealthy:

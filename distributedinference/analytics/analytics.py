@@ -24,6 +24,9 @@ class EventName(Enum):
     CHAT_COMPLETIONS = "chat_completions"
     DASHBOARD_CHAT_COMPLETIONS = "dashboard_chat_completions"
 
+    IMAGE_GENERATION = "image_generation"
+    IMAGE_EDIT = "image_edit"
+
     USER_EXECUTED_INFERENCE_REQUEST = "user_executed_inference_request"
     USER_NODE_SELECTED_FOR_INFERENCE = "user_node_selected_for_inference"
     USER_RATE_LIMITED = "user_rate_limited"
