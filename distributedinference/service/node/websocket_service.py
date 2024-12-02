@@ -74,7 +74,7 @@ async def execute(
     node_uid = node_info.node_id
     connect_time = time.time()
     node_status = await node_status_transition.execute(
-        node_repository, node_uid, NodeStatusEvent.START
+        node_repository, node_uid, NodeStatusEvent.START, enum_model_type
     )
     await node_repository.set_node_connection_timestamp(
         node_uid,

@@ -20,7 +20,6 @@ from distributedinference.domain.node.entities import (
     ConnectedNode,
     ImageGenerationWebsocketRequest,
     ImageGenerationWebsocketResponse,
-    ModelType,
 )
 from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import InferenceError
@@ -572,11 +571,6 @@ class NodeRepository:
             return node.active_requests_count() < self._max_parallel_requests_per_node
 
         return node.active_requests_count() == 1
-
-    def get_node_model_type(self, node_id: UUID) -> Optional[ModelType]:
-        if node_id in self._connected_nodes:
-            return self._connected_nodes[node_id].model_type
-        return None
 
     @async_timer("node_repository.get_connected_nodes_count", logger=logger)
     async def get_connected_nodes_count(self) -> int:
