@@ -2,11 +2,11 @@ from openai.types.images_response import ImagesResponse
 from uuid_extensions import uuid7
 
 from distributedinference import api_logger
+from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.images import images_generations_service
 from distributedinference.service.images.entities import (
     ImageEditRequest,
-    ImageGenerationWebsocketRequest,
 )
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 

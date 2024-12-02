@@ -37,7 +37,7 @@ from distributedinference.service.node.protocol.protocol_handler import Protocol
 logger = api_logger.get()
 
 
-# pylint: disable=R0912, R0913, R0914
+# pylint: disable=R0912, R0913, R0914, R0915
 async def execute(
     websocket: WebSocket,
     user: User,
@@ -124,7 +124,7 @@ async def execute(
     health_check_protocol: HealthCheckProtocol = protocol_handler.get(
         HealthCheckProtocol.PROTOCOL_NAME
     )
-    # Skip health check for image generation models
+    # TODO: Skip health check for image generation models
     if node.model_type is ModelType.LLM:
         health_check_protocol.add_node(
             node_info.node_id, node_info.name, node_info.specs.version, websocket
