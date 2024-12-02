@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 from distributedinference.domain.node import node_status_transition
-from distributedinference.domain.node.entities import NodeStatus
+from distributedinference.domain.node.entities import ModelType, NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.repository.node_repository import NodeRepository
 
@@ -106,10 +106,13 @@ async def test_transitions():
         assert result == expected
 
 
-async def test_skip_benchmarking():
+async def test_diffusion_node_transition():
     node_repository = _get_node_repository(None)
     result = await node_status_transition.execute(
-        node_repository, NODE_ID, NodeStatusEvent.START, skip_benchmarking=True
+        node_repository,
+        NODE_ID,
+        NodeStatusEvent.START,
+        node_model_type=ModelType.DIFFUSION,
     )
     print(f"UnitTest, skip_benchmarking: {result}")
     assert result == NodeStatus.RUNNING
