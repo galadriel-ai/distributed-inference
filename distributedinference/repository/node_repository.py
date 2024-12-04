@@ -82,7 +82,7 @@ SELECT
     ni.last_updated_at,
     nm.requests_served,
     nm.uptime,
-    nm.connected_at,
+    nm.status,
     nm.rtt,
     nb.tokens_per_second AS benchmark_tokens_per_second
 FROM node_info ni
@@ -312,9 +312,10 @@ SET
 WHERE id = :id;
 """
 
-SQL_UPDATE_NODE_CONNECTION_TIMESTAMP = """
+SQL_UPDATE_NODE_CONNECTION_TIMESTAMP_AND_STATUS = """
 UPDATE node_metrics
 SET
+    status = :status,
     connected_at = :connected_at,
     last_updated_at = :last_updated_at
 WHERE node_info_id = :id;
@@ -323,13 +324,13 @@ WHERE node_info_id = :id;
 SQL_GET_CONNECTED_NODE_COUNT = """
 SELECT COUNT(id) AS node_count
 FROM node_metrics
-WHERE connected_at IS NOT NULL;
+WHERE status LIKE 'RUNNING%';
 """
 
 SQL_GET_CONNECTED_NODE_IDS = """
 SELECT node_info_id
 FROM node_metrics
-WHERE connected_at IS NOT NULL;
+WHERE status LIKE 'RUNNING%';
 """
 
 SQL_GET_NODE_METRICS = """
@@ -477,7 +478,7 @@ class NodeRepository:
                         specs=specs,
                         requests_served=row.requests_served,
                         uptime=row.uptime,
-                        connected=bool(row.connected_at),
+                        connected=NodeStatus(row.status).is_connected(),
                         benchmark_tokens_per_second=row.benchmark_tokens_per_second,
                         is_archived=row.is_archived,
                         created_at=row.created_at,
@@ -636,7 +637,7 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
-                    is_active=bool(row.connected_at),
+                    is_active=NodeStatus(row.status).is_active(),
                 )
             return result
 
@@ -675,6 +676,15 @@ class NodeRepository:
 
     def get_locally_connected_nodes(self) -> List[ConnectedNode]:
         return list(self._connected_nodes.values())
+
+    def get_locally_connected_node_keys(self) -> List[UUID]:
+        return list(self._connected_nodes.keys())
+
+    def set_local_node_status(self, node_id: UUID, status: NodeStatus) -> bool:
+        if node_id in self._connected_nodes:
+            self._connected_nodes[node_id].node_status = status
+            return True
+        return False
 
     @async_timer("node_repository.get_nodes_for_benchmarking", logger=logger)
     async def get_nodes_for_benchmarking(self) -> List[ConnectedNode]:
@@ -866,10 +876,12 @@ class NodeRepository:
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            for node_id in self._connected_nodes:
+            for node_id, node in self._connected_nodes.items():
                 data["id"] = node_id
+                data["status"] = node.node_status.value
                 await session.execute(
-                    sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP), data
+                    sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP_AND_STATUS),
+                    data,
                 )
             await session.commit()
 

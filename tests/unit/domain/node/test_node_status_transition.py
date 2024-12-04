@@ -116,3 +116,28 @@ async def test_diffusion_node_transition():
     )
     print(f"UnitTest, skip_benchmarking: {result}")
     assert result == NodeStatus.RUNNING
+
+
+async def test_is_active():
+    status = NodeStatus.RUNNING
+    assert status.is_active()
+    status = NodeStatus.RUNNING_DEGRADED
+    assert status.is_active()
+    status = NodeStatus.RUNNING_BENCHMARKING
+    assert not status.is_active()
+    status = NodeStatus.STOPPED
+    assert not status.is_active()
+    status = NodeStatus.STOPPED_BENCHMARK_FAILED
+    assert not status.is_active()
+
+async def test_is_connected():
+    status = NodeStatus.RUNNING
+    assert status.is_connected()
+    status = NodeStatus.RUNNING_DEGRADED
+    assert status.is_connected()
+    status = NodeStatus.RUNNING_BENCHMARKING
+    assert status.is_connected()
+    status = NodeStatus.STOPPED
+    assert not status.is_connected()
+    status = NodeStatus.STOPPED_BENCHMARK_FAILED
+    assert not status.is_connected()

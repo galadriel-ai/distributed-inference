@@ -29,6 +29,14 @@ class NodeStatus(Enum):
     STOPPED_DEGRADED = "STOPPED_DEGRADED"
     STOPPED_DISABLED = "STOPPED_DISABLED"
 
+    def is_connected(self):
+        return self in [
+            NodeStatus.RUNNING,
+            NodeStatus.RUNNING_BENCHMARKING,
+            NodeStatus.RUNNING_DEGRADED,
+            NodeStatus.RUNNING_DISABLED,
+        ]
+
     def is_active(self):
         return self in [
             NodeStatus.RUNNING,
