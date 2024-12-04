@@ -130,6 +130,7 @@ async def test_is_active():
     status = NodeStatus.STOPPED_BENCHMARK_FAILED
     assert not status.is_active()
 
+
 async def test_is_connected():
     status = NodeStatus.RUNNING
     assert status.is_connected()
