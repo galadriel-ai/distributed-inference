@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 from uuid_extensions import uuid7
 
-from distributedinference.domain.node import metrics_update_job as job
+from distributedinference.domain.node.jobs import metrics_update_job as job
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository.node_repository import NodeRepository
 

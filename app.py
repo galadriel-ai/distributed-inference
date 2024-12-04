@@ -9,8 +9,10 @@ from starlette.middleware.cors import CORSMiddleware
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.domain.node import health_check_job
-from distributedinference.domain.node import metrics_update_job
+from distributedinference.domain.node.jobs import health_check_job
+from distributedinference.domain.node.jobs import metrics_update_job
+from distributedinference.domain.node.jobs import save_daily_usage_job
+from distributedinference.domain.node.jobs import save_tokens_job
 from distributedinference.repository import connection
 from distributedinference.routers import main_router
 from distributedinference.service.exception_handlers.exception_handlers import (
@@ -54,6 +56,18 @@ async def lifespan(_: FastAPI):
             dependencies.get_protocol_handler(),
         )
     )
+    save_daily_usage_task = asyncio.create_task(
+        save_daily_usage_job.execute(
+            dependencies.get_tokens_repository(),
+            dependencies.get_tokens_queue_repository(),
+        )
+    )
+    save_tokens_task = asyncio.create_task(
+        save_tokens_job.execute(
+            dependencies.get_tokens_repository(),
+            dependencies.get_tokens_queue_repository(),
+        )
+    )
     yield
 
     # Clean up resources and database before shutting down
@@ -62,8 +76,15 @@ async def lifespan(_: FastAPI):
     metrics_task.cancel()
     protocol_task.cancel()
     health_task.cancel()
+    save_daily_usage_task.cancel()
+    save_tokens_task.cancel()
     await asyncio.gather(
-        metrics_task, protocol_task, health_task, return_exceptions=True
+        metrics_task,
+        protocol_task,
+        health_task,
+        save_daily_usage_task,
+        save_tokens_task,
+        return_exceptions=True,
     )
     logger.info("Cleanup complete.")
 

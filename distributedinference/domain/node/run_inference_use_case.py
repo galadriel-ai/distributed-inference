@@ -31,8 +31,14 @@ from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.tokens_repository import (
+    DailyUserModelUsageIncrement,
+)
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 
 logger = api_logger.get()
 
@@ -57,11 +63,13 @@ class InferenceExecutor:
         node_repository: NodeRepository,
         tokens_repository: TokensRepository,
         metrics_queue_repository: MetricsQueueRepository,
+        tokens_queue_repository: TokensQueueRepository,
         analytics: Analytics,
     ):
         self.node_repository = node_repository
         self.tokens_repository = tokens_repository
         self.metrics_queue_repository = metrics_queue_repository
+        self.tokens_queue_repository = tokens_queue_repository
         self.analytics = analytics
 
         self.is_include_usage: bool = False
@@ -280,8 +288,7 @@ class InferenceExecutor:
         node_uid: UUID,
         usage: CompletionUsage,
     ):
-        # TODO: in the background?
-        await self.tokens_repository.insert_usage_tokens(
+        await self.tokens_queue_repository.push_token_usage(
             UsageTokens(
                 consumer_user_profile_id=user_uid,
                 producer_node_info_id=node_uid,
@@ -291,10 +298,13 @@ class InferenceExecutor:
                 total_tokens=usage.total_tokens,
             )
         )
-        await self.tokens_repository.increment_daily_usage(
-            user_profile_id=user_uid,
-            model=request.model,
-            tokens_to_add=usage.total_tokens,
+        await self.tokens_queue_repository.push_daily_usage(
+            DailyUserModelUsageIncrement(
+                user_profile_id=user_uid,
+                model_name=request.model,
+                tokens_count=usage.total_tokens,
+                requests_count=1,
+            )
         )
 
     async def _mark_node_as_unhealthy(self, node: ConnectedNode) -> None:

@@ -12,6 +12,9 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
@@ -48,6 +51,9 @@ async def completions(
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),
+    tokens_queue_repository: TokensQueueRepository = Depends(
+        dependencies.get_tokens_queue_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     analytics.track_event(user.uid, AnalyticsEvent(EventName.CHAT_COMPLETIONS, {}))
@@ -60,5 +66,6 @@ async def completions(
         tokens_repository,
         rate_limit_repository,
         metrics_queue_repository,
+        tokens_queue_repository,
         analytics,
     )

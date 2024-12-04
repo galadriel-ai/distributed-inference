@@ -15,6 +15,9 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -43,6 +46,7 @@ async def execute(
     tokens_repository: TokensRepository,
     rate_limit_repository: RateLimitRepository,
     metrics_queue_repository: MetricsQueueRepository,
+    tokens_queue_repository: TokensQueueRepository,
     analytics: Analytics,
 ) -> Union[StreamingResponse, ChatCompletion]:
 
@@ -78,6 +82,7 @@ async def execute(
                 node_repository=node_repository,
                 tokens_repository=tokens_repository,
                 metrics_queue_repository=metrics_queue_repository,
+                tokens_queue_repository=tokens_queue_repository,
                 analytics=analytics,
             ),
             headers=headers,
@@ -91,6 +96,7 @@ async def execute(
         node_repository=node_repository,
         tokens_repository=tokens_repository,
         metrics_queue_repository=metrics_queue_repository,
+        tokens_queue_repository=tokens_queue_repository,
         analytics=analytics,
     )
 
