@@ -78,6 +78,7 @@ node_costs_gauge = Gauge(
     "node_costs", "Node GPU 1h rent costs per model", ["model_name"]
 )
 
+# pylint: disable=C0103
 node_tokens_last_id = None
 
 
@@ -88,6 +89,7 @@ async def get_metrics(
         dependencies.get_metrics_repository
     ),
 ):
+    # pylint: disable=W0603
     global node_tokens_last_id
     registry = _get_registry()
     _clear()
@@ -168,14 +170,11 @@ async def _set_node_tokens(
 
     for usage in node_usage_total_tokens.usage:
         # we're incrementing the gauge with the new values
+        metric = node_tokens_gauge.labels(usage.model_name, usage.node_uid)
         if start_from_id:
-            node_tokens_gauge.labels(usage.model_name, usage.node_uid).inc(
-                usage.total_tokens
-            )
+            metric.inc(usage.total_tokens)
         else:
-            node_tokens_gauge.labels(usage.model_name, usage.node_uid).set(
-                usage.total_tokens
-            )
+            metric.set(usage.total_tokens)
     return node_usage_total_tokens.last_id
 
 

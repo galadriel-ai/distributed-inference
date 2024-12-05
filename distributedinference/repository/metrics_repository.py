@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import List
-from typing import Tuple
 from typing import Optional
 from uuid import UUID
 
@@ -99,34 +98,18 @@ class MetricsRepository:
                 for row in rows
             ]
 
-    @async_timer("metrics_repository.get_total_tokens_by_node_ids", logger=logger)
-    async def get_total_tokens_by_node_ids(
-        self, node_ids: List[UUID]
-    ) -> List[NodeModelTotalTokens]:
-        data = {"node_ids": node_ids}
-        tokens = []
-        async with self._session_provider_read.get() as session:
-            rows = await session.execute(
-                sqlalchemy.text(SQL_GET_TOTAL_TOKENS_BY_NODE_IDS), data
-            )
-            for row in rows:
-                tokens.append(
-                    NodeModelTotalTokens(
-                        node_uid=row.producer_node_info_id,
-                        model_name=row.model_name,
-                        total_tokens=row.total_tokens,
-                    )
-                )
-        return tokens
-
     @async_timer("metrics_repository.get_all_nodes_total_tokens", logger=logger)
     async def get_all_nodes_total_tokens(
         self, start_from_id: Optional[UUID] = None
     ) -> TotalTokensResponse:
         tokens = []
-        max_id = start_from_id
+        data = {
+            "last_id": start_from_id,
+        }
         async with self._session_provider_read.get() as session:
-            rows = await session.execute(sqlalchemy.text(SQL_GET_ALL_NODE_TOTAL_TOKENS))
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_ALL_NODE_TOTAL_TOKENS), data
+            )
             for row in rows:
                 tokens.append(
                     NodeModelTotalTokens(
