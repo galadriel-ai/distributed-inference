@@ -20,6 +20,9 @@ from distributedinference.repository.metrics_queue_repository import (
 )
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 from distributedinference.service import error_responses
 from distributedinference.service.completions import (
     convert_tool_call_chunks_to_non_streaming,
@@ -40,6 +43,7 @@ async def execute(
     node_repository: NodeRepository,
     tokens_repository: TokensRepository,
     metrics_queue_repository: MetricsQueueRepository,
+    tokens_queue_repository: TokensQueueRepository,
     analytics: Analytics,
 ) -> ChatCompletion:
     try:
@@ -60,6 +64,7 @@ async def execute(
             node_repository=node_repository,
             tokens_repository=tokens_repository,
             metrics_queue_repository=metrics_queue_repository,
+            tokens_queue_repository=tokens_queue_repository,
             analytics=analytics,
         )
         async for inference_response in executor.execute(

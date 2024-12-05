@@ -64,6 +64,7 @@ async def test_execute_no_rate_limit():
             tokens_repository=AsyncMock(),
             rate_limit_repository=AsyncMock(),
             metrics_queue_repository=MagicMock(),
+            tokens_queue_repository=AsyncMock(),
             analytics=AsyncMock(),
         )
 
@@ -118,6 +119,7 @@ async def test_execute_no_rate_limit_stream():
             tokens_repository=AsyncMock(),
             rate_limit_repository=AsyncMock(),
             metrics_queue_repository=MagicMock(),
+            tokens_queue_repository=AsyncMock(),
             analytics=AsyncMock(),
         )
 
@@ -169,6 +171,7 @@ async def test_execute_rate_limited():
                 tokens_repository=AsyncMock(),
                 rate_limit_repository=AsyncMock(),
                 metrics_queue_repository=MagicMock(),
+                tokens_queue_repository=AsyncMock(),
                 analytics=AsyncMock(),
             )
 
@@ -205,6 +208,7 @@ async def test_tools_not_supported_for_model():
             tokens_repository=AsyncMock(),
             rate_limit_repository=AsyncMock(),
             metrics_queue_repository=MagicMock(),
+            tokens_queue_repository=AsyncMock(),
             analytics=AsyncMock(),
         )
         assert e is not None
@@ -258,6 +262,7 @@ async def test_keeps_tools_from_input():
         tokens_repository=AsyncMock(),
         rate_limit_repository=AsyncMock(),
         metrics_queue_repository=MagicMock(),
+        tokens_queue_repository=AsyncMock(),
         analytics=AsyncMock(),
     )
     call_args = service.chat_completions_service.execute.call_args.args
@@ -295,6 +300,7 @@ async def test_model_not_supported():
             tokens_repository=AsyncMock(),
             rate_limit_repository=AsyncMock(),
             metrics_queue_repository=MagicMock(),
+            tokens_queue_repository=AsyncMock(),
             analytics=AsyncMock(),
         )
         assert e is not None
