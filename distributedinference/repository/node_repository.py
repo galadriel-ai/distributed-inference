@@ -461,7 +461,11 @@ class NodeRepository:
                         specs=specs,
                         requests_served=row.requests_served,
                         uptime=row.uptime,
-                        connected=NodeStatus(row.status).is_connected(),
+                        connected=(
+                            NodeStatus(row.status).is_connected()
+                            if row.status
+                            else False
+                        ),
                         benchmark_tokens_per_second=row.benchmark_tokens_per_second,
                         is_archived=row.is_archived,
                         created_at=row.created_at,
@@ -557,7 +561,9 @@ class NodeRepository:
                     ),
                     gpu_model=row.gpu_model,
                     model_name=row.model_name,
-                    is_active=NodeStatus(row.status).is_active(),
+                    is_active=(
+                        NodeStatus(row.status).is_active() if row.status else False
+                    ),
                 )
             return result
 
