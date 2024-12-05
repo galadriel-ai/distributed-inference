@@ -20,6 +20,7 @@ from distributedinference.analytics.analytics import (
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.domain.node import health_check_job
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
@@ -51,6 +52,11 @@ def mock_node_repository():
 
 
 @pytest.fixture
+def mock_connected_node_repository():
+    return AsyncMock(spec=ConnectedNodeRepository)
+
+
+@pytest.fixture
 def mock_analytics():
     return MagicMock(spec=Analytics)
 
@@ -65,6 +71,7 @@ async def test_check_node_health_healthy(
     mock_send_health_check_inference,
     create_mock_node,
     mock_node_repository,
+    mock_connected_node_repository,
     mock_analytics,
     mock_protocol_handler,
 ):
@@ -77,7 +84,11 @@ async def test_check_node_health_healthy(
     mock_send_health_check_inference.return_value = healthy_response
 
     await health_check_job._check_node_health(
-        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+        mock_node,
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_analytics,
+        mock_protocol_handler,
     )
 
     mock_node_repository.update_node_status.assert_called_once_with(
@@ -96,6 +107,7 @@ async def test_check_node_health_unhealthy(
     mock_send_health_check_inference,
     create_mock_node,
     mock_node_repository,
+    mock_connected_node_repository,
     mock_analytics,
     mock_protocol_handler,
 ):
@@ -111,7 +123,11 @@ async def test_check_node_health_unhealthy(
     mock_send_health_check_inference.return_value = unhealthy_response
 
     await health_check_job._check_node_health(
-        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+        mock_node,
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_analytics,
+        mock_protocol_handler,
     )
 
     mock_node_repository.update_node_status.assert_called_once_with(
@@ -126,13 +142,21 @@ async def test_check_node_health_unhealthy(
 
 
 async def test_check_node_health_exception(
-    create_mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+    create_mock_node,
+    mock_node_repository,
+    mock_connected_node_repository,
+    mock_analytics,
+    mock_protocol_handler,
 ):
     mock_node = create_mock_node()
-    mock_node_repository.receive_for_request.side_effect = Exception("Ooops")
+    mock_connected_node_repository.receive_for_request.side_effect = Exception("Ooops")
 
     await health_check_job._check_node_health(
-        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+        mock_node,
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_analytics,
+        mock_protocol_handler,
     )
 
     mock_node_repository.update_node_status.assert_not_called()  # Since exception occurs
@@ -145,24 +169,32 @@ async def test_check_node_health_exception(
 
 
 async def test_check_node_health_skips_disabled(
-    create_mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+    create_mock_node,
+    mock_node_repository,
+    mock_connected_node_repository,
+    mock_analytics,
+    mock_protocol_handler,
 ):
     mock_node = create_mock_node()
     mock_node_repository.get_node_status.return_value = NodeStatus.RUNNING_DISABLED
-    mock_node_repository.receive_for_request.side_effect = Exception("Ooops")
+    mock_connected_node_repository.receive_for_request.side_effect = Exception("Ooops")
 
     await health_check_job._check_node_health(
-        mock_node, mock_node_repository, mock_analytics, mock_protocol_handler
+        mock_node,
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_analytics,
+        mock_protocol_handler,
     )
 
-    mock_node_repository.send_inference_request.assert_not_called()
+    mock_connected_node_repository.send_inference_request.assert_not_called()
 
 
 async def test_send_health_check_inference_healthy(
-    create_mock_node, mock_node_repository
+    create_mock_node, mock_node_repository, mock_connected_node_repository
 ):
     mock_node = create_mock_node()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=mock_node.uid,
@@ -189,86 +221,86 @@ async def test_send_health_check_inference_healthy(
     health_check_job.is_node_performant.execute.return_value = True
 
     response = await health_check_job._send_health_check_inference(
-        mock_node, mock_node_repository
+        mock_node, mock_connected_node_repository
     )
 
     assert response.is_healthy is True
     assert response.error is None
 
-    mock_node_repository.send_inference_request.assert_called_once()
-    call_args = mock_node_repository.send_inference_request.call_args
+    mock_connected_node_repository.send_inference_request.assert_called_once()
+    call_args = mock_connected_node_repository.send_inference_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
     assert inference_request.model == mock_node.model
     assert inference_request.chat_request["model"] == mock_node.model
 
-    mock_node_repository.cleanup_request.assert_called_once()
-    call_args = mock_node_repository.cleanup_request.call_args
+    mock_connected_node_repository.cleanup_request.assert_called_once()
+    call_args = mock_connected_node_repository.cleanup_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
 
 
 async def test_send_health_check_inference_healthy_old_node(
-    create_mock_node, mock_node_repository
+    create_mock_node, mock_node_repository, mock_connected_node_repository
 ):
     healthy_response = AsyncMock(
         chunk=MagicMock(usage=MagicMock(total=10), choices=[]), error=None
     )
     mock_node = create_mock_node(version="0.0.15")
-    mock_node_repository.receive_for_request.return_value = healthy_response
+    mock_connected_node_repository.receive_for_request.return_value = healthy_response
     health_check_job.is_node_performant = MagicMock()
     health_check_job.is_node_performant.execute.return_value = True
 
     response = await health_check_job._send_health_check_inference(
-        mock_node, mock_node_repository
+        mock_node, mock_connected_node_repository
     )
 
     assert response.is_healthy is True
     assert response.error is None
 
-    mock_node_repository.send_inference_request.assert_called_once()
-    call_args = mock_node_repository.send_inference_request.call_args
+    mock_connected_node_repository.send_inference_request.assert_called_once()
+    call_args = mock_connected_node_repository.send_inference_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
     assert inference_request.model == mock_node.model
     assert inference_request.chat_request["model"] == mock_node.model
 
-    mock_node_repository.cleanup_request.assert_called_once()
-    call_args = mock_node_repository.cleanup_request.call_args
+    mock_connected_node_repository.cleanup_request.assert_called_once()
+    call_args = mock_connected_node_repository.cleanup_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
 
 
 async def test_send_health_check_inference_unhealthy(
-    create_mock_node, mock_node_repository
+    create_mock_node, mock_node_repository, mock_connected_node_repository
 ):
     unhealthy_response = None
     mock_node = create_mock_node()
-    mock_node_repository.receive_for_request.return_value = unhealthy_response
+    mock_connected_node_repository.receive_for_request.return_value = unhealthy_response
 
     response = await health_check_job._send_health_check_inference(
-        mock_node, mock_node_repository
+        mock_node, mock_connected_node_repository
     )
 
     assert response.is_healthy is False
     assert response.error.status_code == InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR
     assert response.error.message == "Node did not respond to health check request"
 
-    mock_node_repository.send_inference_request.assert_called_once()
-    call_args = mock_node_repository.send_inference_request.call_args
+    mock_connected_node_repository.send_inference_request.assert_called_once()
+    call_args = mock_connected_node_repository.send_inference_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
     assert inference_request.model == mock_node.model
     assert inference_request.chat_request["model"] == mock_node.model
 
-    mock_node_repository.cleanup_request.assert_called_once()
-    call_args = mock_node_repository.cleanup_request.call_args
+    mock_connected_node_repository.cleanup_request.assert_called_once()
+    call_args = mock_connected_node_repository.cleanup_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
 
 
 async def test_send_health_check_inference_error_response(
-    create_mock_node, mock_node_repository
+    create_mock_node, mock_node_repository, mock_connected_node_repository
 ):
     error_response = AsyncMock(
         chunk=None,
@@ -278,23 +310,23 @@ async def test_send_health_check_inference_error_response(
         ),
     )
     mock_node = create_mock_node()
-    mock_node_repository.receive_for_request.return_value = error_response
+    mock_connected_node_repository.receive_for_request.return_value = error_response
 
     response = await health_check_job._send_health_check_inference(
-        mock_node, mock_node_repository
+        mock_node, mock_connected_node_repository
     )
 
     assert response.is_healthy is False
     assert response.error.status_code == InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR
     assert response.error.message == "Node encountered an error"
-    mock_node_repository.send_inference_request.assert_called_once()
-    call_args = mock_node_repository.send_inference_request.call_args
+    mock_connected_node_repository.send_inference_request.assert_called_once()
+    call_args = mock_connected_node_repository.send_inference_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
     assert inference_request.model == mock_node.model
     assert inference_request.chat_request["model"] == mock_node.model
 
-    mock_node_repository.cleanup_request.assert_called_once()
-    call_args = mock_node_repository.cleanup_request.call_args
+    mock_connected_node_repository.cleanup_request.assert_called_once()
+    call_args = mock_connected_node_repository.cleanup_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid

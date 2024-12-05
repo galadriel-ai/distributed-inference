@@ -18,6 +18,7 @@ from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
+from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node import websocket_service
 from distributedinference.service.node.protocol.ping_pong_protocol import (
@@ -53,15 +54,24 @@ NODE_INFO = FullNodeInfo(
 
 
 @pytest.fixture
-def node_repository() -> NodeRepository:
+def node_repository() -> AsyncMock(spec=NodeRepository):
     node_repository = AsyncMock(spec=NodeRepository)
-    node_repository.register_node = Mock(return_value=True)
     node_repository.get_node_metrics_by_ids = AsyncMock(return_value={})
     node_repository.get_node_status = AsyncMock(return_value=NodeStatus.RUNNING)
     return node_repository
 
 
-async def test_execute_node_no_model_header():
+@pytest.fixture
+def connected_node_repository() -> AsyncMock(spec=ConnectedNodeRepository):
+    repository = AsyncMock(spec=ConnectedNodeRepository)
+    repository.register_node = Mock(return_value=True)
+    return repository
+
+
+async def test_execute_node_no_model_header(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     user = User(
         uid=uuid.uuid4(),
@@ -69,7 +79,6 @@ async def test_execute_node_no_model_header():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
@@ -90,6 +99,7 @@ async def test_execute_node_no_model_header():
             None,
             None,
             node_repository,
+            connected_node_repository,
             benchmark_repository,
             Mock(),
             Mock(),
@@ -97,11 +107,14 @@ async def test_execute_node_no_model_header():
 
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_not_called()
+    connected_node_repository.register_node.assert_not_called()
     node_repository.set_node_connection_timestamp.assert_not_called()
 
 
-async def test_execute_node_no_benchmark():
+async def test_execute_node_no_benchmark(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     user = User(
         uid=uuid.uuid4(),
@@ -109,7 +122,6 @@ async def test_execute_node_no_benchmark():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
@@ -130,6 +142,7 @@ async def test_execute_node_no_benchmark():
             "model",
             None,
             node_repository,
+            connected_node_repository,
             benchmark_repository,
             Mock(),
             Mock(),
@@ -137,11 +150,14 @@ async def test_execute_node_no_benchmark():
 
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_not_called()
+    connected_node_repository.register_node.assert_not_called()
     node_repository.set_node_connection_timestamp.assert_not_called()
 
 
-async def test_execute_node_benchmark_too_low():
+async def test_execute_node_benchmark_too_low(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     user = User(
         uid=uuid.uuid4(),
@@ -149,7 +165,6 @@ async def test_execute_node_benchmark_too_low():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
@@ -177,6 +192,7 @@ async def test_execute_node_benchmark_too_low():
             "model",
             None,
             node_repository,
+            connected_node_repository,
             benchmark_repository,
             Mock(),
             Mock(),
@@ -184,11 +200,14 @@ async def test_execute_node_benchmark_too_low():
 
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_not_called()
+    connected_node_repository.register_node.assert_not_called()
     node_repository.set_node_connection_timestamp.assert_not_called()
 
 
-async def test_execute_node_benchmark_405B_enough():
+async def test_execute_node_benchmark_405b_enough(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     user = User(
         uid=uuid.uuid4(),
@@ -196,13 +215,12 @@ async def test_execute_node_benchmark_405B_enough():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
-    node_repository.register_node = Mock(return_value=False)
+    connected_node_repository.register_node = Mock(return_value=False)
 
     model_name = next(iter(settings.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND_PER_MODEL))
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
@@ -230,6 +248,7 @@ async def test_execute_node_benchmark_405B_enough():
             model_name,
             None,
             node_repository,
+            connected_node_repository,
             benchmark_repository,
             Mock(),
             Mock(),
@@ -237,11 +256,14 @@ async def test_execute_node_benchmark_405B_enough():
 
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_called_once()
+    connected_node_repository.register_node.assert_called_once()
     node_repository.set_node_connection_timestamp.assert_called_once()
 
 
-async def test_node_already_connected_with_other_worker():
+async def test_node_already_connected_with_other_worker(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     user = User(
         uid=uuid.uuid4(),
@@ -249,7 +271,6 @@ async def test_node_already_connected_with_other_worker():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
     node_info = FullNodeInfo(
         node_id=NODE_UUID,
         name=str(NODE_UUID),
@@ -262,7 +283,7 @@ async def test_node_already_connected_with_other_worker():
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
-    node_repository.register_node = Mock(return_value=False)
+    connected_node_repository.register_node = Mock(return_value=False)
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
@@ -285,6 +306,7 @@ async def test_node_already_connected_with_other_worker():
             "model",
             None,
             node_repository,
+            connected_node_repository,
             benchmark_repository,
             Mock(),
             Mock(),
@@ -292,11 +314,14 @@ async def test_node_already_connected_with_other_worker():
 
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_not_called()
+    connected_node_repository.register_node.assert_not_called()
     node_repository.set_node_connection_timestamp.assert_not_called()
 
 
-async def test_execute_node_already_connected():
+async def test_execute_node_already_connected(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     user = User(
         uid=uuid.uuid4(),
@@ -304,13 +329,12 @@ async def test_execute_node_already_connected():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
-    node_repository.register_node = Mock(return_value=False)
+    connected_node_repository.register_node = Mock(return_value=False)
 
     benchmark_repository = AsyncMock(spec=BenchmarkRepository)
     benchmark_repository.get_node_benchmark = AsyncMock(
@@ -333,6 +357,7 @@ async def test_execute_node_already_connected():
             "model",
             None,
             node_repository,
+            connected_node_repository,
             benchmark_repository,
             Mock(),
             Mock(),
@@ -340,10 +365,13 @@ async def test_execute_node_already_connected():
 
     assert exc_info.value.code == status.WS_1008_POLICY_VIOLATION
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_called_once()
+    connected_node_repository.register_node.assert_called_once()
 
 
-async def test_execute_websocket_disconnect(node_repository: NodeRepository):
+async def test_execute_websocket_disconnect(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock
+):
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
@@ -377,6 +405,7 @@ async def test_execute_websocket_disconnect(node_repository: NodeRepository):
         "model",
         None,
         node_repository,
+        connected_node_repository,
         benchmark_repository,
         Mock(),
         protocol_handler,
@@ -384,15 +413,18 @@ async def test_execute_websocket_disconnect(node_repository: NodeRepository):
 
     # Assert
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_called_once()
-    node_repository.deregister_node.assert_called_once_with(NODE_UUID)
+    connected_node_repository.register_node.assert_called_once()
+    connected_node_repository.deregister_node.assert_called_once_with(NODE_UUID)
     node_repository.set_node_connection_timestamp.assert_called_once()
     node_repository.update_node_to_disconnected.assert_called_once_with(
         NODE_UUID, NodeStatus.STOPPED
     )
 
 
-async def test_execute_protocols(node_repository: NodeRepository):
+async def test_execute_protocols(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)
 
@@ -411,7 +443,7 @@ async def test_execute_protocols(node_repository: NodeRepository):
     protocol_handler = AsyncMock(spec=ProtocolHandler)
     protocol_handler.get = Mock(side_effect=[ping_pong_protocol, health_check_protocol])
 
-    node_repository.register_node = Mock(return_value=True)
+    connected_node_repository.register_node = Mock(return_value=True)
     node_repository.get_node_benchmark = AsyncMock(
         return_value=NodeBenchmark(
             node_id=NODE_UUID,
@@ -438,6 +470,7 @@ async def test_execute_protocols(node_repository: NodeRepository):
         "model",
         None,
         node_repository,
+        connected_node_repository,
         benchmark_repository,
         Mock(),
         protocol_handler,
@@ -461,15 +494,18 @@ async def test_execute_protocols(node_repository: NodeRepository):
 
     # Verify other expected method calls
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_called_once()
-    node_repository.deregister_node.assert_called_once_with(NODE_UUID)
+    connected_node_repository.register_node.assert_called_once()
+    connected_node_repository.deregister_node.assert_called_once_with(NODE_UUID)
     node_repository.set_node_connection_timestamp.assert_called_once()
     node_repository.update_node_to_disconnected.assert_called_once_with(
         NODE_UUID, NodeStatus.STOPPED
     )
 
 
-async def test_execute_node_image_generation_model():
+async def test_execute_node_image_generation_model(
+    node_repository: AsyncMock,
+    connected_node_repository: AsyncMock,
+):
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock()
 
@@ -479,13 +515,12 @@ async def test_execute_node_image_generation_model():
         email="test_user_email",
         usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
     )
-    node_repository = AsyncMock(spec=NodeRepository)
 
     node_metrics = NodeMetrics(status=NodeStatus.STOPPED)
     node_repository.get_node_metrics_by_ids = AsyncMock(
         return_value={NODE_UUID: node_metrics}
     )
-    node_repository.register_node = Mock(return_value=True)
+    connected_node_repository.register_node = Mock(return_value=True)
 
     ping_pong_protocol = AsyncMock(spec=PingPongProtocol)
     ping_pong_protocol.add_node = Mock()
@@ -513,13 +548,14 @@ async def test_execute_node_image_generation_model():
         "model",
         "DIFFUSION",
         node_repository,
+        connected_node_repository,
         benchmark_repository,
         Mock(),
         protocol_handler,
     )
 
     websocket.accept.assert_called_once()
-    node_repository.register_node.assert_called_once()
+    connected_node_repository.register_node.assert_called_once()
     node_repository.set_node_connection_timestamp.assert_called_once()
     ping_pong_protocol.add_node.assert_called_once()
     health_check_protocol.add_node.assert_not_called()

@@ -25,6 +25,7 @@ from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
+from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.protocol.health_check.protocol import (
     HealthCheckProtocol,
@@ -45,6 +46,7 @@ async def execute(
     model_name: Optional[str],
     model_type: Optional[str],
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     benchmark_repository: BenchmarkRepository,
     analytics: Analytics,
     protocol_handler: ProtocolHandler,
@@ -104,7 +106,7 @@ async def execute(
         ),
     )
 
-    if not node_repository.register_node(node):
+    if not connected_node_repository.register_node(node):
         # TODO change the code later to WS_1008_POLICY_VIOLATION once we are sure connection retries are not needed
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
@@ -154,6 +156,7 @@ async def execute(
             node,
             node_info,
             node_repository,
+            connected_node_repository,
             node_uid,
             ping_pong_protocol,
             health_check_protocol,
@@ -167,6 +170,7 @@ async def execute(
             node,
             node_info,
             node_repository,
+            connected_node_repository,
             node_uid,
             ping_pong_protocol,
             health_check_protocol,
@@ -181,6 +185,7 @@ async def execute(
             node,
             node_info,
             node_repository,
+            connected_node_repository,
             node_uid,
             ping_pong_protocol,
             health_check_protocol,
@@ -194,6 +199,7 @@ async def execute(
             node,
             node_info,
             node_repository,
+            connected_node_repository,
             node_uid,
             ping_pong_protocol,
             health_check_protocol,
@@ -209,6 +215,7 @@ async def _websocket_error(
     node: ConnectedNode,
     node_info: FullNodeInfo,
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     node_uid: UUID,
     ping_pong_protocol: PingPongProtocol,
     health_check_protocol: HealthCheckProtocol,
@@ -221,7 +228,7 @@ async def _websocket_error(
     node_status = await _get_new_node_stopped_status(node.uid, node_repository)
     await node_repository.update_node_to_disconnected(node.uid, node_status)
 
-    node_repository.deregister_node(node_uid)
+    connected_node_repository.deregister_node(node_uid)
     logger.info(log_message)
     analytics.track_event(
         user.uid,

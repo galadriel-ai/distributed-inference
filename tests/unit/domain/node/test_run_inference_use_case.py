@@ -20,6 +20,7 @@ from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
+from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.completions.entities import ChatCompletionRequest
@@ -138,13 +139,14 @@ def setup_function():
 
 async def test_success(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
 
-    mock_node_repository.select_node = MagicMock(
+    mock_connected_node_repository.select_node = MagicMock(
         return_value=connected_node_factory(TEST_NODE_ID)
     )
-    mock_node_repository.send_inference_request = AsyncMock()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.send_inference_request = AsyncMock()
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -181,7 +183,7 @@ async def test_success(connected_node_factory):
             ),
         ]
     )
-    mock_node_repository.cleanup_request = AsyncMock()
+    mock_connected_node_repository.cleanup_request = AsyncMock()
 
     chat_input = await ChatCompletionRequest(
         model="llama3", messages=[Message(role="user", content="asd")]
@@ -194,7 +196,11 @@ async def test_success(connected_node_factory):
 
     responses = []
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     async for response in executor.execute(
         USER_UUID,
@@ -208,18 +214,19 @@ async def test_success(connected_node_factory):
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(
+    mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
 
 
 async def test_no_nodes_forward_to_peers():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value=None)
+    mock_connected_node_repository.select_node = MagicMock(return_value=None)
 
     mock_inference = MockInference()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -235,7 +242,11 @@ async def test_no_nodes_forward_to_peers():
     )
 
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     result = []
     async for response in executor.execute(
@@ -252,8 +263,9 @@ async def test_no_nodes_forward_to_peers():
 
 async def test_no_nodes_forward_to_peers_failed():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value=None)
+    mock_connected_node_repository.select_node = MagicMock(return_value=None)
 
     mock_inference = MockInferenceError()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -269,7 +281,11 @@ async def test_no_nodes_forward_to_peers_failed():
     )
 
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     result = []
     async for request in executor.execute(
@@ -285,8 +301,9 @@ async def test_no_nodes_forward_to_peers_failed():
 
 async def test_no_nodes_no_forward_for_forwarding_request():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value=None)
+    mock_connected_node_repository.select_node = MagicMock(return_value=None)
 
     mock_inference = MockInference()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -302,7 +319,11 @@ async def test_no_nodes_no_forward_for_forwarding_request():
     )
 
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     with pytest.raises(NoAvailableNodesError):
         async for response in executor.execute(
@@ -317,8 +338,9 @@ async def test_no_nodes_no_forward_for_forwarding_request():
 # TODO: new test when no nodes and proxy also fails
 async def test_no_nodes_uses_proxy():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value=None)
+    mock_connected_node_repository.select_node = MagicMock(return_value=None)
 
     mock_inference_none_response = MockInferenceNoneResponse()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -338,7 +360,11 @@ async def test_no_nodes_uses_proxy():
     )
 
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     result = []
     async for request in executor.execute(
@@ -354,8 +380,9 @@ async def test_no_nodes_uses_proxy():
 
 async def test_no_nodes_and_proxy_also_fails():
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(return_value=None)
+    mock_connected_node_repository.select_node = MagicMock(return_value=None)
 
     mock_inference_none_response = MockInferenceNoneResponse()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -375,7 +402,11 @@ async def test_no_nodes_and_proxy_also_fails():
     )
 
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     result = []
     async for request in executor.execute(
@@ -391,12 +422,13 @@ async def test_no_nodes_and_proxy_also_fails():
 
 async def test_streaming_no_usage(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(
+    mock_connected_node_repository.select_node = MagicMock(
         return_value=connected_node_factory(TEST_NODE_ID)
     )
-    mock_node_repository.send_inference_request = AsyncMock()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.send_inference_request = AsyncMock()
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -433,7 +465,7 @@ async def test_streaming_no_usage(connected_node_factory):
             ),
         ]
     )
-    mock_node_repository.cleanup_request = AsyncMock()
+    mock_connected_node_repository.cleanup_request = AsyncMock()
 
     chat_input = await ChatCompletionRequest(
         model="llama3",
@@ -450,7 +482,11 @@ async def test_streaming_no_usage(connected_node_factory):
 
     responses = []
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     async for response in executor.execute(
         USER_UUID,
@@ -468,22 +504,23 @@ async def test_streaming_no_usage(connected_node_factory):
     assert responses[2].chunk.choices == []
     assert responses[2].chunk.usage is None
 
-    mock_node_repository.send_inference_request.assert_awaited_once_with(
+    mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
 
 
 async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(
+    mock_connected_node_repository.select_node = MagicMock(
         return_value=connected_node_factory(TEST_NODE_ID)
     )
-    mock_node_repository.send_inference_request = AsyncMock()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.send_inference_request = AsyncMock()
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -517,7 +554,7 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
             ),
         ]
     )
-    mock_node_repository.cleanup_request = AsyncMock()
+    mock_connected_node_repository.cleanup_request = AsyncMock()
 
     chat_input = await ChatCompletionRequest(
         model="llama3",
@@ -533,7 +570,11 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
 
     responses = []
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     async for response in executor.execute(
         USER_UUID,
@@ -548,23 +589,24 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     assert responses[0].request_id == "request_id"
     assert responses[1].request_id == "request_id"
     assert responses[1].chunk.choices[0].finish_reason == "stop"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(
+    mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
 
 
 async def test_old_node_still_works(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(
+    mock_connected_node_repository.select_node = MagicMock(
         return_value=connected_node_factory(TEST_NODE_ID, version="0.0.15")
     )
     node = connected_node_factory(TEST_NODE_ID, "0.0.15")
-    mock_node_repository.send_inference_request = AsyncMock()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.send_inference_request = AsyncMock()
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -591,7 +633,7 @@ async def test_old_node_still_works(connected_node_factory):
             ),
         ]
     )
-    mock_node_repository.cleanup_request = AsyncMock()
+    mock_connected_node_repository.cleanup_request = AsyncMock()
 
     chat_input = await ChatCompletionRequest(
         model="llama3",
@@ -607,7 +649,11 @@ async def test_old_node_still_works(connected_node_factory):
 
     responses = []
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     async for response in executor.execute(
         USER_UUID,
@@ -626,22 +672,23 @@ async def test_old_node_still_works(connected_node_factory):
     assert responses[2].chunk.choices == []
     assert responses[2].chunk.usage is not None
 
-    mock_node_repository.send_inference_request.assert_awaited_once_with(
+    mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
 
 
 async def test_inference_error_stops_loop(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(
+    mock_connected_node_repository.select_node = MagicMock(
         return_value=connected_node_factory(TEST_NODE_ID)
     )
-    mock_node_repository.send_inference_request = AsyncMock()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.send_inference_request = AsyncMock()
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -654,7 +701,7 @@ async def test_inference_error_stops_loop(connected_node_factory):
             ),
         ]
     )
-    mock_node_repository.cleanup_request = AsyncMock()
+    mock_connected_node_repository.cleanup_request = AsyncMock()
 
     chat_input = await ChatCompletionRequest(
         model="llama3",
@@ -670,7 +717,11 @@ async def test_inference_error_stops_loop(connected_node_factory):
 
     responses = []
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     async for response in executor.execute(
         USER_UUID,
@@ -686,22 +737,23 @@ async def test_inference_error_stops_loop(connected_node_factory):
     assert responses[0].chunk == None
     assert responses[0].error.status_code == InferenceErrorStatusCodes.NOT_FOUND
     assert responses[0].error.message == "No model found"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(
+    mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
 
 
 async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(
+    mock_connected_node_repository.select_node = MagicMock(
         return_value=connected_node_factory(TEST_NODE_ID)
     )
-    mock_node_repository.send_inference_request = AsyncMock()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.send_inference_request = AsyncMock()
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -714,7 +766,7 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
             ),
         ]
     )
-    mock_node_repository.cleanup_request = AsyncMock()
+    mock_connected_node_repository.cleanup_request = AsyncMock()
     mock_node_repository.update_node_status = AsyncMock()
     mock_node_repository.get_node_status = AsyncMock(return_value=NodeStatus.RUNNING)
 
@@ -732,7 +784,11 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
 
     responses = []
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     async for response in executor.execute(
         USER_UUID,
@@ -748,10 +804,10 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     assert responses[0].chunk == None
     assert responses[0].error.status_code == InferenceErrorStatusCodes.NOT_FOUND
     assert responses[0].error.message == "No model found"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(
+    mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
     mock_node_repository.update_node_status.assert_awaited_once_with(
@@ -763,12 +819,13 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(
     connected_node_factory,
 ):
     mock_node_repository = MagicMock(NodeRepository)
+    mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_node_repository.select_node = MagicMock(
+    mock_connected_node_repository.select_node = MagicMock(
         return_value=connected_node_factory(TEST_NODE_ID)
     )
-    mock_node_repository.send_inference_request = AsyncMock()
-    mock_node_repository.receive_for_request = AsyncMock(
+    mock_connected_node_repository.send_inference_request = AsyncMock()
+    mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
             InferenceResponse(
                 node_id=TEST_NODE_ID,
@@ -781,7 +838,7 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(
             ),
         ]
     )
-    mock_node_repository.cleanup_request = AsyncMock()
+    mock_connected_node_repository.cleanup_request = AsyncMock()
     mock_node_repository.update_node_status = AsyncMock()
     mock_node_repository.get_node_status = AsyncMock(return_value=NodeStatus.RUNNING)
 
@@ -799,7 +856,11 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(
 
     responses = []
     executor = use_case.InferenceExecutor(
-        mock_node_repository, mock_tokens_repository, AsyncMock(), MagicMock()
+        mock_node_repository,
+        mock_connected_node_repository,
+        mock_tokens_repository,
+        AsyncMock(),
+        MagicMock(),
     )
     async for response in executor.execute(
         USER_UUID,
@@ -815,10 +876,10 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(
     assert responses[0].chunk == None
     assert responses[0].error.status_code == InferenceErrorStatusCodes.BAD_REQUEST
     assert responses[0].error.message == "Client error"
-    mock_node_repository.send_inference_request.assert_awaited_once_with(
+    mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
         TEST_NODE_ID, "request_id"
     )
     # Node status MUST not be updated if it's a client side error

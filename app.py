@@ -25,7 +25,6 @@ from distributedinference.service.middleware.request_enrichment_middleware impor
 )
 from distributedinference.service.node.protocol import protocol_handler
 
-
 logger = api_logger.get()
 
 
@@ -50,6 +49,7 @@ async def lifespan(_: FastAPI):
     health_task = asyncio.create_task(
         health_check_job.execute(
             dependencies.get_node_repository(),
+            dependencies.get_connected_node_repository(),
             dependencies.get_analytics(),
             dependencies.get_protocol_handler(),
         )
@@ -58,7 +58,9 @@ async def lifespan(_: FastAPI):
 
     # Clean up resources and database before shutting down
     logger.info("Shutdown Signal received. Cleaning up...")
-    await dependencies.get_node_repository().set_all_connected_nodes_inactive()
+    connected_node_repository = dependencies.get_connected_node_repository()
+    connected_node_ids = [node.uid for node in connected_node_repository.get_locally_connected_nodes()]
+    await dependencies.get_node_repository().set_nodes_inactive(connected_node_ids)
     metrics_task.cancel()
     protocol_task.cancel()
     health_task.cancel()

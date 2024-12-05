@@ -1,8 +1,12 @@
 import base64
-from typing import Literal, Optional
-from fastapi import APIRouter, File, Form, UploadFile
-from fastapi import Depends
+from typing import Literal
+from typing import Optional
 
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import File
+from fastapi import Form
+from fastapi import UploadFile
 from openai.types.images_response import ImagesResponse
 
 from distributedinference import api_logger
@@ -11,16 +15,13 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.auth import authentication
-from distributedinference.service.images import (
-    images_edits_handler_service,
-    images_generations_handler_service,
-)
-from distributedinference.service.images.entities import (
-    ImageEditRequest,
-    ImageGenerationRequest,
-)
+from distributedinference.service.images import images_edits_handler_service
+from distributedinference.service.images import images_generations_handler_service
+from distributedinference.service.images.entities import ImageEditRequest
+from distributedinference.service.images.entities import ImageGenerationRequest
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 
 TAG = "Images"
@@ -40,7 +41,7 @@ logger = api_logger.get()
 async def generations(
     request: ImageGenerationRequest,
     user: User = Depends(authentication.validate_api_key_header),
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    connected_node_repository: ConnectedNodeRepository = Depends(dependencies.get_connected_node_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
     gcs_client: GoogleCloudStorage = Depends(
         dependencies.get_google_cloud_storage_client
@@ -48,7 +49,9 @@ async def generations(
 ):
     analytics.track_event(user.uid, AnalyticsEvent(EventName.IMAGE_GENERATION, {}))
     return await images_generations_handler_service.execute(
-        request, node_repository, gcs_client
+        request,
+        connected_node_repository,
+        gcs_client,
     )
 
 
@@ -82,7 +85,7 @@ async def edits(
         description="A unique identifier representing your end-user", default=None
     ),
     api_user: User = Depends(authentication.validate_api_key_header),
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    connected_node_repository: ConnectedNodeRepository = Depends(dependencies.get_connected_node_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
     gcs_client: GoogleCloudStorage = Depends(
         dependencies.get_google_cloud_storage_client
@@ -102,6 +105,6 @@ async def edits(
     )
     return await images_edits_handler_service.execute(
         request,
-        node_repository,
+        connected_node_repository,
         gcs_client,
     )

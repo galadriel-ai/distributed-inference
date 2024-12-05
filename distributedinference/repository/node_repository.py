@@ -1,32 +1,17 @@
-# pylint: disable=too-many-lines
-import asyncio
-import random
 import time
-from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
-from fastapi.encoders import jsonable_encoder
-from fastapi import status as http_status
+
 import sqlalchemy
-from openai.types.chat import ChatCompletionChunk
 from uuid_extensions import uuid7
 
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import (
-    ConnectedNode,
-    ImageGenerationWebsocketRequest,
-    ImageGenerationWebsocketResponse,
-)
+from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import FullNodeInfo
-from distributedinference.domain.node.entities import InferenceError
-from distributedinference.domain.node.entities import InferenceErrorStatusCodes
-from distributedinference.domain.node.entities import InferenceRequest
-from distributedinference.domain.node.entities import InferenceResponse
-from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeMetrics
@@ -509,69 +494,6 @@ class NodeRepository:
                 return row.id
             return None
 
-    def register_node(self, connected_node: ConnectedNode) -> bool:
-        """
-        Register a connected node, returns True if the node was successfully registered, False if the node is already registered
-        """
-        if connected_node.uid not in self._connected_nodes:
-            self._connected_nodes[connected_node.uid] = connected_node
-            return True
-        return False
-
-    def deregister_node(self, node_id: UUID):
-        if node_id in self._connected_nodes:
-            # Send error to all active requests
-            for request_id, queue in self._connected_nodes[
-                node_id
-            ].request_incoming_queues.items():
-                queue.put_nowait(
-                    InferenceResponse(
-                        node_id=node_id,
-                        request_id=request_id,
-                        error=InferenceError(
-                            status_code=InferenceErrorStatusCodes.UNPROCESSABLE_ENTITY,
-                            message="Node disconnected",
-                        ),
-                    ).to_dict()
-                )
-            del self._connected_nodes[node_id]
-
-    async def close_node_connection(self, node_id: UUID):
-        if node_id in self._connected_nodes:
-            await self._connected_nodes[node_id].websocket.close(
-                code=http_status.WS_1008_POLICY_VIOLATION,
-                reason="No Inference result",
-            )
-
-    # pylint: disable=W0613
-    def select_node(self, model: str) -> Optional[ConnectedNode]:
-        if not self._connected_nodes:
-            return None
-
-        eligible_nodes = [
-            node
-            for node in self._connected_nodes.values()
-            if node.model == model and self._can_handle_new_request(node)
-        ]
-
-        if not eligible_nodes:
-            return None
-
-        return random.choice(eligible_nodes)
-
-    def _can_handle_new_request(self, node: ConnectedNode) -> bool:
-        if not node.is_self_hosted and not node.node_status.is_healthy():
-            return False
-        if node.is_datacenter_gpu():
-            return (
-                node.active_requests_count()
-                < self._max_parallel_requests_per_datacenter_node
-            )
-        if node.can_handle_parallel_requests():
-            return node.active_requests_count() < self._max_parallel_requests_per_node
-
-        return node.active_requests_count() == 1
-
     @async_timer("node_repository.get_connected_nodes_count", logger=logger)
     async def get_connected_nodes_count(self) -> int:
         async with self._session_provider_read.get() as session:
@@ -665,17 +587,6 @@ class NodeRepository:
                 )
             return result
 
-    def get_unhealthy_nodes(self) -> List[ConnectedNode]:
-        # returns only in-memory unhealthy nodes
-        return [
-            node
-            for node in self._connected_nodes.values()
-            if not node.node_status.is_healthy()
-        ]
-
-    def get_locally_connected_nodes(self) -> List[ConnectedNode]:
-        return list(self._connected_nodes.values())
-
     @async_timer("node_repository.get_nodes_for_benchmarking", logger=logger)
     async def get_nodes_for_benchmarking(self) -> List[ConnectedNode]:
         connected_node_ids = list(self._connected_nodes.keys())
@@ -692,6 +603,7 @@ class NodeRepository:
                 node_ids.append(row.node_info_id)
         return [node for node in self._connected_nodes.values() if node.uid in node_ids]
 
+    # TODO: should be called together with ConnectedNodeRepository.register_node(..), in the same use_case
     # Insert if it doesn't exist
     @async_timer("node_repository.set_node_connection_timestamp", logger=logger)
     async def set_node_connection_timestamp(
@@ -860,13 +772,13 @@ class NodeRepository:
             await session.commit()
 
     @async_timer("node_repository.set_all_connected_nodes_inactive", logger=logger)
-    async def set_all_connected_nodes_inactive(self):
+    async def set_nodes_inactive(self, node_ids: List[UUID]):
         data = {
             "connected_at": None,
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            for node_id in self._connected_nodes:
+            for node_id in node_ids:
                 data["id"] = node_id
                 await session.execute(
                     sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP), data
@@ -942,81 +854,6 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_INSERT_NODE_HEALTH), data)
             await session.commit()
-
-    async def send_inference_request(
-        self, node_id: UUID, request: InferenceRequest
-    ) -> bool:
-        if node_id in self._connected_nodes:
-            connected_node = self._connected_nodes[node_id]
-            connected_node.request_incoming_queues[request.id] = asyncio.Queue()
-            await connected_node.websocket.send_json(asdict(request))
-            return True
-        return False
-
-    async def send_image_generation_request(
-        self, node_id: UUID, request: ImageGenerationWebsocketRequest
-    ) -> bool:
-        if node_id in self._connected_nodes:
-            connected_node = self._connected_nodes[node_id]
-            connected_node.request_incoming_queues[request.request_id] = asyncio.Queue()
-            await connected_node.websocket.send_json(jsonable_encoder(request))
-            return True
-        return False
-
-    async def receive_for_request(
-        self, node_id: UUID, request_id: str
-    ) -> Optional[InferenceResponse]:
-        if node_id in self._connected_nodes:
-            connected_node = self._connected_nodes[node_id]
-            data = await connected_node.request_incoming_queues[request_id].get()
-            try:
-                return InferenceResponse(
-                    node_id=node_id,
-                    request_id=data["request_id"],
-                    chunk=(
-                        ChatCompletionChunk(**data["chunk"])
-                        if data.get("chunk")
-                        else None
-                    ),
-                    error=(
-                        InferenceError(**data["error"]) if data.get("error") else None
-                    ),
-                    status=(
-                        InferenceStatusCodes(data["status"])
-                        if data.get("status")
-                        else None
-                    ),
-                )
-            except Exception:
-                logger.warning(f"Failed to parse chunk, request_id={request_id}")
-                return None
-        return None
-
-    async def receive_for_image_generation_request(
-        self, node_id: UUID, request_id: str
-    ) -> Optional[ImageGenerationWebsocketResponse]:
-        if node_id in self._connected_nodes:
-            connected_node = self._connected_nodes[node_id]
-            data = await connected_node.request_incoming_queues[request_id].get()
-            try:
-                return ImageGenerationWebsocketResponse(
-                    node_id=node_id,
-                    request_id=data["request_id"],
-                    images=data["images"],
-                    error=data["error"],
-                )
-            except Exception:
-                logger.warning(
-                    f"Failed to parse image generation response, request_id={request_id}"
-                )
-                logger.debug(f"Received data: {data}")
-                return None
-        return None
-
-    async def cleanup_request(self, node_id: UUID, request_id: str):
-        if node_id in self._connected_nodes:
-            connected_node = self._connected_nodes[node_id]
-            del connected_node.request_incoming_queues[request_id]
 
     def _get_specs_from_row(self, row):
         specs = None

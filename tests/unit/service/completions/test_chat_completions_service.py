@@ -116,6 +116,7 @@ async def test_success():
             ),
             MagicMock(),
             MagicMock(),
+            MagicMock(),
             AsyncMock(),
             MagicMock(),
         )
