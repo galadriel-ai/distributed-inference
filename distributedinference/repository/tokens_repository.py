@@ -196,6 +196,14 @@ class DailyUserModelUsage:
 
 
 @dataclass
+class DailyUserModelUsageIncrement:
+    user_profile_id: UUID
+    model_name: str
+    requests_count: int
+    tokens_count: int
+
+
+@dataclass
 class ModelUsageInformation:
     model_name: str
     tokens_count: int
@@ -229,6 +237,32 @@ class TokensRepository:
             logger.debug("tokens_repository.insert_usage_tokens commit()")
             await session.commit()
             logger.debug("tokens_repository.insert_usage_tokens done()")
+
+    @async_timer("tokens_repository.insert_usage_tokens_bulk", logger=logger)
+    async def insert_usage_tokens_bulk(self, uts: List[UsageTokens]):
+        data = [
+            {
+                "id": uuid7(),
+                "consumer_user_profile_id": ut.consumer_user_profile_id,
+                "producer_node_info_id": ut.producer_node_info_id,
+                "model_name": ut.model_name,
+                "prompt_tokens": ut.prompt_tokens,
+                "completion_tokens": ut.completion_tokens,
+                "total_tokens": ut.total_tokens,
+                "created_at": utcnow(),
+                "last_updated_at": utcnow(),
+            }
+            for ut in uts
+        ]
+        logger.debug(
+            f"tokens_repository.insert_usage_tokens_bulk inserting {len(data)} rows"
+        )
+        async with self._session_provider.get() as session:
+            logger.debug("tokens_repository.insert_usage_tokens_bulk execute()")
+            await session.execute(sqlalchemy.text(SQL_INSERT_USAGE_TOKENS), data)
+            logger.debug("tokens_repository.insert_usage_tokens_bulk commit()")
+            await session.commit()
+            logger.debug("tokens_repository.insert_usage_tokens_bulk done()")
 
     # pylint: disable=W0613
     @async_timer("tokens_repository.get_node_latest_usage_tokens", logger=logger)
@@ -393,25 +427,56 @@ class TokensRepository:
                 date=row.usage_date if row else utctoday(),
             )
 
-    @async_timer("tokens_repository.update_daily_usage", logger=logger)
+    @async_timer("tokens_repository.increment_daily_usage", logger=logger)
     async def increment_daily_usage(
         self,
-        user_profile_id: UUID,
-        model: str,
-        tokens_to_add: int,
+        daily_usage_inc: DailyUserModelUsageIncrement,
     ) -> None:
         data = {
-            "user_profile_id": user_profile_id,
-            "model_name": model,
-            "tokens_to_add": tokens_to_add,
-            "requests_to_add": 1,
+            "user_profile_id": daily_usage_inc.user_profile_id,
+            "model_name": daily_usage_inc.model_name,
+            "tokens_to_add": daily_usage_inc.tokens_count,
+            "requests_to_add": daily_usage_inc.requests_count,
             "usage_date": utctoday(),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
+            logger.debug("tokens_repository.increment_daily_usage execute()")
             await session.execute(
                 sqlalchemy.text(SQL_INCREMENT_USER_MODEL_DAILY_USAGE),
                 data,
             )
+            logger.debug("tokens_repository.increment_daily_usage commit()")
             await session.commit()
+            logger.debug("tokens_repository.increment_daily_usage done()")
+
+    @async_timer("tokens_repository.increment_daily_usage_bulk", logger=logger)
+    async def increment_daily_usage_bulk(
+        self,
+        daily_usage_incs: List[DailyUserModelUsageIncrement],
+    ) -> None:
+        data = [
+            {
+                "user_profile_id": daily_usage_inc.user_profile_id,
+                "model_name": daily_usage_inc.model_name,
+                "tokens_to_add": daily_usage_inc.tokens_count,
+                "requests_to_add": daily_usage_inc.requests_count,
+                "usage_date": utctoday(),
+                "created_at": utcnow(),
+                "last_updated_at": utcnow(),
+            }
+            for daily_usage_inc in daily_usage_incs
+        ]
+        logger.debug(
+            f"tokens_repository.increment_daily_usage_bulk inserting {len(data)} rows"
+        )
+        async with self._session_provider.get() as session:
+            logger.debug("tokens_repository.increment_daily_usage_bulk execute()")
+            await session.execute(
+                sqlalchemy.text(SQL_INCREMENT_USER_MODEL_DAILY_USAGE),
+                data,
+            )
+            logger.debug("tokens_repository.increment_daily_usage_bulk commit()")
+            await session.commit()
+            logger.debug("tokens_repository.increment_daily_usage_bulk done()")

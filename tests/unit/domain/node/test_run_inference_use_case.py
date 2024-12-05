@@ -200,6 +200,7 @@ async def test_success(connected_node_factory):
         mock_connected_node_repository,
         mock_tokens_repository,
         AsyncMock(),
+        AsyncMock(),
         MagicMock(),
     )
     async for response in executor.execute(
@@ -246,6 +247,7 @@ async def test_no_nodes_forward_to_peers():
         mock_connected_node_repository,
         mock_tokens_repository,
         AsyncMock(),
+        AsyncMock(),
         MagicMock(),
     )
     result = []
@@ -285,6 +287,7 @@ async def test_no_nodes_forward_to_peers_failed():
         mock_connected_node_repository,
         mock_tokens_repository,
         AsyncMock(),
+        AsyncMock(),
         MagicMock(),
     )
     result = []
@@ -322,6 +325,7 @@ async def test_no_nodes_no_forward_for_forwarding_request():
         mock_node_repository,
         mock_connected_node_repository,
         mock_tokens_repository,
+        AsyncMock(),
         AsyncMock(),
         MagicMock(),
     )
@@ -364,6 +368,7 @@ async def test_no_nodes_uses_proxy():
         mock_connected_node_repository,
         mock_tokens_repository,
         AsyncMock(),
+        AsyncMock(),
         MagicMock(),
     )
     result = []
@@ -405,6 +410,7 @@ async def test_no_nodes_and_proxy_also_fails():
         mock_node_repository,
         mock_connected_node_repository,
         mock_tokens_repository,
+        AsyncMock(),
         AsyncMock(),
         MagicMock(),
     )
@@ -485,6 +491,7 @@ async def test_streaming_no_usage(connected_node_factory):
         mock_node_repository,
         mock_connected_node_repository,
         mock_tokens_repository,
+        AsyncMock(),
         AsyncMock(),
         MagicMock(),
     )
@@ -574,6 +581,7 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
         mock_connected_node_repository,
         mock_tokens_repository,
         AsyncMock(),
+        AsyncMock(),
         MagicMock(),
     )
     async for response in executor.execute(
@@ -653,6 +661,7 @@ async def test_old_node_still_works(connected_node_factory):
         mock_connected_node_repository,
         mock_tokens_repository,
         AsyncMock(),
+        AsyncMock(),
         MagicMock(),
     )
     async for response in executor.execute(
@@ -721,6 +730,7 @@ async def test_inference_error_stops_loop(connected_node_factory):
         mock_connected_node_repository,
         mock_tokens_repository,
         AsyncMock(),
+        AsyncMock(),
         MagicMock(),
     )
     async for response in executor.execute(
@@ -787,6 +797,7 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
         mock_node_repository,
         mock_connected_node_repository,
         mock_tokens_repository,
+        AsyncMock(),
         AsyncMock(),
         MagicMock(),
     )
@@ -859,6 +870,7 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(
         mock_node_repository,
         mock_connected_node_repository,
         mock_tokens_repository,
+        AsyncMock(),
         AsyncMock(),
         MagicMock(),
     )

@@ -219,6 +219,9 @@ async def completions(
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),
+    tokens_queue_repository: TokensRepository = Depends(
+        dependencies.get_tokens_repository
+    ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
@@ -250,6 +253,7 @@ async def completions(
         tokens_repository,
         rate_limit_repository,
         metrics_queue_repository,
+        tokens_queue_repository,
         analytics,
     )
 

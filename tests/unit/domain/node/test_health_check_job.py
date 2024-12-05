@@ -22,7 +22,7 @@ from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
 from distributedinference.repository.node_repository import NodeRepository
-from distributedinference.domain.node import health_check_job
+from distributedinference.domain.node.jobs import health_check_job
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 
 
@@ -66,7 +66,9 @@ def mock_protocol_handler():
     return MagicMock(spec=ProtocolHandler)
 
 
-@patch("distributedinference.domain.node.health_check_job._send_health_check_inference")
+@patch(
+    "distributedinference.domain.node.jobs.health_check_job._send_health_check_inference"
+)
 async def test_check_node_health_healthy(
     mock_send_health_check_inference,
     create_mock_node,
@@ -102,7 +104,9 @@ async def test_check_node_health_healthy(
     )
 
 
-@patch("distributedinference.domain.node.health_check_job._send_health_check_inference")
+@patch(
+    "distributedinference.domain.node.jobs.health_check_job._send_health_check_inference"
+)
 async def test_check_node_health_unhealthy(
     mock_send_health_check_inference,
     create_mock_node,

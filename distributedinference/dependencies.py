@@ -22,6 +22,9 @@ from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
@@ -35,6 +38,7 @@ _metrics_queue_repository: MetricsQueueRepository
 _metrics_repository: MetricsRepository
 _rate_limit_repository: RateLimitRepository
 _billing_repository: BillingRepository
+_tokens_queue_repository: TokensQueueRepository
 
 _embedding_api_repository: EmbeddingApiRepository
 _authentication_api_repository: AuthenticationApiRepository
@@ -55,6 +59,7 @@ def init_globals():
     global _metrics_repository
     global _rate_limit_repository
     global _billing_repository
+    global _tokens_queue_repository
     global _embedding_api_repository
     global _authentication_api_repository
     global _analytics
@@ -87,6 +92,7 @@ def init_globals():
     _billing_repository = BillingRepository(
         get_session_provider(), get_session_provider_read()
     )
+    _tokens_queue_repository = TokensQueueRepository()
 
     _analytics = Analytics(
         posthog=init_posthog(
@@ -174,3 +180,7 @@ def get_billing_repository() -> BillingRepository:
 
 def get_google_cloud_storage_client() -> GoogleCloudStorage:
     return _google_cloud_storage_client
+
+
+def get_tokens_queue_repository() -> TokensQueueRepository:
+    return _tokens_queue_repository

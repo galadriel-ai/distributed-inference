@@ -309,13 +309,13 @@ WHERE node_info_id = :id;
 SQL_GET_CONNECTED_NODE_COUNT = """
 SELECT COUNT(id) AS node_count
 FROM node_metrics
-WHERE status LIKE 'RUNNING%';
+WHERE status::text LIKE 'RUNNING%';
 """
 
 SQL_GET_CONNECTED_NODE_IDS = """
 SELECT node_info_id
 FROM node_metrics
-WHERE status LIKE 'RUNNING%';
+WHERE status::text LIKE 'RUNNING%';
 """
 
 SQL_GET_NODE_METRICS = """

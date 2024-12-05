@@ -16,6 +16,9 @@ from distributedinference.repository.connected_node_repository import ConnectedN
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tokens_repository import TokensRepository
@@ -33,7 +36,7 @@ from distributedinference.utils.timer import async_timer
 logger = api_logger.get()
 
 
-# pylint: disable=R0913
+# pylint: disable=R0913, R0801
 @async_timer("chat_completions_handler_service.execute", logger=logger)
 async def execute(
     request: ChatCompletionRequest,
@@ -45,6 +48,7 @@ async def execute(
     tokens_repository: TokensRepository,
     rate_limit_repository: RateLimitRepository,
     metrics_queue_repository: MetricsQueueRepository,
+    tokens_queue_repository: TokensQueueRepository,
     analytics: Analytics,
 ) -> Union[StreamingResponse, ChatCompletion]:
 
@@ -80,6 +84,7 @@ async def execute(
                 node_repository=node_repository,
                 tokens_repository=tokens_repository,
                 metrics_queue_repository=metrics_queue_repository,
+                tokens_queue_repository=tokens_queue_repository,
                 analytics=analytics,
             ),
             headers=headers,
@@ -94,6 +99,7 @@ async def execute(
         connected_node_repository=connected_node_repository,
         tokens_repository=tokens_repository,
         metrics_queue_repository=metrics_queue_repository,
+        tokens_queue_repository=tokens_queue_repository,
         analytics=analytics,
     )
 
