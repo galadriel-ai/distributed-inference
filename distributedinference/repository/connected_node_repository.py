@@ -115,6 +115,9 @@ class ConnectedNodeRepository:
     def get_locally_connected_nodes(self) -> List[ConnectedNode]:
         return list(self._connected_nodes.values())
 
+    def get_locally_connected_node_keys(self) -> List[UUID]:
+        return list(self._connected_nodes.keys())
+
     async def send_inference_request(
         self, node_id: UUID, request: InferenceRequest
     ) -> bool:
@@ -190,6 +193,8 @@ class ConnectedNodeRepository:
             connected_node = self._connected_nodes[node_id]
             del connected_node.request_incoming_queues[request_id]
 
-    def update_node_status(self, node_id: UUID, status: NodeStatus) -> None:
+    def update_node_status(self, node_id: UUID, status: NodeStatus) -> bool:
         if node_id in self._connected_nodes:
             self._connected_nodes[node_id].node_status = status
+            return True
+        return False

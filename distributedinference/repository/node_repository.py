@@ -602,7 +602,6 @@ class NodeRepository:
                 node_ids.append(row.node_info_id)
         return [node for node in connected_nodes if node.uid in node_ids]
 
-    # TODO: should be called together with ConnectedNodeRepository.register_node(..), in the same use_case
     # Insert if it doesn't exist
     @async_timer("node_repository.set_node_connection_timestamp", logger=logger)
     async def set_node_connection_timestamp(
@@ -768,17 +767,15 @@ class NodeRepository:
             )
             await session.commit()
 
-    @async_timer("node_repository.set_all_connected_nodes_inactive", logger=logger)
-    # TODO:
-    async def set_nodes_inactive(self, node_ids: List[UUID]):
+    @async_timer("node_repository.set_nodes_inactive", logger=logger)
+    async def set_nodes_inactive(self, nodes: List[ConnectedNode]):
         data = {
             "connected_at": None,
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            for node_id in node_ids:
-            for node_id, node in self._connected_nodes.items():
-                data["id"] = node_id
+            for node in nodes:
+                data["id"] = node.uid
                 data["status"] = node.node_status.value
                 await session.execute(
                     sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP_AND_STATUS),
