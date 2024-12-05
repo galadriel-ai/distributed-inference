@@ -9,7 +9,8 @@ from starlette.middleware.cors import CORSMiddleware
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.domain.node.jobs import health_check_job, set_nodes_inactive
+from distributedinference.domain.node import set_nodes_inactive
+from distributedinference.domain.node.jobs import health_check_job
 from distributedinference.domain.node.jobs import metrics_update_job
 from distributedinference.domain.node.jobs import save_daily_usage_job
 from distributedinference.domain.node.jobs import save_tokens_job

@@ -82,6 +82,7 @@ async def execute(
                 forwarding_from,
                 request,
                 node_repository=node_repository,
+                connected_node_repository=connected_node_repository,
                 tokens_repository=tokens_repository,
                 metrics_queue_repository=metrics_queue_repository,
                 tokens_queue_repository=tokens_queue_repository,

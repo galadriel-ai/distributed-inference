@@ -21,6 +21,7 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
+from distributedinference.repository.tokens_queue_repository import TokensQueueRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
@@ -219,8 +220,8 @@ async def completions(
     metrics_queue_repository: MetricsQueueRepository = Depends(
         dependencies.get_metrics_queue_repository
     ),
-    tokens_queue_repository: TokensRepository = Depends(
-        dependencies.get_tokens_repository
+    tokens_queue_repository: TokensQueueRepository = Depends(
+        dependencies.get_tokens_queue_repository
     ),
     user_repository: UserRepository = Depends(dependencies.get_user_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
