@@ -58,6 +58,7 @@ llm_fallback_called_gauge = Gauge(
 class InferenceExecutor:
     metrics_increment: NodeMetricsIncrement
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         node_repository: NodeRepository,

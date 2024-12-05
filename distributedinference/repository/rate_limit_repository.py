@@ -44,51 +44,6 @@ FROM usage_tier
 WHERE id = :id;
 """
 
-SQL_GET_USER_MODEL_BUCKET = """
-SELECT
-    model_name,
-    requests_remaining_minute,
-    tokens_remaining_minute,
-    requests_remaining_day,
-    tokens_remaining_day,
-    last_updated_at
-FROM
-    rate_limit_buckets
-WHERE
-    user_profile_id = :user_profile_id
-    AND model_name = :model_name;
-"""
-
-SQL_UPDATE_RATE_LIMIT_BUCKETS = """
-INSERT INTO rate_limit_buckets (
-    user_profile_id,
-    model_name,
-    requests_remaining_minute,
-    tokens_remaining_minute,
-    requests_remaining_day,
-    tokens_remaining_day,
-    created_at,
-    last_updated_at
-)
-VALUES (
-    :user_profile_id,
-    :model_name,
-    GREATEST(0, :requests_remaining_minute),
-    GREATEST(0, :tokens_remaining_minute),
-    GREATEST(0, :requests_remaining_day),
-    GREATEST(0, :tokens_remaining_day),
-    :created_at,
-    :last_updated_at
-)
-ON CONFLICT (user_profile_id, model_name)
-DO UPDATE SET
-    requests_remaining_minute = GREATEST(0, rate_limit_buckets.requests_remaining_minute - EXCLUDED.requests_remaining_minute),
-    tokens_remaining_minute = GREATEST(0, rate_limit_buckets.tokens_remaining_minute - EXCLUDED.tokens_remaining_minute),
-    requests_remaining_day = GREATEST(0, rate_limit_buckets.requests_remaining_day - EXCLUDED.requests_remaining_day),
-    tokens_remaining_day = GREATEST(0, rate_limit_buckets.tokens_remaining_day - EXCLUDED.tokens_remaining_day),
-    last_updated_at = NOW();
-"""
-
 logger = api_logger.get()
 
 

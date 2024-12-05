@@ -1,6 +1,5 @@
 import asyncio
 from typing import List
-from typing import Optional
 
 from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.repository.tokens_repository import (
