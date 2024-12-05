@@ -3,7 +3,9 @@ from uuid_extensions import uuid7
 
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.service.images import images_generations_service
 from distributedinference.service.images.entities import (
     ImageGenerationRequest,

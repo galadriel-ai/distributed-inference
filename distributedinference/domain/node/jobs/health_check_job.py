@@ -26,7 +26,9 @@ from distributedinference.domain.node.entities import CheckHealthResponse
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.node.time_tracker import TimeTracker
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 
 from distributedinference.repository.node_repository import ConnectedNode
 from distributedinference.repository.node_repository import NodeRepository
@@ -65,7 +67,7 @@ async def execute(
                 node_repository,
                 connected_node_repository,
                 analytics,
-                protocol_handler
+                protocol_handler,
             )
 
 
@@ -109,7 +111,9 @@ async def _send_health_check_inference(
     await connected_node_repository.send_inference_request(node.uid, request)
     try:
         while True:
-            response = await connected_node_repository.receive_for_request(node.uid, request.id)
+            response = await connected_node_repository.receive_for_request(
+                node.uid, request.id
+            )
             if not response:
                 return CheckHealthResponse(
                     node_id=node.uid,

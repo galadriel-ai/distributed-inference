@@ -15,8 +15,9 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.service.auth import authentication
 from distributedinference.service.images import images_edits_handler_service
 from distributedinference.service.images import images_generations_handler_service
@@ -41,7 +42,9 @@ logger = api_logger.get()
 async def generations(
     request: ImageGenerationRequest,
     user: User = Depends(authentication.validate_api_key_header),
-    connected_node_repository: ConnectedNodeRepository = Depends(dependencies.get_connected_node_repository),
+    connected_node_repository: ConnectedNodeRepository = Depends(
+        dependencies.get_connected_node_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
     gcs_client: GoogleCloudStorage = Depends(
         dependencies.get_google_cloud_storage_client
@@ -85,7 +88,9 @@ async def edits(
         description="A unique identifier representing your end-user", default=None
     ),
     api_user: User = Depends(authentication.validate_api_key_header),
-    connected_node_repository: ConnectedNodeRepository = Depends(dependencies.get_connected_node_repository),
+    connected_node_repository: ConnectedNodeRepository = Depends(
+        dependencies.get_connected_node_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
     gcs_client: GoogleCloudStorage = Depends(
         dependencies.get_google_cloud_storage_client

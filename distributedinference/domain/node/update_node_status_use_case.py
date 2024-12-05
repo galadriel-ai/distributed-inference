@@ -1,7 +1,9 @@
 from uuid import UUID
 
 from distributedinference.domain.node.entities import NodeStatus
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 
 

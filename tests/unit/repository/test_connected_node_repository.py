@@ -16,7 +16,9 @@ from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node.entities import NodeStatus
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.node_repository import (
     SQL_INCREMENT_NODE_METRICS,
@@ -133,7 +135,9 @@ def test_select_node_with_nodes_hosting_different_models(
     assert selected_node is None
 
 
-def test_select_node_but_unavailable_model(connected_node_repository, connected_node_factory):
+def test_select_node_but_unavailable_model(
+    connected_node_repository, connected_node_factory
+):
     node1 = connected_node_factory("1")
 
     connected_node_repository.register_node(node1)
@@ -142,7 +146,9 @@ def test_select_node_but_unavailable_model(connected_node_repository, connected_
     assert selected_node is None
 
 
-def test_select_node_after_deregistration(connected_node_repository, connected_node_factory):
+def test_select_node_after_deregistration(
+    connected_node_repository, connected_node_factory
+):
     node1 = connected_node_factory("1")
     node2 = connected_node_factory("2")
     node3 = connected_node_factory("3")
@@ -211,7 +217,9 @@ def test_select_datacenter_node_after_reaching_maximum_parallel_requests(
     assert connected_node_repository.select_node("model") is None
 
 
-def test_8gb_node_handles_only_1_connection(connected_node_repository, connected_node_factory):
+def test_8gb_node_handles_only_1_connection(
+    connected_node_repository, connected_node_factory
+):
     node = connected_node_factory("1", small_node=True)
     connected_node_repository.register_node(node)
 

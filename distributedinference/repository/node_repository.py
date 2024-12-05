@@ -593,7 +593,9 @@ class NodeRepository:
             return result
 
     @async_timer("node_repository.get_nodes_for_benchmarking", logger=logger)
-    async def get_nodes_for_benchmarking(self, connected_nodes: List[ConnectedNode]) -> List[ConnectedNode]:
+    async def get_nodes_for_benchmarking(
+        self, connected_nodes: List[ConnectedNode]
+    ) -> List[ConnectedNode]:
         connected_node_ids = [node.uid for node in connected_nodes]
         data = {
             "node_ids": connected_node_ids,

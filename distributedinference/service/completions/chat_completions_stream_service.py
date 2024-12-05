@@ -9,7 +9,9 @@ from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.run_inference_use_case import InferenceExecutor
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )

@@ -25,7 +25,9 @@ from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.protocol.health_check.protocol import (
     HealthCheckProtocol,

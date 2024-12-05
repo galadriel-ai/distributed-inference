@@ -20,7 +20,9 @@ from distributedinference.analytics.analytics import (
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.domain.node.jobs import health_check_job
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler

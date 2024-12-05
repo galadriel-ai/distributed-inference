@@ -20,7 +20,9 @@ from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.completions.entities import ChatCompletionRequest

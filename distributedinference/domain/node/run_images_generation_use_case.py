@@ -6,7 +6,9 @@ from openai.types.images_response import ImagesResponse
 from distributedinference import api_logger
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.service import error_responses
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 
@@ -27,7 +29,9 @@ async def execute(
         )
         raise error_responses.NoAvailableInferenceNodesError()
 
-    await connected_node_repository.send_image_generation_request(node.uid, websocket_request)
+    await connected_node_repository.send_image_generation_request(
+        node.uid, websocket_request
+    )
 
     response = await connected_node_repository.receive_for_image_generation_request(
         node.uid, websocket_request.request_id

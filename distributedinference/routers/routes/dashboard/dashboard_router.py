@@ -13,7 +13,9 @@ from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.billing_repository import BillingRepository
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -21,7 +23,9 @@ from distributedinference.repository.metrics_queue_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.rate_limit_repository import RateLimitRepository
-from distributedinference.repository.tokens_queue_repository import TokensQueueRepository
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
@@ -212,7 +216,9 @@ async def completions(
     user: User = Depends(authentication.validate_session_token),
     forwarding_from: Optional[str] = Depends(authentication.get_forwarding_origin),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
-    connected_node_repository: ConnectedNodeRepository = Depends(dependencies.get_connected_node_repository),
+    connected_node_repository: ConnectedNodeRepository = Depends(
+        dependencies.get_connected_node_repository
+    ),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     rate_limit_repository: RateLimitRepository = Depends(
         dependencies.get_rate_limit_repository

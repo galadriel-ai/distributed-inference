@@ -6,7 +6,9 @@ from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
 from distributedinference.repository.billing_repository import BillingRepository
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 
 from distributedinference.repository.connection import get_session_provider
 from distributedinference.repository.connection import get_session_provider_read
@@ -49,6 +51,7 @@ _grafana_api_repository: GrafanaApiRepository
 _google_cloud_storage_client: GoogleCloudStorage
 
 
+# pylint: disable=W0603
 def init_globals():
     # TODO: refactor this, we shouldn't use globals
     global _node_repository_instance

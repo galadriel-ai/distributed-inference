@@ -69,7 +69,6 @@ class ConnectedNodeRepository:
                 )
             del self._connected_nodes[node_id]
 
-    # pylint: disable=W0613
     def select_node(self, model: str) -> Optional[ConnectedNode]:
         if not self._connected_nodes:
             return None

@@ -12,7 +12,9 @@ from distributedinference.domain.node import run_images_generation_use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import ImageGenerationWebsocketResponse
 from distributedinference.domain.node.entities import NodeStatus
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
 from distributedinference.service.images import (

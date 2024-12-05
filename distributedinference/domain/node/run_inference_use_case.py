@@ -26,7 +26,9 @@ from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.node.time_tracker import TimeTracker
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -185,7 +187,9 @@ class InferenceExecutor:
         * InferenceResponse if there is one
         * bool indicating if the streaming has been finished
         """
-        response = await self.connected_node_repository.receive_for_request(node.uid, request.id)
+        response = await self.connected_node_repository.receive_for_request(
+            node.uid, request.id
+        )
         if not response:
             # Nothing to check, we can mark node as unhealthy and break
             await self._mark_node_as_unhealthy(node)

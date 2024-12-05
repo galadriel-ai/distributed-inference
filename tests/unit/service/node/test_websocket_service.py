@@ -18,7 +18,9 @@ from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node import websocket_service
 from distributedinference.service.node.protocol.ping_pong_protocol import (
@@ -369,8 +371,7 @@ async def test_execute_node_already_connected(
 
 
 async def test_execute_websocket_disconnect(
-    node_repository: AsyncMock,
-    connected_node_repository: AsyncMock
+    node_repository: AsyncMock, connected_node_repository: AsyncMock
 ):
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect)

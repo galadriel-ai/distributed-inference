@@ -12,7 +12,9 @@ from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.domain.rate_limit import rate_limit_use_case
 from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.connected_node_repository import ConnectedNodeRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
