@@ -9,7 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.domain.node import health_check_job
+from distributedinference.domain.node import health_check_job, set_nodes_inactive
 from distributedinference.domain.node import metrics_update_job
 from distributedinference.repository import connection
 from distributedinference.routers import main_router
@@ -58,9 +58,7 @@ async def lifespan(_: FastAPI):
 
     # Clean up resources and database before shutting down
     logger.info("Shutdown Signal received. Cleaning up...")
-    connected_node_repository = dependencies.get_connected_node_repository()
-    connected_node_ids = [node.uid for node in connected_node_repository.get_locally_connected_nodes()]
-    await dependencies.get_node_repository().set_nodes_inactive(connected_node_ids)
+    await set_nodes_inactive.execute(dependencies.get_node_repository())
     metrics_task.cancel()
     protocol_task.cancel()
     health_task.cancel()

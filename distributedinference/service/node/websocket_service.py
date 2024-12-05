@@ -257,9 +257,7 @@ async def _check_before_connecting(
     )
     if (
         node_metrics.get(node_info.node_id)
-        # TODO: this should check `node_metrics[node_info.node_id].status.is_active()`
-        #  but this can lead to faulty results apparently
-        and node_metrics[node_info.node_id].is_active
+        and node_metrics[node_info.node_id].status.is_connected()
     ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
