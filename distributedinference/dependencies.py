@@ -6,6 +6,9 @@ from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
 from distributedinference.repository.billing_repository import BillingRepository
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 
 from distributedinference.repository.connection import get_session_provider
 from distributedinference.repository.connection import get_session_provider_read
@@ -30,6 +33,7 @@ from distributedinference.service.node.protocol.protocol_handler import Protocol
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 
 _node_repository_instance: NodeRepository
+_connected_node_repository_instance: ConnectedNodeRepository
 _node_stats_repository_instance: NodeStatsRepository
 _benchmark_repository_instance: BenchmarkRepository
 _metrics_queue_repository: MetricsQueueRepository
@@ -49,8 +53,9 @@ _google_cloud_storage_client: GoogleCloudStorage
 
 # pylint: disable=W0603
 def init_globals():
-    # TODO: refactor this, we shoudn't use globals
+    # TODO: refactor this, we shouldn't use globals
     global _node_repository_instance
+    global _connected_node_repository_instance
     global _node_stats_repository_instance
     global _benchmark_repository_instance
     global _metrics_queue_repository
@@ -67,6 +72,10 @@ def init_globals():
     _node_repository_instance = NodeRepository(
         get_session_provider(),
         get_session_provider_read(),
+        settings.MAX_PARALLEL_REQUESTS_PER_NODE,
+        settings.MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE,
+    )
+    _connected_node_repository_instance = ConnectedNodeRepository(
         settings.MAX_PARALLEL_REQUESTS_PER_NODE,
         settings.MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE,
     )
@@ -114,6 +123,10 @@ def init_globals():
 
 def get_node_repository() -> NodeRepository:
     return _node_repository_instance
+
+
+def get_connected_node_repository() -> ConnectedNodeRepository:
+    return _connected_node_repository_instance
 
 
 def get_node_stats_repository() -> NodeStatsRepository:

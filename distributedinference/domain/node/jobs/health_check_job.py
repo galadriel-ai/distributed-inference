@@ -17,6 +17,7 @@ from distributedinference import api_logger
 from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node import is_inference_request_finished
+from distributedinference.domain.node import update_node_status_use_case
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
@@ -25,6 +26,9 @@ from distributedinference.domain.node.entities import CheckHealthResponse
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.node.time_tracker import TimeTracker
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 
 from distributedinference.repository.node_repository import ConnectedNode
 from distributedinference.repository.node_repository import NodeRepository
@@ -42,6 +46,7 @@ logger = api_logger.get()
 
 async def execute(
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     analytics: Analytics,
     protocol_handler: ProtocolHandler,
 ) -> None:
@@ -55,17 +60,24 @@ async def execute(
     while True:
         await asyncio.sleep(timeout)
         logger.debug("Running health check job!")
-        nodes = await _get_nodes_for_check(node_repository)
+        nodes = await _get_nodes_for_check(node_repository, connected_node_repository)
         for node in nodes:
-            await _check_node_health(node, node_repository, analytics, protocol_handler)
+            await _check_node_health(
+                node,
+                node_repository,
+                connected_node_repository,
+                analytics,
+                protocol_handler,
+            )
 
 
 async def _get_nodes_for_check(
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
 ) -> List[ConnectedNode]:
     result = []
     try:
-        nodes = node_repository.get_unhealthy_nodes()
+        nodes = connected_node_repository.get_unhealthy_nodes()
         result += nodes
     except Exception:
         logger.error(
@@ -74,7 +86,8 @@ async def _get_nodes_for_check(
         )
 
     try:
-        nodes = await node_repository.get_nodes_for_benchmarking()
+        connected_nodes = connected_node_repository.get_locally_connected_nodes()
+        nodes = await node_repository.get_nodes_for_benchmarking(connected_nodes)
         result += nodes
     except Exception:
         logger.error(
@@ -86,7 +99,7 @@ async def _get_nodes_for_check(
 
 async def _send_health_check_inference(
     node: ConnectedNode,
-    node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
 ) -> CheckHealthResponse:
     request = InferenceRequest(
         id=str(uuid7()),
@@ -95,10 +108,12 @@ async def _send_health_check_inference(
     )
     time_tracker = TimeTracker()
     time_tracker.start()
-    await node_repository.send_inference_request(node.uid, request)
+    await connected_node_repository.send_inference_request(node.uid, request)
     try:
         while True:
-            response = await node_repository.receive_for_request(node.uid, request.id)
+            response = await connected_node_repository.receive_for_request(
+                node.uid, request.id
+            )
             if not response:
                 return CheckHealthResponse(
                     node_id=node.uid,
@@ -147,13 +162,14 @@ async def _send_health_check_inference(
                     error=None,
                 )
     finally:
-        await node_repository.cleanup_request(node.uid, request.id)
+        connected_node_repository.cleanup_request(node.uid, request.id)
 
 
 # pylint: disable=R0912, R0913
 async def _check_node_health(
     node: ConnectedNode,
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     analytics: Analytics,
     _: ProtocolHandler,
 ) -> None:
@@ -165,7 +181,7 @@ async def _check_node_health(
                 f"Skipping node health check for node_id={node.uid}, current status: {node_status.value}"
             )
             return
-        response = await _send_health_check_inference(node, node_repository)
+        response = await _send_health_check_inference(node, connected_node_repository)
         is_healthy = response.is_healthy
         logger.debug(
             f"Node health check result, node_id={node.uid}, is_healthy={is_healthy}"
@@ -177,9 +193,17 @@ async def _check_node_health(
             )
         # TODO: add back soon
         # if status == NodeStatus.STOPPED_BENCHMARK_FAILED:
-        #    await _disconnect_node(node, node_repository, protocol_handler, status)
+        #     await _disconnect_node(
+        #         node,
+        #         node_repository,
+        #         connected_node_repository,
+        #         protocol_handler,
+        #         status
+        #     )
 
-        await node_repository.update_node_status(node.uid, status)
+        await update_node_status_use_case.execute(
+            node.uid, status, node_repository, connected_node_repository
+        )
 
     except Exception:
         logger.error(
@@ -221,11 +245,12 @@ async def _get_health_check_request(node: ConnectedNode) -> CompletionCreatePara
 async def _disconnect_node(
     node: ConnectedNode,
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     protocol_handler: ProtocolHandler,
     node_status: NodeStatus,
 ):
-    await node_repository.close_node_connection(node.uid)
-    node_repository.deregister_node(node.uid)
+    await connected_node_repository.close_node_connection(node.uid)
+    connected_node_repository.deregister_node(node.uid)
     await node_repository.update_node_to_disconnected(node.uid, node_status)
     ping_pong_protocol: PingPongProtocol = protocol_handler.get(
         settings.PING_PONG_PROTOCOL_NAME

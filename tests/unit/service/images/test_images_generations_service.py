@@ -1,33 +1,30 @@
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid1
-from packaging.version import Version
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
+from uuid import UUID
+from uuid import uuid1
 
 import pytest
+from openai.types.images_response import ImagesResponse
+from packaging.version import Version
 
 from distributedinference.domain.node import run_images_generation_use_case
-from distributedinference.domain.node.entities import (
-    ConnectedNode,
-    ImageGenerationWebsocketResponse,
-    NodeStatus,
+from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import ImageGenerationWebsocketResponse
+from distributedinference.domain.node.entities import NodeStatus
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
 )
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses
 from distributedinference.service.images import (
-    images_generations_handler_service as generation_handler_service,
-)
-from distributedinference.service.images import (
     images_edits_handler_service as edit_handler_service,
 )
 from distributedinference.service.images import (
-    images_generations_service as generation_service,
+    images_generations_handler_service as generation_handler_service,
 )
-from distributedinference.service.images.entities import (
-    ImageGenerationRequest,
-    ImageEditRequest,
-)
-from openai.types.images_response import ImagesResponse
-
+from distributedinference.service.images.entities import ImageEditRequest
+from distributedinference.service.images.entities import ImageGenerationRequest
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 
 USER_UUID = UUID("066d0263-61d3-76a4-8000-6b1403cac403")
@@ -43,7 +40,12 @@ def setup():
 
 @pytest.fixture
 def node_repository():
-    return AsyncMock(NodeRepository)
+    return AsyncMock(spec=NodeRepository)
+
+
+@pytest.fixture
+def connected_node_repository():
+    return AsyncMock(spec=ConnectedNodeRepository)
 
 
 @pytest.fixture
@@ -94,7 +96,9 @@ def create_mock_node():
 
 @pytest.mark.asyncio
 async def test_execute_image_generation_request(
-    node_repository, image_generation_request, gsc_client
+    connected_node_repository,
+    image_generation_request,
+    gsc_client,
 ):
     mock_node = create_mock_node()
     run_images_generation_use_case._select_node = MagicMock(return_value=mock_node)
@@ -107,7 +111,7 @@ async def test_execute_image_generation_request(
         error=None,
     )
 
-    node_repository.receive_for_image_generation_request = AsyncMock(
+    connected_node_repository.receive_for_image_generation_request = AsyncMock(
         return_value=mock_image_websocket_response
     )
 
@@ -116,7 +120,9 @@ async def test_execute_image_generation_request(
     )
 
     response = await generation_handler_service.execute(
-        image_generation_request, node_repository, gsc_client
+        image_generation_request,
+        connected_node_repository,
+        gsc_client,
     )
 
     assert isinstance(response, ImagesResponse)
@@ -126,7 +132,9 @@ async def test_execute_image_generation_request(
 
 @pytest.mark.asyncio
 async def test_execute_image_edit_request(
-    node_repository, image_edit_request, gsc_client
+    connected_node_repository,
+    image_edit_request,
+    gsc_client,
 ):
     mock_node = create_mock_node()
     run_images_generation_use_case._select_node = MagicMock(return_value=mock_node)
@@ -139,14 +147,16 @@ async def test_execute_image_edit_request(
         error=None,
     )
 
-    node_repository.receive_for_image_generation_request = AsyncMock(
+    connected_node_repository.receive_for_image_generation_request = AsyncMock(
         return_value=mock_image_websocket_response
     )
     gsc_client.decode_b64_and_upload_to_gcs = AsyncMock(
         return_value="https://example.com/image.png"
     )
     response = await edit_handler_service.execute(
-        image_edit_request, node_repository, gsc_client
+        image_edit_request,
+        connected_node_repository,
+        gsc_client,
     )
 
     assert isinstance(response, ImagesResponse)
@@ -156,24 +166,30 @@ async def test_execute_image_edit_request(
 
 @pytest.mark.asyncio
 async def test_execute_no_available_nodes(
-    node_repository, image_generation_request, gsc_client
+    connected_node_repository,
+    image_generation_request,
+    gsc_client,
 ):
     run_images_generation_use_case._select_node = MagicMock(return_value=None)
 
     with pytest.raises(error_responses.NoAvailableInferenceNodesError):
         await generation_handler_service.execute(
-            image_generation_request, node_repository, gsc_client
+            image_generation_request,
+            connected_node_repository,
+            gsc_client,
         )
 
 
 @pytest.mark.asyncio
 async def test_execute_internal_server_error(
-    node_repository, image_generation_request, gsc_client
+    connected_node_repository,
+    image_generation_request,
+    gsc_client,
 ):
     run_images_generation_use_case._select_node = MagicMock(
         return_value=create_mock_node()
     )
-    node_repository.receive_for_image_generation_request.return_value = None
+    connected_node_repository.receive_for_image_generation_request.return_value = None
 
     gsc_client.decode_b64_and_upload_to_gcs = AsyncMock(
         side_effect=Exception("Failed to upload image to GCS")
@@ -181,5 +197,7 @@ async def test_execute_internal_server_error(
 
     with pytest.raises(error_responses.InternalServerAPIError):
         await generation_handler_service.execute(
-            image_generation_request, node_repository, gsc_client
+            image_generation_request,
+            connected_node_repository,
+            gsc_client,
         )

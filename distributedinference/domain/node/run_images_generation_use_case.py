@@ -1,16 +1,16 @@
 from typing import Optional
 
-from openai.types.images_response import ImagesResponse
 from openai.types.image import Image
+from openai.types.images_response import ImagesResponse
 
-from distributedinference.domain.node.entities import (
-    ConnectedNode,
-    ImageGenerationWebsocketRequest,
+from distributedinference import api_logger
+from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
 )
 from distributedinference.service import error_responses
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
-from distributedinference import api_logger
-from distributedinference.repository.node_repository import NodeRepository
 
 logger = api_logger.get()
 
@@ -19,19 +19,21 @@ async def execute(
     websocket_request: ImageGenerationWebsocketRequest,
     model: str,
     response_format: str,
-    node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     gcs_client: GoogleCloudStorage,
 ) -> ImagesResponse:
-    node = _select_node(node_repository, model)
+    node = _select_node(connected_node_repository, model)
     if not node:
         logger.error(
             f"No available nodes to process the image generation request {websocket_request.request_id}"
         )
         raise error_responses.NoAvailableInferenceNodesError()
 
-    await node_repository.send_image_generation_request(node.uid, websocket_request)
+    await connected_node_repository.send_image_generation_request(
+        node.uid, websocket_request
+    )
 
-    response = await node_repository.receive_for_image_generation_request(
+    response = await connected_node_repository.receive_for_image_generation_request(
         node.uid, websocket_request.request_id
     )
     if not response or response.error is not None:
@@ -62,7 +64,7 @@ async def execute(
 
 
 def _select_node(
-    node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     request_model: str,
 ) -> Optional[ConnectedNode]:
-    return node_repository.select_node(request_model)
+    return connected_node_repository.select_node(request_model)

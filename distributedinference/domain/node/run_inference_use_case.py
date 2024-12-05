@@ -2,22 +2,21 @@ from typing import AsyncGenerator
 from typing import Optional
 from uuid import UUID
 
+from openai.types import CompletionUsage
 from prometheus_client import Gauge
 from prometheus_client import Histogram
 
-from openai.types import CompletionUsage
-
 import settings
-from distributedinference.analytics.analytics import (
-    Analytics,
-    AnalyticsEvent,
-    EventName,
-)
 from distributedinference import api_logger
-from distributedinference.domain.node import is_node_performant
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.node import is_inference_request_finished
-from distributedinference.domain.node import llm_inference_proxy, peer_nodes_forwarding
+from distributedinference.domain.node import is_node_performant
+from distributedinference.domain.node import llm_inference_proxy
 from distributedinference.domain.node import node_status_transition
+from distributedinference.domain.node import peer_nodes_forwarding
+from distributedinference.domain.node import update_node_status_use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
@@ -27,6 +26,9 @@ from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.domain.node.time_tracker import TimeTracker
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -62,12 +64,14 @@ class InferenceExecutor:
     def __init__(
         self,
         node_repository: NodeRepository,
+        connected_node_repository: ConnectedNodeRepository,
         tokens_repository: TokensRepository,
         metrics_queue_repository: MetricsQueueRepository,
         tokens_queue_repository: TokensQueueRepository,
         analytics: Analytics,
     ):
         self.node_repository = node_repository
+        self.connected_node_repository = connected_node_repository
         self.tokens_repository = tokens_repository
         self.metrics_queue_repository = metrics_queue_repository
         self.tokens_queue_repository = tokens_queue_repository
@@ -152,7 +156,7 @@ class InferenceExecutor:
                 )
             return
 
-        await self.node_repository.send_inference_request(node.uid, request)
+        await self.connected_node_repository.send_inference_request(node.uid, request)
         self._initialise_metrics(request, node)
         try:
             while True:
@@ -172,7 +176,7 @@ class InferenceExecutor:
             if not is_performant:
                 await self._mark_node_as_unhealthy(node)
         finally:
-            await self.node_repository.cleanup_request(node.uid, request.id)
+            self.connected_node_repository.cleanup_request(node.uid, request.id)
             await self._log_metrics(user_uid, request, node)
 
     async def _get_chunk(
@@ -183,7 +187,9 @@ class InferenceExecutor:
         * InferenceResponse if there is one
         * bool indicating if the streaming has been finished
         """
-        response = await self.node_repository.receive_for_request(node.uid, request.id)
+        response = await self.connected_node_repository.receive_for_request(
+            node.uid, request.id
+        )
         if not response:
             # Nothing to check, we can mark node as unhealthy and break
             await self._mark_node_as_unhealthy(node)
@@ -234,7 +240,7 @@ class InferenceExecutor:
         user_uid: UUID,
         request: InferenceRequest,
     ) -> Optional[ConnectedNode]:
-        node = self.node_repository.select_node(request.model)
+        node = self.connected_node_repository.select_node(request.model)
         if not node:
             return None
 
@@ -314,7 +320,9 @@ class InferenceExecutor:
             status = await node_status_transition.execute(
                 self.node_repository, node.uid, NodeStatusEvent.DEGRADED
             )
-            await self.node_repository.update_node_status(node.uid, status)
+            await update_node_status_use_case.execute(
+                node.uid, status, self.node_repository, self.connected_node_repository
+            )
             self.analytics.track_event(
                 node.user_id,
                 AnalyticsEvent(

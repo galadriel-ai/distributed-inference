@@ -12,6 +12,9 @@ from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.domain.rate_limit import rate_limit_use_case
 from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -43,6 +46,7 @@ async def execute(
     user: User,
     forwarding_from: Optional[str],
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     tokens_repository: TokensRepository,
     rate_limit_repository: RateLimitRepository,
     metrics_queue_repository: MetricsQueueRepository,
@@ -80,6 +84,7 @@ async def execute(
                 forwarding_from,
                 request,
                 node_repository=node_repository,
+                connected_node_repository=connected_node_repository,
                 tokens_repository=tokens_repository,
                 metrics_queue_repository=metrics_queue_repository,
                 tokens_queue_repository=tokens_queue_repository,
@@ -94,6 +99,7 @@ async def execute(
         forwarding_from,
         request,
         node_repository=node_repository,
+        connected_node_repository=connected_node_repository,
         tokens_repository=tokens_repository,
         metrics_queue_repository=metrics_queue_repository,
         tokens_queue_repository=tokens_queue_repository,

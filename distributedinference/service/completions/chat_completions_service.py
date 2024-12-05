@@ -15,6 +15,9 @@ from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError
 from distributedinference.domain.node.run_inference_use_case import InferenceExecutor
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
@@ -41,6 +44,7 @@ async def execute(
     forwarding_from: Optional[str],
     request: ChatCompletionRequest,
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
     tokens_repository: TokensRepository,
     metrics_queue_repository: MetricsQueueRepository,
     tokens_queue_repository: TokensQueueRepository,
@@ -62,6 +66,7 @@ async def execute(
         usage = None
         executor = InferenceExecutor(
             node_repository=node_repository,
+            connected_node_repository=connected_node_repository,
             tokens_repository=tokens_repository,
             metrics_queue_repository=metrics_queue_repository,
             tokens_queue_repository=tokens_queue_repository,

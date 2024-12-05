@@ -17,6 +17,9 @@ from distributedinference.domain.metrics import calculate_node_costs
 from distributedinference.domain.metrics import node_status_metrics
 from distributedinference.domain.metrics import sql_engine_metrics
 from distributedinference.domain.node.entities import NodeBenchmark
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
 
@@ -80,6 +83,9 @@ node_costs_gauge = Gauge(
 @router.get("", include_in_schema=False)
 async def get_metrics(
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    connected_node_repository: ConnectedNodeRepository = Depends(
+        dependencies.get_connected_node_repository
+    ),
     metrics_repository: MetricsRepository = Depends(
         dependencies.get_metrics_repository
     ),
@@ -91,7 +97,7 @@ async def get_metrics(
     for node in nodes:
         network_nodes_gauge.labels(node.model_name).inc()
 
-    locally_connected_nodes = node_repository.get_locally_connected_nodes()
+    locally_connected_nodes = connected_node_repository.get_locally_connected_nodes()
     for node in locally_connected_nodes:
         locally_connected_nodes_gauge.labels(
             node.model, node.uid, node.node_status.value
