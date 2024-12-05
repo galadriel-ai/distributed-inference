@@ -1,10 +1,13 @@
 import asyncio
 from typing import List
 
+from distributedinference import api_logger
 from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.repository.tokens_repository import (
     DailyUserModelUsageIncrement,
 )
+
+logger = api_logger.get()
 
 
 class TokensQueueRepository:
@@ -17,6 +20,7 @@ class TokensQueueRepository:
         await self.token_usage_queue.put(usage)
 
     async def get_token_usage(self) -> UsageTokens:
+        logger.debug(f"token_usage_queue size: {self.token_usage_queue.qsize()}")
         return await self.token_usage_queue.get()
 
     async def fetch_token_usage_bulk(self, batch_size: int) -> List[UsageTokens]:
@@ -34,6 +38,7 @@ class TokensQueueRepository:
         await self.daily_usage_queue.put(usage)
 
     async def get_daily_usage_increment(self) -> DailyUserModelUsageIncrement:
+        logger.debug(f"daily_usage_queue size: {self.daily_usage_queue.qsize()}")
         return await self.daily_usage_queue.get()
 
     async def fetch_daily_usage_increment_bulk(
