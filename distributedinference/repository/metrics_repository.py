@@ -29,7 +29,7 @@ SELECT
 FROM node_info ni
 LEFT JOIN node_metrics nm on ni.id = nm.node_info_id
 LEFT JOIN node_benchmark nb on ni.id = nb.node_id AND nm.model_name = nb.model_name
-WHERE nm.status LIKE 'RUNNING%';
+WHERE nm.status::text LIKE 'RUNNING%';
 """
 
 SQL_GET_TOTAL_TOKENS_BY_NODE_IDS = """
