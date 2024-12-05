@@ -413,8 +413,6 @@ class NodeRepository:
         self._max_parallel_requests_per_datacenter_node = (
             max_parallel_requests_per_datacenter_node
         )
-        # node_id: ConnectedNode
-        self._connected_nodes: Dict[UUID, ConnectedNode] = {}
 
     @async_timer("node_repository.create_node", logger=logger)
     async def create_node(
@@ -588,8 +586,8 @@ class NodeRepository:
             return result
 
     @async_timer("node_repository.get_nodes_for_benchmarking", logger=logger)
-    async def get_nodes_for_benchmarking(self) -> List[ConnectedNode]:
-        connected_node_ids = list(self._connected_nodes.keys())
+    async def get_nodes_for_benchmarking(self, connected_nodes: List[ConnectedNode]) -> List[ConnectedNode]:
+        connected_node_ids = [node.uid for node in connected_nodes]
         data = {
             "node_ids": connected_node_ids,
             "status": NodeStatus.RUNNING_BENCHMARKING.value,
@@ -601,7 +599,7 @@ class NodeRepository:
             )
             for row in rows:
                 node_ids.append(row.node_info_id)
-        return [node for node in self._connected_nodes.values() if node.uid in node_ids]
+        return [node for node in connected_nodes if node.uid in node_ids]
 
     # TODO: should be called together with ConnectedNodeRepository.register_node(..), in the same use_case
     # Insert if it doesn't exist
@@ -648,8 +646,6 @@ class NodeRepository:
             "status": status.value,
             "last_updated_at": utcnow(),
         }
-        if node_id in self._connected_nodes:
-            self._connected_nodes[node_id].node_status = status
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_STATUS), data)
             await session.commit()

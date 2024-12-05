@@ -217,7 +217,7 @@ async def test_success(connected_node_factory):
     mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_called_once_with(
         TEST_NODE_ID, "request_id"
     )
 
@@ -507,7 +507,7 @@ async def test_streaming_no_usage(connected_node_factory):
     mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_called_once_with(
         TEST_NODE_ID, "request_id"
     )
 
@@ -592,7 +592,7 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_called_once_with(
         TEST_NODE_ID, "request_id"
     )
 
@@ -675,7 +675,7 @@ async def test_old_node_still_works(connected_node_factory):
     mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_called_once_with(
         TEST_NODE_ID, "request_id"
     )
 
@@ -740,7 +740,7 @@ async def test_inference_error_stops_loop(connected_node_factory):
     mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_called_once_with(
         TEST_NODE_ID, "request_id"
     )
 
@@ -807,7 +807,7 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_called_once_with(
         TEST_NODE_ID, "request_id"
     )
     mock_node_repository.update_node_status.assert_awaited_once_with(
@@ -879,7 +879,7 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(
     mock_connected_node_repository.send_inference_request.assert_awaited_once_with(
         TEST_NODE_ID, request
     )
-    mock_connected_node_repository.cleanup_request.assert_awaited_once_with(
+    mock_connected_node_repository.cleanup_request.assert_called_once_with(
         TEST_NODE_ID, "request_id"
     )
     # Node status MUST not be updated if it's a client side error

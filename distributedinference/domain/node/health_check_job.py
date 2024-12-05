@@ -17,6 +17,7 @@ from distributedinference import api_logger
 from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node import is_inference_request_finished
+from distributedinference.domain.node import update_node_status_use_case
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceStatusCodes
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
@@ -83,7 +84,8 @@ async def _get_nodes_for_check(
         )
 
     try:
-        nodes = await node_repository.get_nodes_for_benchmarking()
+        connected_nodes = connected_node_repository.get_locally_connected_nodes()
+        nodes = await node_repository.get_nodes_for_benchmarking(connected_nodes)
         result += nodes
     except Exception:
         logger.error(
@@ -156,7 +158,7 @@ async def _send_health_check_inference(
                     error=None,
                 )
     finally:
-        await connected_node_repository.cleanup_request(node.uid, request.id)
+        connected_node_repository.cleanup_request(node.uid, request.id)
 
 
 # pylint: disable=R0912, R0913
@@ -195,7 +197,9 @@ async def _check_node_health(
         #         status
         #     )
 
-        await node_repository.update_node_status(node.uid, status)
+        await update_node_status_use_case.execute(
+            node.uid, status, node_repository, connected_node_repository
+        )
 
     except Exception:
         logger.error(

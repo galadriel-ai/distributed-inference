@@ -16,6 +16,7 @@ from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import llm_inference_proxy
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node import peer_nodes_forwarding
+from distributedinference.domain.node import update_node_status_use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
@@ -164,7 +165,7 @@ class InferenceExecutor:
             if not is_performant:
                 await self._mark_node_as_unhealthy(node)
         finally:
-            await self.connected_node_repository.cleanup_request(node.uid, request.id)
+            self.connected_node_repository.cleanup_request(node.uid, request.id)
             await self._log_metrics(user_uid, request, node)
 
     async def _get_chunk(
@@ -304,7 +305,9 @@ class InferenceExecutor:
             status = await node_status_transition.execute(
                 self.node_repository, node.uid, NodeStatusEvent.DEGRADED
             )
-            await self.node_repository.update_node_status(node.uid, status)
+            await update_node_status_use_case.execute(
+                node.uid, status, self.node_repository, self.connected_node_repository
+            )
             self.analytics.track_event(
                 node.user_id,
                 AnalyticsEvent(

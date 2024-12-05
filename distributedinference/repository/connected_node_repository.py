@@ -19,6 +19,7 @@ from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 from distributedinference.domain.node.entities import InferenceStatusCodes
+from distributedinference.domain.node.entities import NodeStatus
 
 logger = api_logger.get()
 
@@ -184,7 +185,11 @@ class ConnectedNodeRepository:
                 return None
         return None
 
-    async def cleanup_request(self, node_id: UUID, request_id: str):
+    def cleanup_request(self, node_id: UUID, request_id: str) -> None:
         if node_id in self._connected_nodes:
             connected_node = self._connected_nodes[node_id]
             del connected_node.request_incoming_queues[request_id]
+
+    def update_node_status(self, node_id: UUID, status: NodeStatus) -> None:
+        if node_id in self._connected_nodes:
+            self._connected_nodes[node_id].node_status = status
