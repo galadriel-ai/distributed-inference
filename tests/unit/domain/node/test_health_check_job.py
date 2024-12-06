@@ -346,7 +346,9 @@ async def test_node_connection_inconsistent(
     mock_node = create_mock_node()
     mock_connected_node_repository.get_locally_connected_node_keys.return_value = []
     mock_connected_node_repository._backend_host = mock_node.connected_host
-    mock_node_repository.get_connected_nodes_to_the_current_backend.return_value = [mock_node.uid]
+    mock_node_repository.get_connected_nodes_to_the_current_backend.return_value = [
+        mock_node.uid
+    ]
     mock_node_repository.update_node_to_disconnected = AsyncMock()
 
     await health_check_job._check_connected_nodes_consistency(

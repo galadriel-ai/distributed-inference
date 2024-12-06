@@ -30,6 +30,7 @@ class ConnectedNodeRepository:
 
     # node_id: ConnectedNode
     _connected_nodes: Dict[UUID, ConnectedNode]
+    _backend_host: Optional[BackendHost]
 
     def __init__(
         self,

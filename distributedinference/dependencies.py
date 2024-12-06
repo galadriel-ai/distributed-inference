@@ -80,7 +80,7 @@ def init_globals():
     _connected_node_repository_instance = ConnectedNodeRepository(
         settings.MAX_PARALLEL_REQUESTS_PER_NODE,
         settings.MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE,
-        settings.HOSTNAME
+        settings.HOSTNAME,
     )
     _user_node_repository_instance = UserNodeRepository(
         get_session_provider(),

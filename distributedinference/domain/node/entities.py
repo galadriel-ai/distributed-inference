@@ -71,10 +71,10 @@ class NodeStatus(Enum):
                 description = "Stopped"
         return description
 
+
 class BackendHost(Enum):
     DISTRIBUTED_INFERENCE_EU = "DISTRIBUTED_INFERENCE_EU"
     DISTRIBUTED_INFERENCE_US = "DISTRIBUTED_INFERENCE_US"
-
 
     @staticmethod
     def normalize(value: str) -> str:

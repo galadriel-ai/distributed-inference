@@ -384,6 +384,7 @@ class NodeRepository:
         return [node for node in connected_nodes if node.uid in node_ids]
 
     # Insert if it doesn't exist
+    # pylint: disable=too-many-arguments
     @async_timer("node_repository.set_node_connection_timestamp", logger=logger)
     async def set_node_connection_timestamp(
         self,
@@ -542,7 +543,9 @@ class NodeRepository:
             await session.execute(sqlalchemy.text(SQL_INSERT_NODE_HEALTH), data)
             await session.commit()
 
-    @async_timer("node_repository.get_connected_nodes_to_the_current_backend", logger=logger)
+    @async_timer(
+        "node_repository.get_connected_nodes_to_the_current_backend", logger=logger
+    )
     async def get_connected_nodes_to_the_current_backend(
         self, backend_host: BackendHost
     ) -> List[UUID]:
