@@ -1,17 +1,16 @@
-from collections import defaultdict
+from dataclasses import dataclass
 from typing import Dict
 from typing import List
-from typing import Tuple
 from uuid import UUID
 
 from distributedinference import api_logger
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
 from distributedinference.repository.tokens_repository import (
     DailyUserModelUsageIncrement,
 )
 from distributedinference.repository.tokens_repository import TokensRepository
-from distributedinference.repository.tokens_queue_repository import (
-    TokensQueueRepository,
-)
 
 BATCH_SIZE = 100
 
@@ -49,24 +48,37 @@ async def _handle_daily_usage_updates(
     await tokens_repository.increment_daily_usage_bulk(aggregated)
 
 
+@dataclass(frozen=True)
+class UserModel:
+    user_profile_id: UUID
+    model_name: str
+
+
+@dataclass(frozen=True)
+class UsageCount:
+    requests: int
+    tokens: int
+
+
 def _aggregate_usage(
     data: List[DailyUserModelUsageIncrement],
 ) -> List[DailyUserModelUsageIncrement]:
-    aggregated: Dict[Tuple[UUID, str], Dict[str, int]] = defaultdict(
-        lambda: {"requests_count": 0, "tokens_count": 0}
-    )
+    aggregated: Dict[UserModel, UsageCount] = {}
 
     for item in data:
-        key = (item.user_profile_id, item.model_name)
-        aggregated[key]["requests_count"] += item.requests_count
-        aggregated[key]["tokens_count"] += item.tokens_count
+        user_model = UserModel(item.user_profile_id, item.model_name)
+        usage = aggregated.get(user_model, UsageCount(0, 0))
+        aggregated[user_model] = UsageCount(
+            requests=usage.requests + item.requests_count,
+            tokens=usage.tokens + item.tokens_count,
+        )
 
     return [
         DailyUserModelUsageIncrement(
-            user_profile_id=key[0],
-            model_name=key[1],
-            requests_count=value["requests_count"],
-            tokens_count=value["tokens_count"],
+            user_profile_id=user_model.user_profile_id,
+            model_name=user_model.model_name,
+            requests_count=usage_count.requests,
+            tokens_count=usage_count.tokens,
         )
-        for key, value in aggregated.items()
+        for user_model, usage_count in aggregated.items()
     ]

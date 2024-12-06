@@ -10,7 +10,7 @@ from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service import error_responses
 from distributedinference.service.auth import authentication
 
@@ -55,7 +55,7 @@ async def test_node_name_missing():
 
 
 async def test_node_not_found():
-    mock_repository = AsyncMock(spec=NodeRepository)
+    mock_repository = AsyncMock(spec=UserNodeRepository)
     mock_repository.get_full_node_info_by_name.return_value = None
 
     with pytest.raises(error_responses.NotFoundAPIError) as e:
@@ -64,7 +64,7 @@ async def test_node_not_found():
 
 
 async def test_node_success():
-    mock_repository = AsyncMock(spec=NodeRepository)
+    mock_repository = AsyncMock(spec=UserNodeRepository)
     node_info = FullNodeInfo(
         node_id=UUID("9fe247c3-71ce-4abf-8e3f-24becfab50da"),
         name="name",
@@ -93,7 +93,7 @@ async def test_node_success():
 
 
 async def test_node_basic_success():
-    mock_repository = AsyncMock(spec=NodeRepository)
+    mock_repository = AsyncMock(spec=UserNodeRepository)
     node_info = NodeInfo(
         node_id=UUID("9fe247c3-71ce-4abf-8e3f-24becfab50da"),
         name="name",

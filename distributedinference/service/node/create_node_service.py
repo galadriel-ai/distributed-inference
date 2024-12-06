@@ -2,13 +2,13 @@ from uuid import UUID
 
 from mnemonic import Mnemonic
 
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service.node.entities import CreateNodeRequest
 from distributedinference.service.node.entities import CreateNodeResponse
 
 
 async def execute(
-    request: CreateNodeRequest, user_profile_id: UUID, repository: NodeRepository
+    request: CreateNodeRequest, user_profile_id: UUID, repository: UserNodeRepository
 ) -> CreateNodeResponse:
     name = _generate_name()
     await repository.create_node(user_profile_id, name, request.node_name)

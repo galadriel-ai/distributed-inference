@@ -1,5 +1,5 @@
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service.node.entities import UpdateNodeRequest
 from distributedinference.service.node.entities import UpdateNodeResponse
 
@@ -7,7 +7,7 @@ from distributedinference.service.node.entities import UpdateNodeResponse
 async def execute(
     request: UpdateNodeRequest,
     node_info: NodeInfo,
-    repository: NodeRepository,
+    repository: UserNodeRepository,
 ) -> UpdateNodeResponse:
     is_name_updated = False
     is_archival_status_updated = False
