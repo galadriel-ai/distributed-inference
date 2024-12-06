@@ -75,26 +75,22 @@ async def _get_nodes_for_check(
     node_repository: NodeRepository,
     connected_node_repository: ConnectedNodeRepository,
 ) -> List[ConnectedNode]:
-    result = []
+    connected_nodes = connected_node_repository.get_locally_connected_nodes()
+    connected_nodes_running_benchmarking = []
     try:
-        nodes = connected_node_repository.get_unhealthy_nodes()
-        result += nodes
-    except Exception:
-        logger.error(
-            "Failed to get unhealthy nodes, restarting...",
-            exc_info=True,
+        connected_nodes_running_benchmarking = (
+            await node_repository.get_nodes_for_benchmarking(connected_nodes)
         )
-
-    try:
-        connected_nodes = connected_node_repository.get_locally_connected_nodes()
-        nodes = await node_repository.get_nodes_for_benchmarking(connected_nodes)
-        result += nodes
     except Exception:
         logger.error(
             "Failed to get nodes for benchmarking, restarting...", exc_info=True
         )
 
-    return result
+    unhealthy_nodes = [
+        node for node in connected_nodes if not node.node_status.is_healthy()
+    ]
+
+    return unhealthy_nodes + connected_nodes_running_benchmarking
 
 
 async def _send_health_check_inference(
