@@ -1,9 +1,9 @@
 from typing import Optional
 
 from fastapi import Depends
+from fastapi import Request
 from fastapi import Security
 from fastapi.security import APIKeyHeader
-from fastapi import Request
 
 from distributedinference import api_logger
 from distributedinference.dependencies import get_authentication_api_repository
@@ -14,7 +14,7 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
 from distributedinference.service.middleware import util
@@ -109,11 +109,11 @@ async def validate_session_token(
 async def validate_node_name_basic(
     user: User,
     node_name: Optional[str],
-    node_repository: NodeRepository,
+    user_node_repository: UserNodeRepository,
 ) -> NodeInfo:
     if not node_name:
         raise error_responses.NotFoundAPIError(message_extra="Node ID not provided")
-    node_info = await node_repository.get_node_info_by_name(user.uid, node_name)
+    node_info = await user_node_repository.get_node_info_by_name(user.uid, node_name)
     if not node_info:
         raise error_responses.NotFoundAPIError(
             message_extra="Node with the given name not found."
@@ -124,11 +124,13 @@ async def validate_node_name_basic(
 async def validate_node_name(
     user: User,
     node_name: Optional[str],
-    node_repository: NodeRepository,
+    user_node_repository: UserNodeRepository,
 ) -> FullNodeInfo:
     if not node_name:
         raise error_responses.NotFoundAPIError(message_extra="Node ID not provided")
-    node_info = await node_repository.get_full_node_info_by_name(user.uid, node_name)
+    node_info = await user_node_repository.get_full_node_info_by_name(
+        user.uid, node_name
+    )
     if not node_info:
         raise error_responses.NotFoundAPIError(
             message_extra="Node details with the given name not found, "

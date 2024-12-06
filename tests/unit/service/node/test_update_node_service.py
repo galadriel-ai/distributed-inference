@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 from distributedinference.domain.node.entities import NodeInfo
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service.node import update_node_service as service
 from distributedinference.service.node.entities import UpdateNodeRequest
 from distributedinference.service.node.entities import UpdateNodeResponse
@@ -20,7 +20,7 @@ def _get_node_info():
 
 
 async def test_no_updates():
-    repo = AsyncMock(spec=NodeRepository)
+    repo = AsyncMock(spec=UserNodeRepository)
     response = await service.execute(
         UpdateNodeRequest(
             node_id="node-id",
@@ -37,7 +37,7 @@ async def test_no_updates():
 
 
 async def test_update_name():
-    repo = AsyncMock(spec=NodeRepository)
+    repo = AsyncMock(spec=UserNodeRepository)
     response = await service.execute(
         UpdateNodeRequest(
             node_id="node-id",
@@ -54,7 +54,7 @@ async def test_update_name():
 
 
 async def test_update_archival():
-    repo = AsyncMock(spec=NodeRepository)
+    repo = AsyncMock(spec=UserNodeRepository)
     response = await service.execute(
         UpdateNodeRequest(
             node_id="node-id",
@@ -71,7 +71,7 @@ async def test_update_archival():
 
 
 async def test_update_name_and_archival():
-    repo = AsyncMock(spec=NodeRepository)
+    repo = AsyncMock(spec=UserNodeRepository)
     response = await service.execute(
         UpdateNodeRequest(
             node_id="node-id",

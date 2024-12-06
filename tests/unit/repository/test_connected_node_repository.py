@@ -1,31 +1,19 @@
 import asyncio
 import time
-from datetime import datetime
-from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid1
 
 import pytest
-from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
-from distributedinference.domain.node.entities import NodeMetricsIncrement
-from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
 )
 from distributedinference.repository.connection import SessionProvider
-from distributedinference.repository.node_repository import (
-    SQL_INCREMENT_NODE_METRICS,
-)
-from distributedinference.repository.node_repository import (
-    SQL_UPDATE_NODE_INFO,
-)
 
 MAX_PARALLEL_REQUESTS = 10
 MAX_PARALLEL_DATACENTER_REQUESTS = 20

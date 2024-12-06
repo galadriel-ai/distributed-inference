@@ -5,17 +5,19 @@ from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.domain.node.entities import UserNodeInfo
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service.node.entities import ListNodeRequestNode
 from distributedinference.service.node.entities import ListNodeResponse
 
 
 async def execute(
     user_profile_id: UUID,
-    repository: NodeRepository,
+    user_node_repository: UserNodeRepository,
+    node_repository: NodeRepository,
     tokens_repository: TokensRepository,
 ) -> ListNodeResponse:
-    nodes = await repository.get_user_nodes(user_profile_id)
-    return await _format(repository, tokens_repository, nodes)
+    nodes = await user_node_repository.get_nodes(user_profile_id)
+    return await _format(node_repository, tokens_repository, nodes)
 
 
 async def _format(

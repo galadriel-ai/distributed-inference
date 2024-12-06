@@ -7,11 +7,9 @@ from fastapi.exceptions import WebSocketException
 
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.analytics.analytics import (
-    AnalyticsEvent,
-    EventName,
-    Analytics,
-)
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.benchmark_repository import BenchmarkRepository
 from distributedinference.repository.connected_node_repository import (
@@ -20,6 +18,7 @@ from distributedinference.repository.connected_node_repository import (
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.auth import authentication
 from distributedinference.service.node import get_node_benchmark_service
@@ -52,6 +51,9 @@ logger = api_logger.get()
 async def websocket_endpoint(
     websocket: WebSocket,
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     connected_node_repository: ConnectedNodeRepository = Depends(
         dependencies.get_connected_node_repository
     ),
@@ -73,7 +75,9 @@ async def websocket_endpoint(
             code=status.WS_1008_POLICY_VIOLATION,
             reason="Node-Id header is required",
         )
-    node_info = await authentication.validate_node_name(user, node_id, node_repository)
+    node_info = await authentication.validate_node_name(
+        user, node_id, user_node_repository
+    )
 
     await websocket_service.execute(
         websocket,
@@ -97,11 +101,14 @@ async def websocket_endpoint(
 async def get_info(
     node_id: str = Query(..., description="Node id"),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name_basic(
-        user, node_id, node_repository
+        user, node_id, user_node_repository
     )
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.GET_NODE_INFO, {"node_id": node_id})
@@ -117,7 +124,9 @@ async def get_info(
 # pylint: disable=too-many-arguments, R0913
 async def get_stats(
     node_id: str = Query(..., description="Node id"),
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     node_stats_repository: NodeStatsRepository = Depends(
         dependencies.get_node_stats_repository
     ),
@@ -126,7 +135,7 @@ async def get_stats(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name_basic(
-        user, node_id, node_repository
+        user, node_id, user_node_repository
     )
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.GET_NODE_STATS, {"node_id": node_id})
@@ -143,12 +152,14 @@ async def get_stats(
 )
 async def post_info(
     request: PostNodeInfoRequest,
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name_basic(
-        user, request.node_id, node_repository
+        user, request.node_id, user_node_repository
     )
     analytics.track_event(
         user.uid,
@@ -158,7 +169,7 @@ async def post_info(
         ),
     )
     return await save_node_info_service.execute(
-        request, node_info, user.uid, node_repository
+        request, node_info, user.uid, user_node_repository
     )
 
 
@@ -171,7 +182,9 @@ async def post_info(
 async def get_benchmark(
     node_id: str = Query(..., description="Node id"),
     model: str = Query(..., description="Model name"),
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     benchmark_repository: BenchmarkRepository = Depends(
         dependencies.get_benchmark_repository
     ),
@@ -179,7 +192,7 @@ async def get_benchmark(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name_basic(
-        user, node_id, node_repository
+        user, node_id, user_node_repository
     )
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.GET_NODE_BENCHMARK, {"node_id": node_id})
@@ -196,7 +209,9 @@ async def get_benchmark(
 )
 async def post_benchmark(
     request: PostNodeBenchmarkRequest,
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     benchmark_repository: BenchmarkRepository = Depends(
         dependencies.get_benchmark_repository
     ),
@@ -204,7 +219,7 @@ async def post_benchmark(
     user: User = Depends(authentication.validate_api_key_header),
 ):
     node_info = await authentication.validate_node_name(
-        user, request.node_id, node_repository
+        user, request.node_id, user_node_repository
     )
     analytics.track_event(
         user.uid,

@@ -27,6 +27,7 @@ from distributedinference.repository.tokens_queue_repository import (
     TokensQueueRepository,
 )
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service import error_responses
 from distributedinference.service.api_key import create_api_key_service
@@ -159,7 +160,9 @@ async def post_api_key(
 @router.post("/node", name="Create Node", response_model=CreateNodeResponse)
 async def create_node(
     request: CreateNodeRequest,
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     user: User = Depends(authentication.validate_session_token),
     analytics=Depends(dependencies.get_analytics),
 ):
@@ -167,18 +170,20 @@ async def create_node(
         user.uid,
         AnalyticsEvent(EventName.CREATE_NODE, {"node_name": request.node_name}),
     )
-    return await create_node_service.execute(request, user.uid, node_repository)
+    return await create_node_service.execute(request, user.uid, user_node_repository)
 
 
 @router.put("/node", name="Update Node", response_model=UpdateNodeResponse)
 async def update_node(
     request: UpdateNodeRequest,
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     user: User = Depends(authentication.validate_session_token),
     analytics=Depends(dependencies.get_analytics),
 ):
     node_info = await authentication.validate_node_name_basic(
-        user, request.node_id, node_repository
+        user, request.node_id, user_node_repository
     )
     analytics.track_event(
         user.uid,
@@ -187,18 +192,21 @@ async def update_node(
     return await update_node_service.execute(
         request,
         node_info,
-        node_repository,
+        user_node_repository,
     )
 
 
 @router.get("/nodes", name="List all nodes", response_model=ListNodeResponse)
 async def list_nodes(
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
     node_repository: NodeRepository = Depends(dependencies.get_node_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     user: User = Depends(authentication.validate_session_token),
 ):
     return await get_user_nodes_service.execute(
-        user.uid, node_repository, tokens_repository
+        user.uid, user_node_repository, node_repository, tokens_repository
     )
 
 
@@ -278,10 +286,12 @@ async def get_graph(
     grafana_repository: GrafanaApiRepository = Depends(
         dependencies.get_grafana_repository
     ),
-    node_repository: NodeRepository = Depends(dependencies.get_node_repository),
+    user_node_repository: UserNodeRepository = Depends(
+        dependencies.get_user_node_repository
+    ),
 ):
     return await graph_service.execute(
-        graph_type, node_name, user, grafana_repository, node_repository
+        graph_type, node_name, user, grafana_repository, user_node_repository
     )
 
 
