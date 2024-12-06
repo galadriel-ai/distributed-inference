@@ -20,18 +20,10 @@ async def execute(rate_limit_repository: RateLimitRepository) -> List[Model]:
                         limit.model
                     ],
                     pricing=ModelPricing(
-                        prompt=(
-                            str(limit.price_per_million_tokens)
-                            if limit.price_per_million_tokens
-                            else "0"
-                        ),
-                        completion=(
-                            str(limit.price_per_million_tokens)
-                            if limit.price_per_million_tokens
-                            else "0"
-                        ),
-                        image="0",
-                        request="0",
+                        prompt=(limit.price_per_million_tokens),
+                        completion=(limit.price_per_million_tokens),
+                        image=0,
+                        request=0,
                     ),
                 )
             )

@@ -28,8 +28,8 @@ def _convert_models(models: List[Model]) -> List[ModelResponse]:
 
 def _convert_pricing(pricing: ModelPricing) -> ModelPricingResponse:
     return ModelPricingResponse(
-        prompt=pricing.prompt,
-        completion=pricing.completion,
-        image=pricing.image,
-        request=pricing.request,
+        prompt=str(pricing.prompt) if pricing.prompt else "0",
+        completion=str(pricing.completion) if pricing.completion else "0",
+        image=str(pricing.image) if pricing.image else "0",
+        request=str(pricing.request) if pricing.request else "0",
     )

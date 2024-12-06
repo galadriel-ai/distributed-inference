@@ -3,10 +3,10 @@ from dataclasses import dataclass
 
 @dataclass
 class ModelPricing:
-    prompt: str
-    completion: str
-    image: str
-    request: str
+    prompt: float
+    completion: float
+    image: float
+    request: float
 
 
 @dataclass
