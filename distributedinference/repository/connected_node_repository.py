@@ -104,13 +104,6 @@ class ConnectedNodeRepository:
                 reason="No Inference result",
             )
 
-    def get_unhealthy_nodes(self) -> List[ConnectedNode]:
-        return [
-            node
-            for node in self._connected_nodes.values()
-            if not node.node_status.is_healthy()
-        ]
-
     def get_locally_connected_nodes(self) -> List[ConnectedNode]:
         return list(self._connected_nodes.values())
 
