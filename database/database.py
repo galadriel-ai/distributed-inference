@@ -206,6 +206,10 @@ class NodeStatus(PyEnum):
     STOPPED_DEGRADED = "STOPPED_DEGRADED"
     STOPPED_DISABLED = "STOPPED_DISABLED"
 
+class BackendHost(PyEnum):
+    DISTRIBUTED_INFERENCE_EU = "DISTRIBUTED_INFERENCE_EU"
+    DISTRIBUTED_INFERENCE_US = "DISTRIBUTED_INFERENCE_US"
+
 
 class NodeMetrics(Base):
     __tablename__ = "node_metrics"
@@ -229,6 +233,7 @@ class NodeMetrics(Base):
         Integer(), nullable=False, default=0, server_default="0"
     )  # In seconds
     connected_at = Column(DateTime, nullable=True)
+    connected_host = Column(Enum(BackendHost), nullable=True)
     model_name = Column(String, nullable=True)
     status = Column(Enum(NodeStatus), nullable=False)
 

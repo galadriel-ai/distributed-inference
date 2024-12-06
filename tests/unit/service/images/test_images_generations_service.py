@@ -9,7 +9,7 @@ from openai.types.images_response import ImagesResponse
 from packaging.version import Version
 
 from distributedinference.domain.node import run_images_generation_use_case
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import BackendHost, ConnectedNode
 from distributedinference.domain.node.entities import ImageGenerationWebsocketResponse
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.connected_node_repository import (
@@ -87,6 +87,7 @@ def create_mock_node():
         model="model-1",
         vram=16000,
         connected_at=int(time.time()),
+        connected_host=BackendHost.from_value("distributed-inference-us"),
         websocket=MagicMock(),
         request_incoming_queues={},
         node_status=NodeStatus.RUNNING_DEGRADED,

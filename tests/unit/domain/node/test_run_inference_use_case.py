@@ -12,7 +12,7 @@ from openai.types.chat.chat_completion_chunk import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
 
 from distributedinference.domain.node import run_inference_use_case as use_case
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import BackendHost, ConnectedNode
 from distributedinference.domain.node.entities import InferenceError
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import InferenceRequest
@@ -47,6 +47,7 @@ def connected_node_factory(mock_websocket):
             model,
             16000,
             int(time.time()),
+            BackendHost.from_value("distributed-inference-us"),
             mock_websocket,
             {},
             NodeStatus.RUNNING,

@@ -10,7 +10,7 @@ import sqlalchemy
 from uuid_extensions import uuid7
 
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import ConnectedNode, BackendHost
 from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.domain.node.entities import NodeMetrics
 from distributedinference.domain.node.entities import NodeMetricsIncrement
@@ -76,6 +76,7 @@ SQL_UPDATE_CONNECTED_AT = """
 UPDATE node_metrics
 SET
     connected_at = :connected_at,
+    connected_host = :connected_host,
     status = :status,
     last_updated_at = :last_updated_at
 WHERE node_info_id = :id;
@@ -101,6 +102,7 @@ INSERT INTO node_metrics (
     rtt,
     uptime,
     connected_at,
+    connected_host,
     model_name,
     status,
     created_at,
@@ -116,6 +118,7 @@ INSERT INTO node_metrics (
     :rtt,
     :uptime_increment,
     :connected_at,
+    :connected_host,
     :model_name,
     :status,
     :created_at,
@@ -130,6 +133,7 @@ ON CONFLICT (node_info_id) DO UPDATE SET
     rtt = COALESCE(EXCLUDED.rtt, node_metrics.rtt),
     uptime = node_metrics.uptime + EXCLUDED.uptime,
     connected_at = COALESCE(EXCLUDED.connected_at, node_metrics.connected_at),
+    connected_host = COALESCE(EXCLUDED.connected_host, node_metrics.connected_host),
     model_name = COALESCE(EXCLUDED.model_name, node_metrics.model_name),
     status = COALESCE(EXCLUDED.status, node_metrics.status),
     last_updated_at = EXCLUDED.last_updated_at;
@@ -153,6 +157,7 @@ UPDATE node_metrics
 SET
     status = :status,
     connected_at = :connected_at,
+    connected_host = :connected_host,
     last_updated_at = :last_updated_at
 WHERE node_info_id = :id;
 """
@@ -169,6 +174,12 @@ FROM node_metrics
 WHERE status::text LIKE 'RUNNING%';
 """
 
+SQL_GET_CONNECTED_NODES_TO_THE_CURRENT_BACKEND = """
+SELECT node_info_id
+FROM node_metrics
+WHERE status::text LIKE 'RUNNING%' AND connected_host::text = :connected_host;
+"""
+
 SQL_GET_NODE_METRICS = """
 SELECT
     node_info_id AS id,
@@ -179,6 +190,7 @@ SELECT
     inference_tokens_per_second,
     uptime,
     connected_at,
+    connected_host,
     status
 FROM node_metrics
 WHERE node_info_id = :id;
@@ -374,7 +386,12 @@ class NodeRepository:
     # Insert if it doesn't exist
     @async_timer("node_repository.set_node_connection_timestamp", logger=logger)
     async def set_node_connection_timestamp(
-        self, node_id: UUID, model_name: str, connected_at: datetime, status: NodeStatus
+        self,
+        node_id: UUID,
+        model_name: str,
+        connected_at: datetime,
+        connected_host: BackendHost,
+        status: NodeStatus,
     ):
         data = {
             "id": str(uuid7()),
@@ -387,6 +404,7 @@ class NodeRepository:
             "rtt": None,
             "uptime_increment": 0,
             "connected_at": connected_at,
+            "connected_host": connected_host,
             "model_name": model_name,
             "status": status.value,
             "created_at": utcnow(),
@@ -401,6 +419,7 @@ class NodeRepository:
         data = {
             "id": node_id,
             "connected_at": None,
+            "connected_host": None,
             "status": status.value,
             "last_updated_at": utcnow(),
         }
@@ -440,6 +459,7 @@ class NodeRepository:
     async def set_nodes_inactive(self, nodes: List[ConnectedNode]):
         data = {
             "connected_at": None,
+            "connected_host": None,
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
@@ -521,6 +541,17 @@ class NodeRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_INSERT_NODE_HEALTH), data)
             await session.commit()
+
+    @async_timer("node_repository.get_connected_nodes_to_the_current_backend", logger=logger)
+    async def get_connected_nodes_to_the_current_backend(
+        self, backend_host: BackendHost
+    ) -> List[UUID]:
+        async with self._session_provider_read.get() as session:
+            data = {"connected_host": backend_host.value}
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_CONNECTED_NODES_TO_THE_CURRENT_BACKEND), data
+            )
+            return [row.node_info_id for row in result]
 
 
 def _get_healthcheck_power_percent(health: NodeHealth):

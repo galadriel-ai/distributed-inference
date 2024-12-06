@@ -60,6 +60,10 @@ async def execute(
     while True:
         await asyncio.sleep(timeout)
         logger.debug("Running health check job!")
+        # 1. Connection checks for all nodes that are shown as connected to the current backend
+        await _check_connected_nodes_consistency(connected_node_repository, node_repository)
+
+        # 2. Benchmarking checks for all nodes that are unhealthy or in RUNNING_BENCHMARKING state
         nodes = await _get_nodes_for_check(node_repository, connected_node_repository)
         for node in nodes:
             await _check_node_health(
@@ -256,3 +260,24 @@ async def _disconnect_node(
     )
     await ping_pong_protocol.remove_node_by_uid(node.uid)
     await health_check_protocol.remove_node_by_uid(node.uid)
+
+
+async def _check_connected_nodes_consistency(
+    connected_node_repository: ConnectedNodeRepository, node_repository: NodeRepository
+) -> None:
+    backend_host = connected_node_repository.get_backend_host()
+    if backend_host is None:
+        logger.error("Backend host is None! Skipping connected nodes consistency check.")
+        return None
+    connected_nodes_locally = connected_node_repository.get_locally_connected_node_keys()
+    connected_nodes_from_db = await node_repository.get_connected_nodes_to_the_current_backend(
+        backend_host
+    )
+    for node_uid in connected_nodes_from_db:
+        if node_uid not in connected_nodes_locally:
+            logger.error(f"Node {node_uid} connection is corrupted. Disconnecting...")
+            node_status = await node_status_transition.execute(
+                node_repository, node_uid, NodeStatusEvent.STOP
+            )
+            await node_repository.update_node_to_disconnected(node_uid, node_status)
+    return None
