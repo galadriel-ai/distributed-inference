@@ -7,7 +7,7 @@ from uuid_extensions import uuid7
 from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeSpecs
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service.node import save_node_info_service as service
 from distributedinference.service.node.entities import PostNodeInfoRequest
 from distributedinference.service.node.entities import PostNodeInfoResponse
@@ -52,7 +52,7 @@ async def test_execute_success():
         ),
     )
 
-    mock_repository = AsyncMock(spec=NodeRepository)
+    mock_repository = AsyncMock(spec=UserNodeRepository)
     response = await service.execute(
         request,
         NodeInfo(

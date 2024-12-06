@@ -3,7 +3,7 @@ from uuid import UUID
 from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeInfo
 from distributedinference.domain.node.entities import NodeSpecs
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service.node.entities import PostNodeInfoRequest
 from distributedinference.service.node.entities import PostNodeInfoResponse
 
@@ -12,7 +12,7 @@ async def execute(
     request: PostNodeInfoRequest,
     node_info: NodeInfo,
     user_profile_id: UUID,
-    repository: NodeRepository,
+    repository: UserNodeRepository,
 ) -> PostNodeInfoResponse:
     node_info_update = _request_to_node_info(request, node_info)
     await repository.save_node_info(user_profile_id, node_info_update)

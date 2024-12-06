@@ -8,7 +8,7 @@ from uuid_extensions import uuid7
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.grafana_api_repository import GrafanaApiRepository
 from distributedinference.repository.grafana_api_repository import GraphValue
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.service import error_responses
 from distributedinference.service.graphs import graph_service as service
 from distributedinference.service.graphs.entities import GetGraphResponse
@@ -32,10 +32,10 @@ async def test_success_network():
             value=2,
         )
     ]
-    node_repository = AsyncMock(spec=NodeRepository)
+    user_node_repository = AsyncMock(spec=UserNodeRepository)
 
     result = await service.execute(
-        "network", None, user, grafana_repository, node_repository
+        "network", None, user, grafana_repository, user_node_repository
     )
 
     assert result == GetGraphResponse(
@@ -53,11 +53,11 @@ async def test_success_user():
             value=2,
         )
     ]
-    node_repository = AsyncMock(spec=NodeRepository)
-    node_repository.get_user_node_ids.return_value = [uuid7()]
+    user_node_repository = AsyncMock(spec=UserNodeRepository)
+    user_node_repository.get_node_ids.return_value = [uuid7()]
 
     result = await service.execute(
-        "user", None, user, grafana_repository, node_repository
+        "user", None, user, grafana_repository, user_node_repository
     )
 
     assert result == GetGraphResponse(
@@ -75,11 +75,11 @@ async def test_success_node():
             value=2,
         )
     ]
-    node_repository = AsyncMock(spec=NodeRepository)
-    node_repository.get_user_node_id_by_name.return_value = uuid7()
+    user_node_repository = AsyncMock(spec=UserNodeRepository)
+    user_node_repository.get_node_id_by_name.return_value = uuid7()
 
     result = await service.execute(
-        "node", "node-name", user, grafana_repository, node_repository
+        "node", "node-name", user, grafana_repository, user_node_repository
     )
 
     assert result == GetGraphResponse(
@@ -91,28 +91,30 @@ async def test_success_node():
 async def test_invalid_graph_type():
     user = _get_user()
     grafana_repository = AsyncMock(spec=GrafanaApiRepository)
-    node_repository = AsyncMock(spec=NodeRepository)
+    user_node_repository = AsyncMock(spec=UserNodeRepository)
     with pytest.raises(error_responses.NotFoundAPIError) as e:
         await service.execute(
-            "random type", None, user, grafana_repository, node_repository
+            "random type", None, user, grafana_repository, user_node_repository
         )
 
 
 async def test_invalid_node_name():
     user = _get_user()
     grafana_repository = AsyncMock(spec=GrafanaApiRepository)
-    node_repository = AsyncMock(spec=NodeRepository)
-    node_repository.get_user_node_id_by_name.return_value = None
+    user_node_repository = AsyncMock(spec=UserNodeRepository)
+    user_node_repository.get_node_id_by_name.return_value = None
     with pytest.raises(error_responses.NotFoundAPIError) as e:
         await service.execute(
-            "node", "node-name", user, grafana_repository, node_repository
+            "node", "node-name", user, grafana_repository, user_node_repository
         )
 
 
 async def test_missing_node_name():
     user = _get_user()
     grafana_repository = AsyncMock(spec=GrafanaApiRepository)
-    node_repository = AsyncMock(spec=NodeRepository)
-    node_repository.get_user_node_id_by_name.return_value = None
+    user_node_repository = AsyncMock(spec=UserNodeRepository)
+    user_node_repository.get_node_id_by_name.return_value = None
     with pytest.raises(error_responses.ValidationTypeError) as e:
-        await service.execute("node", None, user, grafana_repository, node_repository)
+        await service.execute(
+            "node", None, user, grafana_repository, user_node_repository
+        )
