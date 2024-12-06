@@ -153,7 +153,7 @@ class UserNodeRepository:
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read
 
-    @async_timer("node_repository.create_node", logger=logger)
+    @async_timer("user_node_repository.create_node", logger=logger)
     async def create_node(
         self,
         user_profile_id: UUID,
@@ -279,7 +279,7 @@ class UserNodeRepository:
                 )
         return None
 
-    @async_timer("node_repository.update_node_name_alias", logger=logger)
+    @async_timer("user_node_repository.update_node_name_alias", logger=logger)
     async def update_node_name_alias(
         self,
         node_id: UUID,
@@ -294,7 +294,7 @@ class UserNodeRepository:
             await session.execute(sqlalchemy.text(SQL_UPDATE_NODE_NAME_ALIAS), data)
             await session.commit()
 
-    @async_timer("node_repository.update_node_archival_status", logger=logger)
+    @async_timer("user_node_repository.update_node_archival_status", logger=logger)
     async def update_node_archival_status(
         self,
         node_id: UUID,
