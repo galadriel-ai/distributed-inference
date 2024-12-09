@@ -79,6 +79,15 @@ MODEL_MAX_TOKENS_MAPPING = {
     "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4": 8192,
     "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16": 128000,
 }
+# from https://context.ai/model/llama3-1-70b-instruct-v1
+MODEL_MAX_COMPLETION_TOKENS_MAPPING = {
+    "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8": 2048,
+    "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16": 2048,
+    "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16": 2048,
+    "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4": 2048,
+    "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4": 2048,
+    "neuralmagic/Mistral-Nemo-Instruct-2407-quantized.w4a16": 4096,
+}
 MODELS_SUPPORTING_TOOLS = [
     "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16",
     "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16",

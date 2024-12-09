@@ -9,6 +9,7 @@ from distributedinference.routers.routes import embedding_router
 from distributedinference.routers.routes import network_router
 from distributedinference.routers.routes import node_router
 from distributedinference.routers.routes import metrics_router
+from distributedinference.routers.routes import models_router
 from distributedinference.routers.routes import tool_router
 from distributedinference.routers.routes.dashboard import authentication_router
 from distributedinference.routers.routes.dashboard import dashboard_router
@@ -29,6 +30,7 @@ routers_to_include: List[APIRouter] = [
     authentication_router.router,
     dashboard_router.router,
     metrics_router.router,
+    models_router.router,
 ]
 
 for router_to_include in routers_to_include:
