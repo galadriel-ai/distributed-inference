@@ -72,6 +72,21 @@ class NodeStatus(Enum):
         return description
 
 
+class BackendHost(Enum):
+    DISTRIBUTED_INFERENCE_EU = "DISTRIBUTED_INFERENCE_EU"
+    DISTRIBUTED_INFERENCE_US = "DISTRIBUTED_INFERENCE_US"
+
+    @staticmethod
+    def normalize(value: str) -> str:
+        return value.upper().replace("-", "_")
+
+    # from function to handle snake case and lowercase values e.g. distributed-inference-eu
+    @classmethod
+    def from_value(cls, value: str) -> "BackendHost":
+        normalized_value = cls.normalize(value)
+        return cls(normalized_value)
+
+
 @dataclass
 class NodeMetricsIncrement:
     node_id: UUID
@@ -176,6 +191,7 @@ class ConnectedNode:
     model: str
     vram: int
     connected_at: int  # in seconds
+    connected_host: BackendHost
     websocket: WebSocket
     request_incoming_queues: Dict[str, asyncio.Queue]
     node_status: NodeStatus

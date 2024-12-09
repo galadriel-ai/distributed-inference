@@ -7,7 +7,7 @@ from uuid import uuid1
 
 import pytest
 
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import BackendHost, ConnectedNode
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.connected_node_repository import (
@@ -31,6 +31,7 @@ def connected_node_repository(session_provider):
     return ConnectedNodeRepository(
         MAX_PARALLEL_REQUESTS,
         MAX_PARALLEL_DATACENTER_REQUESTS,
+        "distributed-inference-us",
     )
 
 
@@ -58,6 +59,7 @@ def connected_node_factory(mock_websocket):
             model,
             vram,
             int(time.time()),
+            BackendHost.from_value("distributed-inference-us"),
             mock_websocket,
             {},
             node_status,

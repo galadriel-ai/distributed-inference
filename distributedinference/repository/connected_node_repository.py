@@ -11,7 +11,7 @@ from fastapi.encoders import jsonable_encoder
 from openai.types.chat import ChatCompletionChunk
 
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import ConnectedNode
+from distributedinference.domain.node.entities import ConnectedNode, BackendHost
 from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
 from distributedinference.domain.node.entities import ImageGenerationWebsocketResponse
 from distributedinference.domain.node.entities import InferenceError
@@ -30,17 +30,24 @@ class ConnectedNodeRepository:
 
     # node_id: ConnectedNode
     _connected_nodes: Dict[UUID, ConnectedNode]
+    _backend_host: Optional[BackendHost]
 
     def __init__(
         self,
         max_parallel_requests_per_node: int,
         max_parallel_requests_per_datacenter_node: int,
+        hostname: str,
     ):
         self._max_parallel_requests_per_node = max_parallel_requests_per_node
         self._max_parallel_requests_per_datacenter_node = (
             max_parallel_requests_per_datacenter_node
         )
         self._connected_nodes = {}
+        try:
+            self._backend_host = BackendHost.from_value(hostname)
+        except TypeError as e:
+            logger.error(f"Failed to initialize BackendHost: {e}")
+            self._backend_host = None
 
     def register_node(self, connected_node: ConnectedNode) -> bool:
         """
@@ -190,3 +197,6 @@ class ConnectedNodeRepository:
             self._connected_nodes[node_id].node_status = status
             return True
         return False
+
+    def get_backend_host(self) -> Optional[BackendHost]:
+        return self._backend_host

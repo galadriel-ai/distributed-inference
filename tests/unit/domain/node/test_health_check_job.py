@@ -7,6 +7,7 @@ from packaging.version import Version
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from distributedinference.domain.node.entities import (
+    BackendHost,
     ConnectedNode,
     CheckHealthResponse,
     InferenceError,
@@ -37,6 +38,7 @@ def create_mock_node():
             model="model-1",
             vram=16000,
             connected_at=int(time.time()),
+            connected_host=BackendHost.from_value("distributed-inference-eu"),
             websocket=MagicMock(),
             request_incoming_queues={},
             node_status=NodeStatus.RUNNING_DEGRADED,
@@ -336,3 +338,24 @@ async def test_send_health_check_inference_error_response(
     call_args = mock_connected_node_repository.cleanup_request.call_args
     node_id, inference_request = call_args[0]
     assert node_id == mock_node.uid
+
+
+async def test_node_connection_inconsistent(
+    create_mock_node, mock_node_repository, mock_connected_node_repository
+):
+    mock_node = create_mock_node()
+    mock_connected_node_repository.get_locally_connected_node_keys.return_value = []
+    mock_connected_node_repository._backend_host = mock_node.connected_host
+    mock_node_repository.get_connected_nodes_to_the_current_backend.return_value = [
+        mock_node.uid
+    ]
+    mock_node_repository.update_node_to_disconnected = AsyncMock()
+
+    await health_check_job._check_connected_nodes_consistency(
+        connected_node_repository=mock_connected_node_repository,
+        node_repository=mock_node_repository,
+    )
+
+    mock_node_repository.update_node_to_disconnected.assert_called_once_with(
+        mock_node.uid, NodeStatus.STOPPED
+    )

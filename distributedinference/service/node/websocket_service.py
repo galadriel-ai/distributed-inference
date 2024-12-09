@@ -58,6 +58,13 @@ async def execute(
     )
     await websocket.accept()
 
+    backend_host = connected_node_repository.get_backend_host()
+    if backend_host is None:
+        raise WebSocketException(
+            code=status.WS_1011_INTERNAL_ERROR,
+            reason="Backend host is not initialized",
+        )
+
     # By default, the model type is LLM to support backward compatibility
     enum_model_type = (
         ModelType.DIFFUSION
@@ -84,6 +91,7 @@ async def execute(
         node_uid,
         formatted_model_name,
         datetime.fromtimestamp(connect_time),
+        backend_host,
         node_status,
     )
     node = ConnectedNode(
@@ -93,6 +101,7 @@ async def execute(
         model_type=enum_model_type,
         vram=node_info.specs.vram,
         connected_at=int(time.time()),
+        connected_host=backend_host,
         websocket=websocket,
         request_incoming_queues={},
         is_self_hosted=user.is_self_hosted_nodes_provider(),
