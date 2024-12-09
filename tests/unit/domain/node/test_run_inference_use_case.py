@@ -1,15 +1,16 @@
 import time
 from typing import AsyncGenerator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
-from uuid import UUID, uuid1
+from uuid import UUID
+from uuid import uuid1
 
 import pytest
-from packaging.version import Version
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
+from packaging.version import Version
 
 from distributedinference.domain.node import run_inference_use_case as use_case
 from distributedinference.domain.node.entities import BackendHost, ConnectedNode
@@ -139,15 +140,18 @@ def setup_function():
     use_case.is_node_performant = MagicMock()
     use_case.is_node_performant.execute.return_value = True
 
+    use_case.select_node_use_case = MagicMock()
+
 
 async def test_success(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
 
-    mock_connected_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID)
+    use_case.select_node_use_case.execute.return_value = connected_node_factory(
+        TEST_NODE_ID
     )
+
     mock_connected_node_repository.send_inference_request = AsyncMock()
     mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -230,7 +234,7 @@ async def test_no_nodes_forward_to_peers():
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(return_value=None)
+    use_case.select_node_use_case.execute.return_value = None
 
     mock_inference = MockInference()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -270,7 +274,7 @@ async def test_no_nodes_forward_to_peers_failed():
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(return_value=None)
+    use_case.select_node_use_case.execute.return_value = None
 
     mock_inference = MockInferenceError()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -309,7 +313,7 @@ async def test_no_nodes_no_forward_for_forwarding_request():
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(return_value=None)
+    use_case.select_node_use_case.execute.return_value = None
 
     mock_inference = MockInference()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -347,7 +351,7 @@ async def test_no_nodes_uses_proxy():
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(return_value=None)
+    use_case.select_node_use_case.execute.return_value = None
 
     mock_inference_none_response = MockInferenceNoneResponse()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -390,7 +394,7 @@ async def test_no_nodes_and_proxy_also_fails():
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(return_value=None)
+    use_case.select_node_use_case.execute.return_value = None
 
     mock_inference_none_response = MockInferenceNoneResponse()
     use_case.peer_nodes_forwarding = MagicMock()
@@ -433,9 +437,10 @@ async def test_streaming_no_usage(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID)
+    use_case.select_node_use_case.execute.return_value = connected_node_factory(
+        TEST_NODE_ID
     )
+
     mock_connected_node_repository.send_inference_request = AsyncMock()
     mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -526,9 +531,10 @@ async def test_streaming_usage_includes_extra_chunk(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID)
+    use_case.select_node_use_case.execute.return_value = connected_node_factory(
+        TEST_NODE_ID
     )
+
     mock_connected_node_repository.send_inference_request = AsyncMock()
     mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -612,9 +618,10 @@ async def test_old_node_still_works(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID, version="0.0.15")
+    use_case.select_node_use_case.execute.return_value = connected_node_factory(
+        TEST_NODE_ID, version="0.0.15"
     )
+
     node = connected_node_factory(TEST_NODE_ID, "0.0.15")
     mock_connected_node_repository.send_inference_request = AsyncMock()
     mock_connected_node_repository.receive_for_request = AsyncMock(
@@ -696,9 +703,10 @@ async def test_inference_error_stops_loop(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID)
+    use_case.select_node_use_case.execute.return_value = connected_node_factory(
+        TEST_NODE_ID
     )
+
     mock_connected_node_repository.send_inference_request = AsyncMock()
     mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -762,9 +770,10 @@ async def test_inference_error_marks_node_as_unhealthy(connected_node_factory):
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID)
+    use_case.select_node_use_case.execute.return_value = connected_node_factory(
+        TEST_NODE_ID
     )
+
     mock_connected_node_repository.send_inference_request = AsyncMock()
     mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[
@@ -835,9 +844,10 @@ async def test_inference_client_error_not_marks_node_as_unhealthy(
     mock_node_repository = MagicMock(NodeRepository)
     mock_connected_node_repository = MagicMock(ConnectedNodeRepository)
     mock_tokens_repository = MagicMock(TokensRepository)
-    mock_connected_node_repository.select_node = MagicMock(
-        return_value=connected_node_factory(TEST_NODE_ID)
+    use_case.select_node_use_case.execute.return_value = connected_node_factory(
+        TEST_NODE_ID
     )
+
     mock_connected_node_repository.send_inference_request = AsyncMock()
     mock_connected_node_repository.receive_for_request = AsyncMock(
         side_effect=[

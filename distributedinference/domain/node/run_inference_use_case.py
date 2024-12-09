@@ -16,6 +16,7 @@ from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import llm_inference_proxy
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node import peer_nodes_forwarding
+from distributedinference.domain.node import select_node_use_case
 from distributedinference.domain.node import update_node_status_use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
@@ -240,7 +241,9 @@ class InferenceExecutor:
         user_uid: UUID,
         request: InferenceRequest,
     ) -> Optional[ConnectedNode]:
-        node = self.connected_node_repository.select_node(request.model)
+        node = select_node_use_case.execute(
+            request.model, self.connected_node_repository
+        )
         if not node:
             return None
 

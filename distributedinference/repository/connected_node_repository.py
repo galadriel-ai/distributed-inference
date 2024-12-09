@@ -1,5 +1,4 @@
 import asyncio
-import random
 from dataclasses import asdict
 from typing import Dict
 from typing import List
@@ -51,7 +50,8 @@ class ConnectedNodeRepository:
 
     def register_node(self, connected_node: ConnectedNode) -> bool:
         """
-        Register a connected node, returns True if the node was successfully registered, False if the node is already registered
+        Register a connected node, returns True if the node was successfully registered,
+        False if the node is already registered
         """
         if connected_node.uid not in self._connected_nodes:
             self._connected_nodes[connected_node.uid] = connected_node
@@ -76,33 +76,8 @@ class ConnectedNodeRepository:
                 )
             del self._connected_nodes[node_id]
 
-    def select_node(self, model: str) -> Optional[ConnectedNode]:
-        if not self._connected_nodes:
-            return None
-
-        eligible_nodes = [
-            node
-            for node in self._connected_nodes.values()
-            if node.model == model and self._can_handle_new_request(node)
-        ]
-
-        if not eligible_nodes:
-            return None
-
-        return random.choice(eligible_nodes)
-
-    def _can_handle_new_request(self, node: ConnectedNode) -> bool:
-        if not node.is_self_hosted and not node.node_status.is_healthy():
-            return False
-        if node.is_datacenter_gpu():
-            return (
-                node.active_requests_count()
-                < self._max_parallel_requests_per_datacenter_node
-            )
-        if node.can_handle_parallel_requests():
-            return node.active_requests_count() < self._max_parallel_requests_per_node
-
-        return node.active_requests_count() == 1
+    def get_nodes_by_model(self, model: str) -> List[ConnectedNode]:
+        return [node for node in self._connected_nodes.values() if node.model == model]
 
     async def close_node_connection(self, node_id: UUID):
         if node_id in self._connected_nodes:
