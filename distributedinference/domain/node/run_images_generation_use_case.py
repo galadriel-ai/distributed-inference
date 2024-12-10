@@ -4,6 +4,7 @@ from openai.types.image import Image
 from openai.types.images_response import ImagesResponse
 
 from distributedinference import api_logger
+from distributedinference.domain.node import select_node_use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
 from distributedinference.repository.connected_node_repository import (
@@ -67,4 +68,4 @@ def _select_node(
     connected_node_repository: ConnectedNodeRepository,
     request_model: str,
 ) -> Optional[ConnectedNode]:
-    return connected_node_repository.select_node(request_model)
+    return select_node_use_case.execute(request_model, connected_node_repository)

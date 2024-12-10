@@ -88,41 +88,26 @@ def test_deregister_node(connected_node_repository, connected_node_factory):
     assert len(connected_node_repository._connected_nodes) == 0
 
 
-def test_select_node_with_no_nodes(connected_node_repository):
-    assert connected_node_repository.select_node("model") is None
-
-
-def test_select_node_with_nodes(connected_node_repository, connected_node_factory):
-    node1 = connected_node_factory("1")
-    node2 = connected_node_factory("2")
-
-    connected_node_repository.register_node(node1)
-    connected_node_repository.register_node(node2)
-
-    selected_node = connected_node_repository.select_node("model")
-    assert selected_node.uid in ["1", "2"]
-    assert selected_node.model == "model"
-
-
-def test_select_node_with_nodes_hosting_different_models(
-    connected_node_repository, connected_node_factory
-):
+# TODO:
+def test_get_nodes_by_models(connected_node_repository, connected_node_factory):
     node1 = connected_node_factory("1", "model1")
     node2 = connected_node_factory("2", "model2")
 
     connected_node_repository.register_node(node1)
     connected_node_repository.register_node(node2)
 
-    selected_node = connected_node_repository.select_node("model1")
-    assert selected_node.uid == "1"
-    assert selected_node.model == "model1"
+    selected_nodes = connected_node_repository.get_nodes_by_model("model1")
+    assert len(selected_nodes) == 1
+    assert selected_nodes[0].uid == "1"
+    assert selected_nodes[0].model == "model1"
 
-    selected_node = connected_node_repository.select_node("model2")
-    assert selected_node.uid == "2"
-    assert selected_node.model == "model2"
+    selected_nodes = connected_node_repository.get_nodes_by_model("model2")
+    assert len(selected_nodes) == 1
+    assert selected_nodes[0].uid == "2"
+    assert selected_nodes[0].model == "model2"
 
-    selected_node = connected_node_repository.select_node("model3")
-    assert selected_node is None
+    selected_nodes = connected_node_repository.get_nodes_by_model("model3")
+    assert selected_nodes == []
 
 
 def test_select_node_but_unavailable_model(
@@ -132,188 +117,41 @@ def test_select_node_but_unavailable_model(
 
     connected_node_repository.register_node(node1)
 
-    selected_node = connected_node_repository.select_node("model2")
-    assert selected_node is None
+    selected_nodes = connected_node_repository.get_nodes_by_model("model2")
+    assert selected_nodes == []
 
 
 def test_select_node_after_deregistration(
     connected_node_repository, connected_node_factory
 ):
-    node1 = connected_node_factory("1")
-    node2 = connected_node_factory("2")
-    node3 = connected_node_factory("3")
-
-    connected_node_repository.register_node(node1)
-    connected_node_repository.register_node(node2)
-    connected_node_repository.register_node(node3)
+    node_uids = ["1", "2", "3"]
+    for node_uid in node_uids:
+        node = connected_node_factory(node_uid)
+        connected_node_repository.register_node(node)
 
     # Initially, it should return node1
-    assert connected_node_repository.select_node("model").uid in ["1", "2", "3"]
-    assert len(connected_node_repository._connected_nodes) == 3
+    nodes = connected_node_repository.get_nodes_by_model("model")
+    assert len(nodes) == 3
+    for i in node_uids:
+        assert i in [node.uid for node in nodes]
 
     connected_node_repository.deregister_node("1")
-    # Now, it should return node2
-    assert connected_node_repository.select_node("model").uid in ["2", "3"]
-    assert len(connected_node_repository._connected_nodes) == 2
+    nodes = connected_node_repository.get_nodes_by_model("model")
+    assert len(nodes) == 2
+    for i in ["2", "3"]:
+        assert i in [node.uid for node in nodes]
 
     connected_node_repository.deregister_node("2")
     # Now, it should return node3
-    assert connected_node_repository.select_node("model").uid == "3"
-    assert len(connected_node_repository._connected_nodes) == 1
+    nodes = connected_node_repository.get_nodes_by_model("model")
+    assert len(nodes) == 1
+    for i in ["3"]:
+        assert i in [node.uid for node in nodes]
 
     connected_node_repository.deregister_node("3")
     # Now, there are no nodes left, should return None
-    assert connected_node_repository.select_node("model") is None
+    assert connected_node_repository.get_nodes_by_model("model") == []
     assert len(connected_node_repository._connected_nodes) == 0
-
-
-def test_select_node_after_reaching_maximum_parallel_requests(
-    connected_node_repository, connected_node_factory
-):
-    node = connected_node_factory("1")
-    connected_node_repository.register_node(node)
-
-    for i in range(MAX_PARALLEL_REQUESTS - 1):
-        node.request_incoming_queues[i] = asyncio.Queue()
-
-    # Initially, it should return the node
-    assert connected_node_repository.select_node("model").uid == "1"
-
-    # Add one more request
-    node.request_incoming_queues[MAX_PARALLEL_REQUESTS - 1] = asyncio.Queue()
-
-    # Now, there are no nodes left, should return None
-    assert connected_node_repository.select_node("model") is None
-
-
-def test_select_datacenter_node_after_reaching_maximum_parallel_requests(
-    connected_node_repository, connected_node_factory
-):
-    node = connected_node_factory("1", datacenter_node=True)
-    connected_node_repository.register_node(node)
-
-    for i in range(MAX_PARALLEL_DATACENTER_REQUESTS - 1):
-        node.request_incoming_queues[f"{i}"] = asyncio.Queue()
-
-    # Initially, it should return the node
-    assert connected_node_repository.select_node("model").uid == "1"
-
-    # Add one more request
-    node.request_incoming_queues[f"{MAX_PARALLEL_DATACENTER_REQUESTS - 1}"] = (
-        asyncio.Queue()
-    )
-
-    # Now, there are no nodes left, should return None
-    assert connected_node_repository.select_node("model") is None
-
-
-def test_8gb_node_handles_only_1_connection(
-    connected_node_repository, connected_node_factory
-):
-    node = connected_node_factory("1", small_node=True)
-    connected_node_repository.register_node(node)
-
-    # Adding one request
-    node.request_incoming_queues["test-id"] = asyncio.Queue()
-
-    # Initially, it should return the node
-    assert connected_node_repository.select_node("model").uid == "1"
-
-    # Add one more request
-    node.request_incoming_queues["test-id-2"] = asyncio.Queue()
-
-    # Now, there are no nodes left, should return None
-    assert connected_node_repository.select_node("model") is None
-
-
-def test_select_node_skips_unhealthy_not_self_hosted_nodes(
-    connected_node_repository, connected_node_factory
-):
-    node = connected_node_factory("1")
-    node.node_status = NodeStatus.RUNNING_DEGRADED
-    connected_node_repository.register_node(node)
-
-    # It should return None
-    assert connected_node_repository.select_node("model") is None
-
-
-def test_select_node_does_not_skip_unhealthy_self_hosted_nodes(
-    connected_node_repository, connected_node_factory
-):
-    node = connected_node_factory("1", is_self_hosted=True)
-    connected_node_repository.register_node(node)
-
-    # It should return the node
-    assert connected_node_repository.select_node("model") == node
-
-
-def test_select_node_with_busy_nodes(connected_node_repository, connected_node_factory):
-    node1 = connected_node_factory("1")
-    node2 = connected_node_factory("2")
-    node3 = connected_node_factory("3")
-
-    connected_node_repository.register_node(node1)
-    connected_node_repository.register_node(node2)
-    connected_node_repository.register_node(node3)
-
-    with patch(
-        "distributedinference.domain.node.entities.ConnectedNode.active_requests_count",
-        side_effect=[
-            MAX_PARALLEL_REQUESTS,
-            MAX_PARALLEL_REQUESTS - 5,
-            MAX_PARALLEL_REQUESTS,
-            MAX_PARALLEL_REQUESTS - 5,
-            MAX_PARALLEL_REQUESTS - 5,
-        ],
-    ):
-        # Only node2 should be available since its active_requests_count is below the max
-        selected_node = connected_node_repository.select_node("model")
-        assert selected_node.uid == "2"
-
-
-@patch("random.choice")
-def test_all_busy_node_selection(
-    mock_random_choice, connected_node_repository, connected_node_factory
-):
-    node1 = connected_node_factory("1")
-    node2 = connected_node_factory("2")
-    node3 = connected_node_factory("3")
-
-    connected_node_repository.register_node(node1)
-    connected_node_repository.register_node(node2)
-    connected_node_repository.register_node(node3)
-
-    with patch(
-        "distributedinference.domain.node.entities.ConnectedNode.active_requests_count",
-        side_effect=[
-            MAX_PARALLEL_REQUESTS,
-            MAX_PARALLEL_REQUESTS,
-            MAX_PARALLEL_REQUESTS,
-        ],
-    ):
-        # All nodes are busy, should return None
-        selected_node = connected_node_repository.select_node("model")
-        assert selected_node is None
-
-
-@patch("random.choice")
-def test_random_node_selection(
-    mock_random_choice, connected_node_repository, connected_node_factory
-):
-    node1 = connected_node_factory("1")
-    node2 = connected_node_factory("2")
-    node3 = connected_node_factory("3")
-
-    connected_node_repository.register_node(node1)
-    connected_node_repository.register_node(node2)
-    connected_node_repository.register_node(node3)
-
-    with patch(
-        "distributedinference.domain.node.entities.ConnectedNode.active_requests_count",
-        side_effect=[3, 3, 10, 3, 3, 3, 3],
-    ):
-        connected_node_repository.select_node("model")
-        mock_random_choice.assert_called_once_with([node1, node2])
 
 
 async def test_deregister_node_sends_error_on_disconnect(
