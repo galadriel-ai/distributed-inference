@@ -1,23 +1,29 @@
 import time
 import uuid
+from dataclasses import dataclass
 from typing import Any
 from typing import Dict
 from typing import Optional
 from uuid import UUID
-from dataclasses import dataclass
 
-import settings
 from fastapi.encoders import jsonable_encoder
-from starlette.websockets import WebSocket
 from packaging import version
 
+import settings
 from distributedinference import api_logger
-from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.domain.node.entities import NodeGPUHealth
+from distributedinference.domain.node.entities import NodeHealth
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.protocol.health_check.entities import (
-    HealthCheckRequest,
     HealthCheckMessageType,
+)
+from distributedinference.service.node.protocol.health_check.entities import (
+    HealthCheckRequest,
+)
+from distributedinference.service.node.protocol.health_check.entities import (
     HealthCheckResponse,
 )
 
@@ -28,7 +34,6 @@ SUPPORTED_NODE_VERSION = "0.0.15"
 
 @dataclass
 class NodeHealthCheckInfo:
-    websocket: WebSocket
     node_uuid: UUID
 
     next_request_time: float = 0
@@ -43,8 +48,10 @@ class HealthCheckProtocol:
     def __init__(
         self,
         node_repository: NodeRepository,
+        connected_node_repository: ConnectedNodeRepository,
     ):
         self.node_repository = node_repository
+        self.connected_node_repository = connected_node_repository
         self.active_nodes: Dict[str, NodeHealthCheckInfo] = {}
         logger.info(f"{self.PROTOCOL_NAME}: Protocol initialized")
 
@@ -83,7 +90,6 @@ class HealthCheckProtocol:
         node_uuid: UUID,
         node_id: str,
         node_version: Optional[str],
-        websocket: WebSocket,
     ) -> bool:
         if node_id in self.active_nodes:
             logger.warning(
@@ -96,7 +102,6 @@ class HealthCheckProtocol:
             )
             return False
         self.active_nodes[node_id] = NodeHealthCheckInfo(
-            websocket=websocket,
             node_uuid=node_uuid,
             next_request_time=_current_milli_time()
             + settings.NODE_HEALTH_CHECK_INTERVAL_SECONDS * 1000,
@@ -142,19 +147,23 @@ class HealthCheckProtocol:
             nonce=nonce,
         )
 
-        websocket = self.active_nodes[node_id].websocket
         message = {
             "protocol": self.PROTOCOL_NAME,
             "data": jsonable_encoder(health_check_request),
         }
-        await websocket.send_json(message)
-
-        node_info.next_request_time = 0
-        node_info.waiting_for_response = True
-        node_info.last_request_nonce = nonce
-        logger.info(
-            f"{self.PROTOCOL_NAME}: Sent health check request to node {node_id}, sent time = {_current_milli_time()}, nonce = {nonce}"
-        )
+        if await self.connected_node_repository.send_json_request(
+            node_info.node_uuid, message
+        ):
+            node_info.next_request_time = 0
+            node_info.waiting_for_response = True
+            node_info.last_request_nonce = nonce
+            logger.info(
+                f"{self.PROTOCOL_NAME}: Sent health check request to node {node_id}, sent time = {_current_milli_time()}, nonce = {nonce}"
+            )
+        else:
+            logger.error(
+                f"{self.PROTOCOL_NAME}: Failed to send health check request to node {node_id}"
+            )
 
     async def _received_health_check_response(
         self, response: HealthCheckResponse, node_info: NodeHealthCheckInfo

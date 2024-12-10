@@ -2,16 +2,20 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 import pytest
-from fastapi import WebSocket
 
-from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.domain.node.entities import NodeGPUHealth
+from distributedinference.domain.node.entities import NodeHealth
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service.node.protocol.health_check.entities import (
     HealthCheckMessageType,
 )
 from distributedinference.service.node.protocol.health_check.protocol import (
     HealthCheckProtocol,
+)
+from distributedinference.service.node.protocol.health_check.protocol import (
     NodeHealthCheckInfo,
 )
 
@@ -26,16 +30,18 @@ def node_repository():
 
 
 @pytest.fixture
-def health_check_protocol(node_repository):
-    return HealthCheckProtocol(
-        node_repository,
-    )
+def connected_node_repository():
+    return AsyncMock(spec=ConnectedNodeRepository)
+
+
+@pytest.fixture
+def health_check_protocol(node_repository, connected_node_repository):
+    return HealthCheckProtocol(node_repository, connected_node_repository)
 
 
 async def test_handler_valid_response(health_check_protocol):
     # Setup
     health_check_protocol.active_nodes[NODE_NAME] = NodeHealthCheckInfo(
-        websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
         waiting_for_response=True,
         last_request_nonce=NODE_NONCE,
@@ -77,7 +83,6 @@ async def test_handler_valid_response(health_check_protocol):
 async def test_handler_invalid_nonce(health_check_protocol):
     # Setup
     health_check_protocol.active_nodes[NODE_NAME] = NodeHealthCheckInfo(
-        websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
         waiting_for_response=True,
         last_request_nonce="correct_nonce",
@@ -97,34 +102,20 @@ async def test_handler_invalid_nonce(health_check_protocol):
 
 
 async def test_add_node(health_check_protocol):
-    # Setup
-    websocket = AsyncMock(spec=WebSocket)
-
-    # Execute
-    health_check_protocol.add_node(NODE_UUID, NODE_NAME, "0.0.15", websocket)
-
-    # Assert
+    health_check_protocol.add_node(NODE_UUID, NODE_NAME, "0.0.15")
     assert NODE_NAME in health_check_protocol.active_nodes
-    assert health_check_protocol.active_nodes[NODE_NAME].websocket == websocket
     assert not health_check_protocol.active_nodes[NODE_NAME].waiting_for_response
 
 
 async def test_add_node_but_unsupported_node_version(health_check_protocol):
-    # Setup
-    websocket = AsyncMock(spec=WebSocket)
-
-    # Execute
-    health_check_protocol.add_node(NODE_UUID, NODE_NAME, "0.0.10", websocket)
-
-    # Assert
-    assert not NODE_NAME in health_check_protocol.active_nodes
+    health_check_protocol.add_node(NODE_UUID, NODE_NAME, "0.0.10")
+    assert NODE_NAME not in health_check_protocol.active_nodes
 
 
 async def test_remove_node(health_check_protocol):
     # Setup
     node_id = "test_node"
     health_check_protocol.active_nodes[node_id] = NodeHealthCheckInfo(
-        websocket=AsyncMock(spec=WebSocket),
         node_uuid=NODE_UUID,
     )
     # Execute

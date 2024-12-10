@@ -479,7 +479,7 @@ async def test_execute_protocols(
 
     # Check if add_node was called
     ping_pong_protocol.add_node.assert_called_once_with(
-        NODE_UUID, str(NODE_UUID), "model", websocket
+        NODE_UUID, str(NODE_UUID), "model"
     )
 
     # Check if remove_node was called
@@ -487,7 +487,7 @@ async def test_execute_protocols(
 
     # Check if add_node was called
     health_check_protocol.add_node.assert_called_once_with(
-        NODE_UUID, str(NODE_UUID), NODE_INFO.specs.version, websocket
+        NODE_UUID, str(NODE_UUID), NODE_INFO.specs.version
     )
 
     # Check if remove_node was called

@@ -113,6 +113,13 @@ class ConnectedNodeRepository:
             return True
         return False
 
+    async def send_json_request(self, node_id: UUID, request: Dict) -> bool:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            await connected_node.websocket.send_json(jsonable_encoder(request))
+            return True
+        return False
+
     async def receive_for_request(
         self, node_id: UUID, request_id: str
     ) -> Optional[InferenceResponse]:

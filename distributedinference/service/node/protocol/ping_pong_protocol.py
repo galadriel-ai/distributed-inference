@@ -6,21 +6,23 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, ConfigDict, ValidationError
-from starlette.websockets import WebSocket
+from pydantic import BaseModel
+from pydantic import ConfigDict
+from pydantic import ValidationError
 
 import settings
-from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference import api_logger
+from distributedinference.domain.node.entities import NodeMetricsIncrement
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
 )
-from distributedinference.service.node.protocol.entities import (
-    PingRequest,
-    PingPongMessageType,
-    PongResponse,
-    NodeReconnectRequest,
-)
+from distributedinference.service.node.protocol.entities import NodeReconnectRequest
+from distributedinference.service.node.protocol.entities import PingPongMessageType
+from distributedinference.service.node.protocol.entities import PingRequest
+from distributedinference.service.node.protocol.entities import PongResponse
 
 logger = api_logger.get()
 
@@ -35,7 +37,6 @@ class PingPongConfig:
 
 # NodePingInfo class to store all the information of a active node
 class NodePingInfo(BaseModel):
-    websocket: WebSocket
     node_uuid: UUID  # the UUID of the node, need this to update the metrics
     model: str
     # Counters
@@ -61,6 +62,7 @@ class PingPongProtocol:
     def __init__(
         self,
         metrics_queue_repository: MetricsQueueRepository,
+        connected_node_repository: ConnectedNodeRepository,
         protocol_name: str,
         config: dict,
     ):
@@ -81,6 +83,7 @@ class PingPongProtocol:
         self.config.ping_miss_threshold = config.get("ping_miss_threshold", 0)
 
         self.metrics_queue_repository = metrics_queue_repository
+        self.connected_node_repository = connected_node_repository
         # The main data structure that stores the active nodes
         # and its states related to the ping-pong protocol
         self.active_nodes: Dict[str, NodePingInfo] = {}
@@ -132,9 +135,7 @@ class PingPongProtocol:
 
     # Add a node to the active nodes dictionary
     # called when a new node connects to the server through websocket
-    def add_node(
-        self, node_uuid: UUID, node_id: str, model: str, websocket: WebSocket
-    ) -> bool:
+    def add_node(self, node_uuid: UUID, node_id: str, model: str) -> bool:
         if node_id in self.active_nodes:
             logger.warning(
                 f"{self.config.name}: Node {node_id} already exists in the active nodes"
@@ -142,7 +143,6 @@ class PingPongProtocol:
             return False
         current_time = _current_milli_time()
         self.active_nodes[node_id] = NodePingInfo(
-            websocket=websocket,
             node_uuid=node_uuid,
             model=model,
             rtt=None,
@@ -216,10 +216,10 @@ class PingPongProtocol:
     # Send a ping message to the client
     async def send_ping_message(self, node_id: str):
         node_info = self.active_nodes.get(node_id)
-        if node_info is None or node_info.websocket is None:
+        if node_info is None:
             # Log an error if the node is not available
             logger.error(
-                f"{self.config.name}: Node {node_id} websocket is not available to send ping message, node_info = {node_info}"
+                f"{self.config.name}: Node {node_id} is not available to send ping message, node_info = {node_info}"
             )
         else:
             nonce = str(uuid.uuid4())
@@ -245,7 +245,14 @@ class PingPongProtocol:
                 "data": jsonable_encoder(ping_request),
             }
             sent_time = _current_milli_time()
-            await node_info.websocket.send_json(message)
+            is_success = await self.connected_node_repository.send_json_request(
+                node_info.node_uuid, message
+            )
+            if not is_success:
+                logger.error(
+                    f"{self.config.name}: Node {node_id} ping message sending failed, node_info = {node_info}"
+                )
+                return
 
             # Update the state and the counters after sending the ping
             node_info.next_ping_time = 0  # reset the next ping time
@@ -357,10 +364,10 @@ class PingPongProtocol:
 
     async def _send_node_reconnect_request(self, node_id: str):
         node_info = self.active_nodes.get(node_id)
-        if node_info is None or node_info.websocket is None:
+        if node_info is None:
             # Log an error if the node is not available
             logger.error(
-                f"{self.config.name}: Node {node_id} websocket is not available to send reconnect request, node_info = {node_info}"
+                f"{self.config.name}: Node {node_id} is not available to send reconnect request, node_info = {node_info}"
             )
         else:
             reconnect_request = NodeReconnectRequest(
@@ -374,9 +381,11 @@ class PingPongProtocol:
                 "protocol": self.config.name,
                 "data": jsonable_encoder(reconnect_request),
             }
-            await node_info.websocket.send_json(message)
+            is_success = await self.connected_node_repository.send_json_request(
+                node_info.node_uuid, message
+            )
             logger.info(
-                f"{self.config.name}: Sent reconnection request to node {node_id}"
+                f"{self.config.name}: Sent reconnection request to node {node_id}, success: {is_success}"
             )
 
 
