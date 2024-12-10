@@ -1,5 +1,4 @@
 import time
-from datetime import datetime
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from uuid import UUID
@@ -8,10 +7,10 @@ from uuid import uuid1
 import pytest
 from uuid_extensions import uuid7
 
+from distributedinference.domain.node.entities import BackendHost
 from distributedinference.domain.node.entities import ConnectedNode
-from distributedinference.domain.node.entities import FullNodeInfo
+from distributedinference.domain.node.entities import ModelType
 from distributedinference.domain.node.entities import NodeMetricsIncrement
-from distributedinference.domain.node.entities import NodeSpecs
 from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.node_repository import NodeRepository
@@ -62,9 +61,11 @@ def connected_node_factory(mock_websocket):
             model,
             vram,
             int(time.time()),
+            BackendHost.DISTRIBUTED_INFERENCE_EU,
             mock_websocket,
             {},
             node_status,
+            ModelType.LLM,
             is_self_hosted,
             None,
         )

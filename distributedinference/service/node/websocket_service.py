@@ -149,12 +149,9 @@ async def execute(
             if "request_id" in parsed_data:
                 request_id = parsed_data["request_id"]
                 if request_id is not None:
-                    try:
-                        await node.request_incoming_queues[request_id].put(parsed_data)
-                    except KeyError:
-                        logger.error(
-                            f"Received chunk for unknown request {request_id}, chunk: {parsed_data}"
-                        )
+                    await connected_node_repository.add_inference_response_chunk(
+                        node.uid, request_id, parsed_data
+                    )
                 else:
                     logger.error("Invalid request id")
             else:

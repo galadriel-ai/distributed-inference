@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import asdict
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -140,6 +141,20 @@ class ConnectedNodeRepository:
                 logger.warning(f"Failed to parse chunk, request_id={request_id}")
                 return None
         return None
+
+    async def add_inference_response_chunk(
+        self, node_id: UUID, request_id: str, parsed_data: Any
+    ) -> None:
+        if node_id in self._connected_nodes:
+            connected_node = self._connected_nodes[node_id]
+            try:
+                await connected_node.request_incoming_queues[request_id].put(
+                    parsed_data
+                )
+            except KeyError:
+                logger.error(
+                    f"Received chunk for unknown request {request_id}, chunk: {parsed_data}"
+                )
 
     async def receive_for_image_generation_request(
         self, node_id: UUID, request_id: str
