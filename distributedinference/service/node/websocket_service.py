@@ -128,7 +128,7 @@ async def execute(
     )
 
     if not ping_pong_protocol.add_node(
-        node_info.node_id, node_info.name, formatted_model_name, websocket
+        node_info.node_id, node_info.name, formatted_model_name
     ):
         raise WebSocketException(
             code=status.WS_1008_POLICY_VIOLATION,
@@ -140,7 +140,7 @@ async def execute(
     # TODO: Skip health check for image generation models
     if node.model_type is ModelType.LLM:
         health_check_protocol.add_node(
-            node_info.node_id, node_info.name, node_info.specs.version, websocket
+            node_info.node_id, node_info.name, node_info.specs.version
         )
     try:
         while True:

@@ -7,6 +7,9 @@ from fastapi.exceptions import WebSocketException
 
 import settings
 from distributedinference import api_logger
+from distributedinference.repository.connected_node_repository import (
+    ConnectedNodeRepository,
+)
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,
@@ -64,6 +67,7 @@ async def execute(
     protocol_handler: ProtocolHandler,
     metrics_queue_repository: MetricsQueueRepository,
     node_repository: NodeRepository,
+    connected_node_repository: ConnectedNodeRepository,
 ) -> None:
     try:
         logger.info("Started Protocol Handler")
@@ -73,11 +77,15 @@ async def execute(
             # TODO this should be refactored
             if protocol_name == settings.PING_PONG_PROTOCOL_NAME:
                 ping_pong_protocol = PingPongProtocol(
-                    metrics_queue_repository, protocol_name, config
+                    metrics_queue_repository,
+                    connected_node_repository,
+                    protocol_name,
+                    config,
                 )
                 protocol_handler.register(protocol_name, ping_pong_protocol)
         protocol_handler.register(
-            HealthCheckProtocol.PROTOCOL_NAME, HealthCheckProtocol(node_repository)
+            HealthCheckProtocol.PROTOCOL_NAME,
+            HealthCheckProtocol(node_repository, connected_node_repository),
         )
         while True:
             # trigger protocol runs every PROTOCOL_RESPONSE_CHECK_INTERVAL_IN_SECONDS seconds
