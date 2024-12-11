@@ -16,7 +16,8 @@ USER_PROFILE_ID = UUID("066cc88e-e83c-7f5f-8000-8bf552a84935")
 async def main():
     connection.init_defaults()
     repo = UserNodeRepository(
-        connection.get_session_provider(), connection.get_session_provider_read())
+        connection.get_session_provider(), connection.get_session_provider_read()
+    )
 
     res = await create_node_service.execute(
         CreateNodeRequest(node_name=NODE_NAME_ALIAS),

@@ -99,6 +99,9 @@ PYTHONPATH=. pytest tests/unit
 ```shell
 pip install black
 python -m black .
+pylint --rcfile=setup.cfg distributedinference/*
+mypy .
+
 ```
 
 ## Production deployment
