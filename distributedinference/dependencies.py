@@ -23,6 +23,7 @@ from distributedinference.repository.benchmark_repository import BenchmarkReposi
 from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
+from distributedinference.repository.tee_api_repository import TeeApiRepository
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_queue_repository import (
     TokensQueueRepository,
@@ -51,6 +52,7 @@ _analytics: Analytics
 _protocol_handler: ProtocolHandler
 
 _grafana_api_repository: GrafanaApiRepository
+_tee_api_repository: TeeApiRepository
 _google_cloud_storage_client: GoogleCloudStorage
 
 
@@ -72,6 +74,7 @@ def init_globals():
     global _analytics
     global _protocol_handler
     global _grafana_api_repository
+    global _tee_api_repository
     global _google_cloud_storage_client
     _node_repository_instance = NodeRepository(
         get_session_provider(),
@@ -124,6 +127,10 @@ def init_globals():
     if settings.GRAFANA_API_BASE_URL and settings.GRAFANA_API_KEY:
         _grafana_api_repository = GrafanaApiRepository(
             settings.GRAFANA_API_BASE_URL, settings.GRAFANA_API_KEY
+        )
+    if settings.TEE_API_BASE_URL and settings.OPENAI_API_KEY:
+        _tee_api_repository = TeeApiRepository(
+            settings.TEE_API_BASE_URL, settings.OPENAI_API_KEY
         )
     _google_cloud_storage_client = GoogleCloudStorage()
 
@@ -182,6 +189,10 @@ def get_protocol_handler() -> ProtocolHandler:
 
 def get_grafana_repository() -> GrafanaApiRepository:
     return _grafana_api_repository
+
+
+def get_tee_repository() -> TeeApiRepository:
+    return _tee_api_repository
 
 
 def get_rate_limit_repository() -> RateLimitRepository:
