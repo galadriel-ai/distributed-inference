@@ -42,9 +42,9 @@ async def main():
     print(f"Verifying signature: {response_json['signature']}")
     print(f"Public key: {response_json['public_key']}")
     is_signature_valid = _verify_signature(
-        response_json['public_key'],
-        response_json['signature'],
-        response_json['hash'],
+        response_json["public_key"],
+        response_json["signature"],
+        response_json["hash"],
     )
     print(f"Is signature valid: {is_signature_valid}")
 
