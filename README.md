@@ -73,7 +73,7 @@ docker-compose up --build -d
 ```shell
 cd ..
 PYTHONPATH=. python scripts/insert_users.py
-PYTHONPATH=. python scripts/insert_nodes.py
+PYTHONPATH=. python scripts/insert_node.py
 ```
 
 `inset_node.py` has a variable `user_id` which should be updated with one of
@@ -99,6 +99,9 @@ PYTHONPATH=. pytest tests/unit
 ```shell
 pip install black
 python -m black .
+python -m pylint --rcfile=setup.cfg distributedinference/*
+python -m mypy .
+
 ```
 
 ## Production deployment

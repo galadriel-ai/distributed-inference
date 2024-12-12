@@ -3,7 +3,7 @@ from uuid import UUID
 
 from distributedinference.domain.user.entities import User
 from distributedinference.repository import connection
-from distributedinference.repository.node_repository import NodeRepository
+from distributedinference.repository.user_node_repository import UserNodeRepository
 from distributedinference.repository.user_repository import UserRepository
 from distributedinference.service.node import create_node_service
 from distributedinference.service.node.entities import CreateNodeRequest
@@ -15,8 +15,8 @@ USER_PROFILE_ID = UUID("066cc88e-e83c-7f5f-8000-8bf552a84935")
 
 async def main():
     connection.init_defaults()
-    repo = NodeRepository(
-        connection.get_session_provider(), connection.get_session_provider_read(), 1, 1
+    repo = UserNodeRepository(
+        connection.get_session_provider(), connection.get_session_provider_read()
     )
 
     res = await create_node_service.execute(

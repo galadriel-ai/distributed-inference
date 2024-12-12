@@ -121,6 +121,7 @@ SELECT
     ) AS latest_credits_addition
 FROM user_credits uc
 LEFT JOIN user_profile up on uc.user_profile_id = up.id
+WHERE up.email NOT LIKE '%@galadriel.com'
 ORDER BY credits;
 """
 
