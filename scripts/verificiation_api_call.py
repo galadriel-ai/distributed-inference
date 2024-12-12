@@ -39,7 +39,7 @@ async def main():
 
 
 def _hash_request_and_response(request_body: Dict, response: Dict) -> bytes:
-    combined_str = f"{json.dumps(request_body)}{json.dumps(response, sort_keys=True)}"
+    combined_str = f"{json.dumps(request_body, sort_keys=True)}{json.dumps(response, sort_keys=True)}"
     return hashlib.sha256(combined_str.encode("utf-8")).digest()
 
 
