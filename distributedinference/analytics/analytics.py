@@ -23,6 +23,7 @@ class EventName(Enum):
 
     CHAT_COMPLETIONS = "chat_completions"
     DASHBOARD_CHAT_COMPLETIONS = "dashboard_chat_completions"
+    VERIFIED_CHAT_COMPLETIONS = "verified_chat_completions"
 
     IMAGE_GENERATION = "image_generation"
     IMAGE_EDIT = "image_edit"
