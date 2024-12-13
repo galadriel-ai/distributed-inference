@@ -237,7 +237,7 @@ async def _websocket_error(
     await node_repository.update_node_to_disconnected(node.uid, node_status)
 
     connected_node_repository.deregister_node(node_uid)
-    logger.info(log_message)
+    logger.info(f"{log_message}, status: {node_status}")
     analytics.track_event(
         user.uid,
         AnalyticsEvent(analytics_event, {"node_id": node_uid}),

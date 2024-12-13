@@ -281,9 +281,11 @@ async def _check_connected_nodes_consistency(
     )
     for node_uid in connected_nodes_from_db:
         if node_uid not in connected_nodes_locally:
-            logger.error(f"Node {node_uid} connection is corrupted. Disconnecting...")
             node_status = await node_status_transition.execute(
                 node_repository, node_uid, NodeStatusEvent.STOP
+            )
+            logger.error(
+                f"Node {node_uid} connection is corrupted. Setting state to {node_status} and disconnecting..."
             )
             await node_repository.update_node_to_disconnected(node_uid, node_status)
     return None

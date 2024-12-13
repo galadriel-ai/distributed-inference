@@ -182,6 +182,9 @@ class ConnectedNodeRepository:
                 )
                 logger.debug(f"Received data: {data}")
                 return None
+            finally:
+                # Remove the request from the queue
+                del connected_node.request_incoming_queues[request_id]
         return None
 
     def cleanup_request(self, node_id: UUID, request_id: str) -> None:
