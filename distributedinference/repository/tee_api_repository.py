@@ -28,10 +28,10 @@ class TeeApiRepository:
                     headers={"Authorization": f"Bearer {self.api_key}"},
                     json=request,
                 )
-            if response.status != 200:
-                return None
-            response_json = await response.json()
-            return response_json
+                if response.status != 200:
+                    return None
+                response_json = await response.json()
+                return response_json
         except Exception:
             logger.error("Tee API error", exc_info=True)
             return None
