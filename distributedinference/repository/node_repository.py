@@ -1,7 +1,7 @@
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Tuple
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -178,6 +178,12 @@ SQL_GET_CONNECTED_NODES_TO_THE_CURRENT_BACKEND = """
 SELECT node_info_id
 FROM node_metrics
 WHERE status::text LIKE 'RUNNING%' AND connected_host::text = :connected_host;
+"""
+
+SQL_GET_RUNNING_NODES_WITHOUT_CONNECTED_HOST = """
+SELECT node_info_id, status
+FROM node_metrics
+WHERE status::text LIKE 'RUNNING%' AND connected_host IS NULL;
 """
 
 SQL_GET_NODE_METRICS = """
@@ -555,6 +561,18 @@ class NodeRepository:
                 sqlalchemy.text(SQL_GET_CONNECTED_NODES_TO_THE_CURRENT_BACKEND), data
             )
             return [row.node_info_id for row in result]
+
+    @async_timer(
+        "node_repository.get_running_nodes_without_connected_host", logger=logger
+    )
+    async def get_running_nodes_without_connected_host(
+        self,
+    ) -> List[Tuple[UUID, NodeStatus]]:
+        async with self._session_provider_read.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_RUNNING_NODES_WITHOUT_CONNECTED_HOST)
+            )
+            return [(row.node_info_id, NodeStatus(row.status)) for row in result]
 
 
 def _get_healthcheck_power_percent(health: NodeHealth):

@@ -65,7 +65,10 @@ async def execute(
             connected_node_repository, node_repository
         )
 
-        # 2. Benchmarking checks for all nodes that are unhealthy or in RUNNING_BENCHMARKING state
+        # 2. Clean up nodes that are in RUNNING% state but without connected_host
+        await _clean_up_running_nodes_without_connected_host(node_repository)
+
+        # 3. Benchmarking checks for all nodes that are unhealthy or in RUNNING_BENCHMARKING state
         nodes = await _get_nodes_for_check(node_repository, connected_node_repository)
         for node in nodes:
             await _check_node_health(
@@ -288,4 +291,21 @@ async def _check_connected_nodes_consistency(
                 f"Node {node_uid} connection is corrupted. Setting state to {node_status} and disconnecting..."
             )
             await node_repository.update_node_to_disconnected(node_uid, node_status)
+    return None
+
+
+async def _clean_up_running_nodes_without_connected_host(
+    node_repository: NodeRepository,
+) -> None:
+    nodes_without_connected_host = (
+        await node_repository.get_running_nodes_without_connected_host()
+    )
+    for uid, current_status in nodes_without_connected_host:
+        node_status = await node_status_transition.execute(
+            node_repository, uid, NodeStatusEvent.STOP
+        )
+        logger.error(
+            f"Node {uid} is {current_status.value} but has no connected host. Setting state to {node_status} and disconnecting..."
+        )
+        await node_repository.update_node_to_disconnected(uid, node_status)
     return None
