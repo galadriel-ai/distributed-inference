@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 
 logger = api_logger.get()
 

@@ -5,7 +5,7 @@ from fastapi import Request
 from fastapi import Security
 from fastapi.security import APIKeyHeader
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.dependencies import get_authentication_api_repository
 from distributedinference.dependencies import get_user_repository
 from distributedinference.domain.node.entities import FullNodeInfo

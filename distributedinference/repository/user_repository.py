@@ -6,10 +6,10 @@ from uuid import UUID
 import sqlalchemy
 from uuid_extensions import uuid7
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.user.entities import ApiKey
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.connection import DBConnection
 from distributedinference.repository.utils import utcnow
 from distributedinference.utils.timer import async_timer
 
@@ -131,7 +131,7 @@ logger = api_logger.get()
 class UserRepository:
 
     def __init__(
-        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+        self, session_provider: DBConnection, session_provider_read: DBConnection
     ):
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read

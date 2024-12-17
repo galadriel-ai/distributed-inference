@@ -6,7 +6,7 @@ import aiohttp
 from duckduckgo_search import AsyncDDGS
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.service.tool.entities import SearchRequest
 from distributedinference.service.tool.entities import SearchResponse
 

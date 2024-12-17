@@ -10,7 +10,7 @@ from fastapi import status as http_status
 from fastapi.encoders import jsonable_encoder
 from openai.types.chat import ChatCompletionChunk
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node.entities import ConnectedNode, BackendHost
 from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
 from distributedinference.domain.node.entities import ImageGenerationWebsocketResponse

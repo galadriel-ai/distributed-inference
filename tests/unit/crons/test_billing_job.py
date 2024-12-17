@@ -73,7 +73,6 @@ async def test_no_bills():
 
     await job.execute(billing_repository, tokens_repository)
     tokens_repository.get_grouped_usages_by_time.assert_not_called()
-    assert job.price_cache == {}
 
 
 async def test_one_user_one_model():

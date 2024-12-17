@@ -1,4 +1,4 @@
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName

@@ -5,7 +5,7 @@ from typing import Optional
 import openai
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.entities import InferenceResponse
 

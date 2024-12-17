@@ -3,7 +3,7 @@ from typing import Optional
 from openai.types.image import Image
 from openai.types.images_response import ImagesResponse
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node import select_node_use_case
 from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest

@@ -8,7 +8,7 @@ import aiohttp
 from aiocache import SimpleMemoryCache
 from aiocache import cached
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 
 CACHE_LENGTH_SECONDS = 300
 

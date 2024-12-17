@@ -3,20 +3,16 @@ from typing import Awaitable
 from typing import Callable
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference import dependencies
 from distributedinference.crons import api_usage_job
 from distributedinference.crons import billing_job
 from distributedinference.crons import credits_notification_job
-from distributedinference.repository import connection
 
 logger = api_logger.get()
 
 
 async def start_cron_jobs():
-    connection.init_defaults()
-    dependencies.init_globals()
-
     tasks = [
         (_run_api_usage_job, "API usage noise", 300),
     ]

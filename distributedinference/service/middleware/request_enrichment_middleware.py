@@ -6,7 +6,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.service.middleware import util
 from distributedinference.service.middleware.entitites import RequestStateKey
 

@@ -17,10 +17,8 @@ async def main(
 ) -> None:
     formatted_credits = Decimal(credits_amount)
 
-    connection.init_defaults()
-
     user_repository = UserRepository(
-        connection.get_session_provider(), connection.get_session_provider_read()
+        connection.db_connection(), connection.db_connection_read()
     )
     user_id = None
     if input_user_id:
@@ -33,7 +31,7 @@ async def main(
         user_id = user.uid
 
     repo = BillingRepository(
-        connection.get_session_provider(), connection.get_session_provider_read()
+        connection.db_connection(), connection.db_connection_read()
     )
 
     user_credits_before = await repo.get_user_credit_balance(user_id)

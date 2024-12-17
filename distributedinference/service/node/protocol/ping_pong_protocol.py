@@ -11,7 +11,7 @@ from pydantic import ConfigDict
 from pydantic import ValidationError
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,

@@ -3,7 +3,7 @@ from typing import AsyncIterable, Optional
 from openai.types.chat import CompletionCreateParams
 from uuid_extensions import uuid7
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError

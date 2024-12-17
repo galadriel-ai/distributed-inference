@@ -4,7 +4,7 @@ from typing import AsyncIterator
 from fastapi.responses import StreamingResponse
 from starlette.types import Send
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.service import error_responses
 
 logger = api_logger.get()

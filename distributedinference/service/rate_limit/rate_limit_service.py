@@ -1,5 +1,5 @@
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.rate_limit import get_user_limits_use_case
 from distributedinference.domain.rate_limit.entities import UserUsage
 from distributedinference.domain.user.entities import User

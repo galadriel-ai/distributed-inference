@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.routers.routes import chat_router
 from distributedinference.routers.routes import images_router
 from distributedinference.routers.routes import embedding_router

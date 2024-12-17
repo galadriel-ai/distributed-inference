@@ -4,8 +4,8 @@ from prometheus_client import Gauge
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 import settings
-from distributedinference import api_logger
-from distributedinference.repository import connection
+from distributedinference.api_logger import api_logger
+from distributedinference.repository.connection import db_connection, db_connection_read
 
 sql_engine_pool_size = Gauge(
     "sql_engine_pool_size", "SQL engine pool size", ["postgres_ip"]
@@ -36,10 +36,10 @@ class SqlStatus:
 async def execute():
     clear()
 
-    engine: AsyncEngine = connection.connection["engine"]
+    engine: AsyncEngine = db_connection.engine
     set_values(engine, settings.DB_HOST)
 
-    engine: AsyncEngine = connection.connection_read["engine"]
+    engine: AsyncEngine = db_connection_read.engine
     set_values(engine, settings.DB_HOST_READ)
 
 

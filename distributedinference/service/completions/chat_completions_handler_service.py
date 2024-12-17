@@ -5,7 +5,7 @@ from fastapi import Response
 from starlette.responses import StreamingResponse
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.analytics.analytics import EventName
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent

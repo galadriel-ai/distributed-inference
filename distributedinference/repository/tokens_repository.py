@@ -7,8 +7,8 @@ from uuid import UUID
 import sqlalchemy
 from uuid_extensions import uuid7
 
-from distributedinference import api_logger
-from distributedinference.repository.connection import SessionProvider
+from distributedinference.api_logger import api_logger
+from distributedinference.repository.connection import DBConnection
 from distributedinference.repository.utils import historic_uuid
 from distributedinference.repository.utils import historic_uuid_seconds
 from distributedinference.repository.utils import utcnow, utctoday
@@ -213,7 +213,7 @@ class ModelUsageInformation:
 class TokensRepository:
 
     def __init__(
-        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+        self, session_provider: DBConnection, session_provider_read: DBConnection
     ):
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read

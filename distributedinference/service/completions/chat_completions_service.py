@@ -9,7 +9,7 @@ from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from uuid_extensions import uuid7
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.domain.node.entities import InferenceRequest
 from distributedinference.domain.node.exceptions import NoAvailableNodesError

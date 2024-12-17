@@ -12,7 +12,7 @@ from openai.types.chat import completion_create_params
 from pydantic import BaseModel
 from pydantic import Field
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 
 logger = api_logger.get()
 

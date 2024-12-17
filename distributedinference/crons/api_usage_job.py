@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 import openai
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 
 MAX_REQUESTS = 22
 

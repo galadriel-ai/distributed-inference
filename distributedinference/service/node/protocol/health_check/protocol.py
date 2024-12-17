@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from packaging import version
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node.entities import NodeGPUHealth
 from distributedinference.domain.node.entities import NodeHealth
 from distributedinference.repository.connected_node_repository import (

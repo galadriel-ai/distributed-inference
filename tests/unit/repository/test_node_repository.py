@@ -12,7 +12,7 @@ from distributedinference.domain.node.entities import ConnectedNode
 from distributedinference.domain.node.entities import ModelType
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.domain.node.entities import NodeStatus
-from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.connection import DBConnection
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_repository import (
     SQL_INCREMENT_NODE_METRICS,
@@ -25,7 +25,7 @@ NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
 
 @pytest.fixture
 def session_provider():
-    mock_session_provider = MagicMock(spec=SessionProvider)
+    mock_session_provider = MagicMock(spec=DBConnection)
     return mock_session_provider
 
 

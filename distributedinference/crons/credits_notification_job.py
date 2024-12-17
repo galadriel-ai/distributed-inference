@@ -5,7 +5,7 @@ from typing import Optional
 import aiohttp
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.billing.entities import CreditsReport
 from distributedinference.repository.billing_repository import BillingRepository
 

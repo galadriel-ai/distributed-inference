@@ -1,4 +1,4 @@
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node.node_status_transition import NodeStatusEvent
 from distributedinference.repository.connected_node_repository import (

@@ -8,7 +8,7 @@ from uuid_extensions import uuid7
 
 from distributedinference.domain.node.entities import FullNodeInfo
 from distributedinference.domain.node.entities import NodeSpecs
-from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.connection import DBConnection
 from distributedinference.repository.user_node_repository import (
     SQL_UPDATE_NODE_INFO,
 )
@@ -19,7 +19,7 @@ NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
 
 @pytest.fixture
 def session_provider():
-    mock_session_provider = MagicMock(spec=SessionProvider)
+    mock_session_provider = MagicMock(spec=DBConnection)
     return mock_session_provider
 
 

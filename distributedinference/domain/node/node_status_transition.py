@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node.entities import ModelType, NodeStatus
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.service import error_responses

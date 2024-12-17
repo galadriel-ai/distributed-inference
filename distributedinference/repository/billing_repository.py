@@ -10,7 +10,7 @@ from uuid_extensions import uuid7
 
 from distributedinference.domain.billing.entities import BillableUser
 from distributedinference.domain.billing.entities import CreditsReport
-from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.connection import DBConnection
 from distributedinference.repository.utils import utcnow
 
 SQL_ADD_CREDITS = """
@@ -129,7 +129,7 @@ ORDER BY credits;
 class BillingRepository:
 
     def __init__(
-        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+        self, session_provider: DBConnection, session_provider_read: DBConnection
     ):
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read

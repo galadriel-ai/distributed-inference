@@ -13,7 +13,7 @@ from distributedinference.analytics.analytics import (
     AnalyticsEvent,
     EventName,
 )
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node import is_node_performant
 from distributedinference.domain.node import node_status_transition
 from distributedinference.domain.node import is_inference_request_finished

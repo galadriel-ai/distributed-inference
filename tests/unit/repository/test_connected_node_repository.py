@@ -13,7 +13,7 @@ from distributedinference.domain.node.entities import NodeStatus
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
 )
-from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.connection import DBConnection
 
 MAX_PARALLEL_REQUESTS = 10
 MAX_PARALLEL_DATACENTER_REQUESTS = 20
@@ -22,7 +22,7 @@ NODE_UUID = UUID("40c95432-8b2c-4208-bdf4-84f49ff957a3")
 
 @pytest.fixture
 def session_provider():
-    mock_session_provider = MagicMock(spec=SessionProvider)
+    mock_session_provider = MagicMock(spec=DBConnection)
     return mock_session_provider
 
 

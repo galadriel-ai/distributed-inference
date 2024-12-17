@@ -1,7 +1,7 @@
 import asyncio
 from typing import List
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.repository.tokens_repository import (
     DailyUserModelUsageIncrement,

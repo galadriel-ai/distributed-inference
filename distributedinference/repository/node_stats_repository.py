@@ -3,11 +3,11 @@ from uuid import UUID
 
 import sqlalchemy
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node_stats.entities import UserAggregatedStats
 from distributedinference.domain.node_stats.entities import NodeStats
 from distributedinference.repository import utils
-from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.connection import DBConnection
 from distributedinference.utils.timer import async_timer
 
 SQL_GET_NODE_STATS = """
@@ -41,7 +41,7 @@ logger = api_logger.get()
 class NodeStatsRepository:
 
     def __init__(
-        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+        self, session_provider: DBConnection, session_provider_read: DBConnection
     ):
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read

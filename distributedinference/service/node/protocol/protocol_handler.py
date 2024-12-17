@@ -6,7 +6,7 @@ from fastapi import status
 from fastapi.exceptions import WebSocketException
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
 )

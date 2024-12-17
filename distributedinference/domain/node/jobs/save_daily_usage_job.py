@@ -3,7 +3,7 @@ from typing import Dict
 from typing import List
 from uuid import UUID
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.repository.tokens_queue_repository import (
     TokensQueueRepository,
 )

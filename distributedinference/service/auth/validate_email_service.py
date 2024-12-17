@@ -1,4 +1,4 @@
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi import Depends
 from openai.types import CreateEmbeddingResponse
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.embedding_api_repository import (

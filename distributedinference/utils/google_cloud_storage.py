@@ -2,7 +2,7 @@ import asyncio
 import base64
 from datetime import timedelta
 from google.cloud import storage
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 import settings
 
 logger = api_logger.get()

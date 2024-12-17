@@ -1,5 +1,5 @@
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.rate_limit import check_limit_use_case
 from distributedinference.domain.rate_limit import check_daily_limits_use_case
 from distributedinference.domain.rate_limit.entities import RateLimit

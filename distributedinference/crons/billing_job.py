@@ -5,7 +5,7 @@ from typing import Optional
 from uuid import UUID
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.billing.entities import BillableUser
 from distributedinference.domain.billing.entities import TotalBill
 from distributedinference.repository.billing_repository import BillingRepository
@@ -18,33 +18,33 @@ class BillingException(Exception):
     pass
 
 
-# usage_tier_id + model_name: price
-# Gets reset on every execution
-price_cache: Dict[str, Decimal] = {}
-
-
 # pylint: disable=W0603
 async def execute(
-    billing_repository: BillingRepository,
-    tokens_repository: TokensRepository,
+        billing_repository: BillingRepository,
+        tokens_repository: TokensRepository,
 ) -> None:
-    global price_cache
-    price_cache = {}
+    # usage_tier_id + model_name: price
+    # price_cache Gets reset on every execution
+    price_cache: Dict[str, Decimal] = {}
+
     billable_users = await billing_repository.get_billable_users()
     for billable_user in billable_users:
         try:
-            user_bill = await _get_user_total_bill(
-                billable_user, tokens_repository, billing_repository
-            )
-            await _bill_user(user_bill, billable_user, billing_repository)
-        except Exception:
-            logger.error("Unexected error in billing_job", exc_info=True)
+            user_bill = await _get_user_total_bill(billable_user=billable_user,
+                                                   tokens_repository=tokens_repository,
+                                                   billing_repository=billing_repository,
+                                                   price_cache=price_cache
+                                                   )
+            await _bill_user(user_bill=user_bill, billable_user=billable_user, billing_repository=billing_repository)
+        except Exception as e:
+            logger.error(f"Unexpected error in billing_job, error: {e}", exc_info=True)
 
 
 async def _get_user_total_bill(
-    billable_user: BillableUser,
-    tokens_repository: TokensRepository,
-    billing_repository: BillingRepository,
+        billable_user: BillableUser,
+        tokens_repository: TokensRepository,
+        billing_repository: BillingRepository,
+        price_cache: Dict[str, Decimal],
 ) -> TotalBill:
     usages = await tokens_repository.get_grouped_usages_by_time(
         billable_user.user_profile_id, billable_user.last_credit_calculation_at
@@ -52,7 +52,10 @@ async def _get_user_total_bill(
     total_credits_used = Decimal("0")
     last_credit_calculation_at: Optional[datetime] = None
     for usage in usages:
-        model_price = await _get_model_price(billable_user, usage, billing_repository)
+        model_price = await _get_model_price(billable_user=billable_user,
+                                             usage=usage,
+                                             billing_repository=billing_repository,
+                                             price_cache=price_cache)
         if model_price:
             price = usage.tokens_count * model_price / 1000000
             total_credits_used += price
@@ -69,7 +72,7 @@ async def _get_user_total_bill(
 
 
 async def _get_model_price(
-    billable_user, usage, billing_repository
+        billable_user, usage, billing_repository, price_cache
 ) -> Optional[Decimal]:
     cache_key = f"{billable_user.usage_tier_id}-{usage.model_name}"
     if cache_key in price_cache:
@@ -82,9 +85,9 @@ async def _get_model_price(
 
 
 async def _bill_user(
-    user_bill: TotalBill,
-    billable_user: BillableUser,
-    billing_repository: BillingRepository,
+        user_bill: TotalBill,
+        billable_user: BillableUser,
+        billing_repository: BillingRepository,
 ) -> None:
     if user_bill.credits_used > Decimal("0"):
         if not user_bill.last_credit_calculation_at:

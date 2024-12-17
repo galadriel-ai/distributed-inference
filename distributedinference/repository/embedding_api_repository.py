@@ -6,7 +6,7 @@ from typing import Union
 from openai import AsyncOpenAI
 from openai.types import CreateEmbeddingResponse
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 
 logger = api_logger.get()
 

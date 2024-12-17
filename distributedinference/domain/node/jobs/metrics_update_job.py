@@ -5,7 +5,7 @@ from typing import List
 from uuid import UUID
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node.entities import NodeMetricsIncrement
 from distributedinference.repository.metrics_queue_repository import (
     MetricsQueueRepository,

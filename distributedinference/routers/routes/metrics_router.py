@@ -11,7 +11,7 @@ from prometheus_client import generate_latest
 from prometheus_client.multiprocess import MultiProcessCollector
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.metrics import calculate_node_costs
 from distributedinference.domain.metrics import node_status_metrics

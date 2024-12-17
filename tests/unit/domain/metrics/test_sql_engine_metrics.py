@@ -15,13 +15,13 @@ def setup_function():
     settings.DB_HOST = "db_host"
     settings.DB_HOST_READ = "db_host_read"
 
-    sql_engine_metrics.connection = MagicMock()
+    sql_engine_metrics = MagicMock()
     mock_engine = MagicMock()
     mock_engine.pool.status.return_value = "Pool size: 50  Connections in pool: 49 Current Overflow: -5 Current Checked out connections: 12"
-    sql_engine_metrics.connection.connection = {"engine": mock_engine}
+    sql_engine_metrics.db_connection.engine = mock_engine
     mock_engine_read = MagicMock()
     mock_engine_read.pool.status.return_value = "Pool size: 51  Connections in pool: 50 Current Overflow: 6 Current Checked out connections: 13"
-    sql_engine_metrics.connection.connection_read = {"engine": mock_engine_read}
+    sql_engine_metrics.db_connection_read.engine = mock_engine_read
 
 
 def teardown_function():

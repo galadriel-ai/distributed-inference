@@ -1,7 +1,7 @@
 from openai.types.images_response import ImagesResponse
 from uuid_extensions import uuid7
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference.domain.node.entities import ImageGenerationWebsocketRequest
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,

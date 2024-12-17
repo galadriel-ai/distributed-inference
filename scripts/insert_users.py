@@ -30,9 +30,8 @@ USERS = [
 
 
 async def main():
-    connection.init_defaults()
     repo = UserRepository(
-        connection.get_session_provider(), connection.get_session_provider_read()
+        connection.db_connection(), connection.db_connection_read()
     )
 
     print(f"Inserting {len(USERS)} users.")

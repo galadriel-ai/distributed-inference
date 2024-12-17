@@ -7,14 +7,13 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 import settings
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.node import set_nodes_inactive
 from distributedinference.domain.node.jobs import health_check_job
 from distributedinference.domain.node.jobs import metrics_update_job
 from distributedinference.domain.node.jobs import save_daily_usage_job
 from distributedinference.domain.node.jobs import save_tokens_job
-from distributedinference.repository import connection
 from distributedinference.routers import main_router
 from distributedinference.service.exception_handlers.exception_handlers import (
     custom_exception_handler,
@@ -33,41 +32,36 @@ logger = api_logger.get()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    connection.init_defaults()
-    dependencies.init_globals()
-
     metrics_task = asyncio.create_task(
-        metrics_update_job.execute(
-            dependencies.get_metrics_queue_repository(),
-            dependencies.get_node_repository(),
-        )
+        metrics_update_job.execute(metrics_queue_repository=dependencies.get_metrics_queue_repository(),
+                                   node_repository=dependencies.get_node_repository())
     )
     protocol_task = asyncio.create_task(
         protocol_handler.execute(
-            dependencies.get_protocol_handler(),
-            dependencies.get_metrics_queue_repository(),
-            dependencies.get_node_repository(),
-            dependencies.get_connected_node_repository(),
+            protocol_handler=dependencies.get_protocol_handler(),
+            metrics_queue_repository=dependencies.get_metrics_queue_repository(),
+            node_repository=dependencies.get_node_repository(),
+            connected_node_repository=dependencies.get_connected_node_repository(),
         )
     )
     health_task = asyncio.create_task(
         health_check_job.execute(
-            dependencies.get_node_repository(),
-            dependencies.get_connected_node_repository(),
-            dependencies.get_analytics(),
-            dependencies.get_protocol_handler(),
+            node_repository=dependencies.get_node_repository(),
+            connected_node_repository=dependencies.get_connected_node_repository(),
+            analytics=dependencies.get_analytics(),
+            protocol_handler=dependencies.get_protocol_handler(),
         )
     )
     save_daily_usage_task = asyncio.create_task(
         save_daily_usage_job.execute(
-            dependencies.get_tokens_repository(),
-            dependencies.get_tokens_queue_repository(),
+            tokens_repository=dependencies.get_tokens_repository(),
+            tokens_queue_repository=dependencies.get_tokens_queue_repository(),
         )
     )
     save_tokens_task = asyncio.create_task(
         save_tokens_job.execute(
-            dependencies.get_tokens_repository(),
-            dependencies.get_tokens_queue_repository(),
+            tokens_repository=dependencies.get_tokens_repository(),
+            tokens_queue_repository=dependencies.get_tokens_queue_repository(),
         )
     )
     yield
@@ -75,8 +69,8 @@ async def lifespan(_: FastAPI):
     # Clean up resources and database before shutting down
     logger.info("Shutdown Signal received. Cleaning up...")
     await set_nodes_inactive.execute(
-        dependencies.get_node_repository(),
-        dependencies.get_connected_node_repository(),
+        node_repository=dependencies.get_node_repository(),
+        connected_node_repository=dependencies.get_connected_node_repository(),
     )
     metrics_task.cancel()
     protocol_task.cancel()

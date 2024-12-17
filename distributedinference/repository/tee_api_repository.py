@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 
 import aiohttp
 
-from distributedinference import api_logger
+from distributedinference.api_logger import api_logger
 
 logger = api_logger.get()
 
