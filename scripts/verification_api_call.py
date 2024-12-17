@@ -29,7 +29,7 @@ async def main():
     print(response_json)
 
     formatted_response_json = copy.deepcopy(response_json)
-    extra_fields = ["hash", "signature", "attestation", "public_key"]
+    extra_fields = ["hash", "signature", "attestation", "public_key", "tx_hash"]
     for field in extra_fields:
         formatted_response_json.pop(field, None)
 
