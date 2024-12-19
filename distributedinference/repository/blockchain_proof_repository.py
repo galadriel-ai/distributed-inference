@@ -13,6 +13,7 @@ from solders.transaction import Transaction
 from solders.keypair import Keypair
 from solders.instruction import Instruction, AccountMeta
 from solders.message import Message
+from solders.system_program import transfer, TransferParams
 
 
 from distributedinference import api_logger
@@ -100,6 +101,24 @@ class BlockchainProofRepository:
 
     def get_keypair(self):
         return self.keypair
+
+    async def transfer(self, recipient: Pubkey, lamports: int):
+        transfer_tx = transfer(
+            TransferParams(
+                from_pubkey=self.keypair.pubkey(),
+                to_pubkey=recipient,
+                lamports=lamports,
+            )
+        )
+        recent_blockhash_response = await self.client.get_latest_blockhash()
+        recent_blockhash = recent_blockhash_response.value.blockhash
+        transaction = Transaction(
+            [self.keypair], Message([transfer_tx]), recent_blockhash
+        )
+        return await self.client.send_transaction(
+            transaction,
+            opts=TxOpts(skip_confirmation=False, preflight_commitment=Confirmed),
+        )
 
     async def call_instruction(
         self, signer: list[Keypair], data: bytes, accounts: list[AccountMeta]

@@ -14,6 +14,3 @@ RUN useradd --create-home appuser
 WORKDIR /home/appuser
 
 COPY . /home/appuser
-
-# Copy the Google Cloud credentials to the container
-COPY sidekik-ai-7191fc59c17c.json /home/appuser
