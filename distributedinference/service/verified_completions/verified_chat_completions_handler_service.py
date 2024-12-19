@@ -10,6 +10,10 @@ from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
 )
 from distributedinference.repository.tee_api_repository import TeeApiRepository
+from distributedinference.repository.utils import utcnow
+from distributedinference.repository.verified_completions_repository import (
+    VerifiedCompletionsRepository,
+)
 from distributedinference.service import error_responses
 from distributedinference.service.verified_completions.entities import (
     ChatCompletionRequest,
@@ -19,10 +23,12 @@ logger = api_logger.get()
 
 
 async def execute(
+    api_key: str,
     request: ChatCompletionRequest,
     response: Response,
     tee_repository: TeeApiRepository,
     blockchain_proof_repository: BlockchainProofRepository,
+    verified_completions_repository: VerifiedCompletionsRepository,
 ) -> Dict:
     if request.stream:
         raise NotImplementedError
@@ -48,7 +54,38 @@ async def execute(
             raise error_responses.InternalServerAPIError()
 
         response_body["tx_hash"] = str(tx_response.value)
+
+        await _log_verified_completion(
+            verified_completions_repository, api_key, request, response_body
+        )
         return response_body
     except Exception as e:
         logger.error(f"Error adding proof to blockchain: {e}")
         raise error_responses.InternalServerAPIError()
+
+
+async def _log_verified_completion(
+    verified_completions_repository: VerifiedCompletionsRepository,
+    api_key: str,
+    request: ChatCompletionRequest,
+    response: Dict,
+) -> None:
+    exclude_keys = {
+        "hash",
+        "public_key",
+        "signature",
+        "attestation",
+        "tx_hash",
+    }
+    original_response = {k: v for k, v in response.items() if k not in exclude_keys}
+
+    await verified_completions_repository.insert_verified_completion(
+        api_key=api_key,
+        request=request.model_dump(),
+        response=original_response,
+        hash=response["hash"],
+        public_key=response["public_key"],
+        signature=response["signature"],
+        attestation=response["attestation"],
+        tx_hash=response["tx_hash"],
+    )

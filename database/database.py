@@ -339,5 +339,24 @@ class UserModelUsage24h(Base):
     )
 
 
+class VerifiedCompletions(Base):
+    __tablename__ = "verified_completions"
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        nullable=False,
+    )
+    hash = Column(String(), nullable=False, index=True)
+    api_key = Column(String(), nullable=False, index=True)
+    request = Column(JSON, nullable=False)
+    response = Column(JSON, nullable=False)
+    public_key = Column(String(), nullable=False)
+    signature = Column(String(), nullable=False)
+    attestation = Column(String(), nullable=False)
+    tx_hash = Column(String(), nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    last_updated_at = Column(DateTime, nullable=False)
+
+
 def get_connection() -> Session:
     return session_maker()
