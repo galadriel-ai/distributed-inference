@@ -1,4 +1,7 @@
 import settings
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
 from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.posthog import init_posthog
@@ -56,6 +59,7 @@ _protocol_handler: ProtocolHandler
 
 _grafana_api_repository: GrafanaApiRepository
 _tee_api_repository: TeeApiRepository
+_blockchain_proof_repository: BlockchainProofRepository
 _google_cloud_storage_client: GoogleCloudStorage
 
 _verified_completions_repository: VerifiedCompletionsRepository
@@ -80,6 +84,7 @@ def init_globals():
     global _protocol_handler
     global _grafana_api_repository
     global _tee_api_repository
+    global _blockchain_proof_repository
     global _google_cloud_storage_client
     global _verified_completions_repository
 
@@ -142,6 +147,16 @@ def init_globals():
         _tee_api_repository = TeeApiRepository(
             settings.TEE_API_BASE_URL, settings.OPENAI_API_KEY
         )
+    if (
+        settings.SOLANA_PROGRAM_ID
+        and settings.SOLANA_RPC_URL
+        and settings.SOLANA_KEYPAIR_DIR
+    ):
+        _blockchain_proof_repository = BlockchainProofRepository(
+            settings.SOLANA_RPC_URL,
+            settings.SOLANA_PROGRAM_ID,
+            settings.SOLANA_KEYPAIR_DIR,
+        )
     _google_cloud_storage_client = GoogleCloudStorage()
 
 
@@ -203,6 +218,10 @@ def get_grafana_repository() -> GrafanaApiRepository:
 
 def get_tee_repository() -> TeeApiRepository:
     return _tee_api_repository
+
+
+def get_blockchain_proof_repository() -> BlockchainProofRepository:
+    return _blockchain_proof_repository
 
 
 def get_rate_limit_repository() -> RateLimitRepository:

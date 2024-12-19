@@ -14,6 +14,9 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
 from distributedinference.repository.tee_api_repository import TeeApiRepository
 from distributedinference.service.auth import authentication
 from distributedinference.service.verified_completions import (
@@ -38,7 +41,7 @@ router.tags = [TAG]
 logger = api_logger.get()
 
 
-# pylint: disable=R0913
+# pylint: disable=too-many-arguments
 @router.post(
     "/completions",
     summary="Creates a model response for the given chat conversation.",
@@ -52,6 +55,9 @@ async def completions(
     response: Response,
     user: User = Depends(authentication.validate_api_key_header),
     tee_repository: TeeApiRepository = Depends(dependencies.get_tee_repository),
+    blockchain_proof_repository: BlockchainProofRepository = Depends(
+        dependencies.get_blockchain_proof_repository
+    ),
     verified_completions_repository=Depends(
         dependencies.get_verified_completions_repository
     ),
@@ -62,7 +68,12 @@ async def completions(
     )
     api_key = _get_api_key(api_request)
     return await verified_chat_completions_handler_service.execute(
-        api_key, request, response, tee_repository, verified_completions_repository
+        api_key,
+        request,
+        response,
+        tee_repository,
+        blockchain_proof_repository,
+        verified_completions_repository,
     )
 
 
