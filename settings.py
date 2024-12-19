@@ -196,5 +196,7 @@ HOSTNAME = os.getenv("HOSTNAME", "")
 
 # Solana blockchain settings
 SOLANA_RPC_URL = os.getenv("SOLANA_DEVNET_URL", "https://api.devnet.solana.com")
-SOLANA_PROGRAM_ID = os.getenv("SOLANA_PROGRAM_ID", "HCkvLKhWQ8TTRdoSry29epRZnAoEDhP9CjmDS8jLtY9")
+SOLANA_PROGRAM_ID = os.getenv(
+    "SOLANA_PROGRAM_ID", "HCkvLKhWQ8TTRdoSry29epRZnAoEDhP9CjmDS8jLtY9"
+)
 SOLANA_KEYPAIR_DIR = os.getenv("SOLANA_KEYPAIR_DIR", "solana.key")

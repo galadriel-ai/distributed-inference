@@ -14,14 +14,18 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 api_dir = os.path.join(script_dir, "distributedinference")
 sys.path.append(api_dir)
 # pylint: disable=C0413
-from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
 
 KEYPAIR_DIR = "~/.config/solana/id.json"
 SOLANA_RPC_URL = "https://api.devnet.solana.com"
 SOLANA_PROGRAM_ID = "HCkvLKhWQ8TTRdoSry29epRZnAoEDhP9CjmDS8jLtY9"
 
 
-async def main(arg_add: Optional[str], arg_remove: Optional[str], arg_transfer: Optional[str]):
+async def main(
+    arg_add: Optional[str], arg_remove: Optional[str], arg_transfer: Optional[str]
+):
     # Create a ContractClient object
     keypair = None
     with open(os.path.expanduser(KEYPAIR_DIR), "r", encoding="utf-8") as file:
@@ -60,7 +64,9 @@ async def main(arg_add: Optional[str], arg_remove: Optional[str], arg_transfer: 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Add or remove authority to/from Solana contract")
+    parser = argparse.ArgumentParser(
+        description="Add or remove authority to/from Solana contract"
+    )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-a", "--add", help="Public key to add as authority")
     group.add_argument("-r", "--remove", help="Public key to remove as authority")

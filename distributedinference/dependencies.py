@@ -1,5 +1,7 @@
-from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
 import settings
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
 from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.posthog import init_posthog
@@ -135,9 +137,15 @@ def init_globals():
         _tee_api_repository = TeeApiRepository(
             settings.TEE_API_BASE_URL, settings.OPENAI_API_KEY
         )
-    if settings.SOLANA_PROGRAM_ID and settings.SOLANA_RPC_URL and settings.SOLANA_KEYPAIR_DIR:
+    if (
+        settings.SOLANA_PROGRAM_ID
+        and settings.SOLANA_RPC_URL
+        and settings.SOLANA_KEYPAIR_DIR
+    ):
         _blockchain_proof_repository = BlockchainProofRepository(
-            settings.SOLANA_RPC_URL, settings.SOLANA_PROGRAM_ID, settings.SOLANA_KEYPAIR_DIR
+            settings.SOLANA_RPC_URL,
+            settings.SOLANA_PROGRAM_ID,
+            settings.SOLANA_KEYPAIR_DIR,
         )
     _google_cloud_storage_client = GoogleCloudStorage()
 

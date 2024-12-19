@@ -11,7 +11,6 @@ from solders.system_program import ID as SYS_PROGRAM_ID
 from solders.pubkey import Pubkey
 from solders.transaction import Transaction
 from solders.keypair import Keypair
-from solders.signature import Signature
 from solders.instruction import Instruction, AccountMeta
 from solders.message import Message
 
@@ -29,27 +28,27 @@ INSTRUCTION_DISCRIMINATORS = {
 }
 
 
-def _load_or_create_keypair(dir: str) -> Keypair:
-    dir = os.path.expanduser(dir)
-    keypair = _get_private_key(dir)
+def _load_or_create_keypair(key_path: str) -> Keypair:
+    key_path = os.path.expanduser(key_path)
+    keypair = _get_private_key(key_path)
     if keypair is None:
         logger.info("No existing keypair found. Creating a new keypair...")
         keypair = Keypair()
-        _save_private_key(keypair, dir)
+        _save_private_key(keypair, key_path)
     return keypair
 
 
-def _get_private_key(dir: str) -> Optional[Keypair]:
-    if os.path.exists(dir):
-        with open(dir, "r", encoding="utf-8") as file:
+def _get_private_key(key_path: str) -> Optional[Keypair]:
+    if os.path.exists(key_path):
+        with open(key_path, "r", encoding="utf-8") as file:
             seed = json.load(file)
             return Keypair.from_bytes(seed)
     return None
 
 
-def _save_private_key(keypair: Keypair, dir: str):
+def _save_private_key(keypair: Keypair, key_path: str):
     private_key_json = json.dumps(keypair.to_bytes_array()).encode("utf-8")
-    with open(dir, "wb") as file:
+    with open(key_path, "wb") as file:
         file.write(private_key_json)
 
 

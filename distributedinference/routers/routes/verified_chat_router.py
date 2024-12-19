@@ -8,7 +8,9 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
 from distributedinference.repository.tee_api_repository import TeeApiRepository
 from distributedinference.service.auth import authentication
 from distributedinference.service.verified_completions import (
@@ -26,6 +28,7 @@ router.tags = [TAG]
 logger = api_logger.get()
 
 
+# pylint: disable=too-many-arguments
 @router.post(
     "/completions",
     summary="Creates a model response for the given chat conversation.",
