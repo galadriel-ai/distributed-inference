@@ -1,9 +1,11 @@
+from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Literal
 from typing import Optional
 from typing import Union
 from typing import cast
+from uuid import UUID
 
 from openai._utils import async_maybe_transform
 from openai.types.chat import ChatCompletion as OpenAiChatCompletion
@@ -258,3 +260,46 @@ class ChatCompletionRequest(BaseModel):
 class ChatCompletion(OpenAiChatCompletion):
     # TODO: additional fields here, eg signature etc
     pass
+
+
+class VerifiedChatCompletionFilter(str, Enum):
+    ALL = "all"
+    MINE = "mine"
+
+
+class VerifiedChatCompletion(BaseModel):
+    id: str = Field(description="Unique ID of the verified completion.")
+    request: Dict
+    response: Dict
+    hash: str = Field(
+        description="The SHA-256 hash of the request and response",
+    )
+    public_key: str = Field(description="Signer public key")
+    signature: str = Field(
+        description="The signature of the hash, signed by the Solana account in hex format.",
+    )
+    attestation: str = Field(
+        description="The attestation document.",
+    )
+    tx_hash: str = Field(
+        description="The transaction hash.",
+    )
+    created_at: int = Field(
+        description="The timestamp of when the verified completion was created.",
+    )
+
+
+class VerifiedChatCompletionsRequest(BaseModel):
+    limit: Optional[int] = Field(
+        description="List of verified chat completions.", default=100
+    )
+    cursor: Optional[UUID] = Field(description="Cursor for pagination.", default=None)
+
+
+class VerifiedChatCompletionsResponse(BaseModel):
+    completions: List[VerifiedChatCompletion] = Field(
+        description="List of verified chat completions."
+    )
+    cursor: Optional[UUID] = Field(
+        description="Cursor for pagination.",
+    )
