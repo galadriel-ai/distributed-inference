@@ -12,7 +12,7 @@ pytest-asyncio==0.24.0
 pytest-cov==5.0.0
 SQLAlchemy[asyncio]==2.0.36
 alembic==1.13.2
-openai==1.42.0
+openai==1.58.1
 uuid7==0.1.0
 websockets==12.0
 stytch==11.4.1
@@ -30,3 +30,6 @@ duckduckgo-search==6.3.3
 google-cloud-core==2.4.1
 google-cloud-storage==2.18.2
 python-multipart==0.0.17
+borsh-construct==0.1.0
+solana==0.36.1
+solders==0.23.0

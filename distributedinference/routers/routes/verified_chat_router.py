@@ -8,6 +8,7 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
 from distributedinference.repository.tee_api_repository import TeeApiRepository
 from distributedinference.service.auth import authentication
 from distributedinference.service.verified_completions import (
@@ -37,11 +38,14 @@ async def completions(
     response: Response,
     user: User = Depends(authentication.validate_api_key_header),
     tee_repository: TeeApiRepository = Depends(dependencies.get_tee_repository),
+    blockchain_proof_repository: BlockchainProofRepository = Depends(
+        dependencies.get_blockchain_proof_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.VERIFIED_CHAT_COMPLETIONS, {})
     )
     return await verified_chat_completions_handler_service.execute(
-        request, response, tee_repository
+        request, response, tee_repository, blockchain_proof_repository
     )
