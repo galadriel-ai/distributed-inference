@@ -74,8 +74,8 @@ SELECT
     created_at,
     last_updated_at
 FROM verified_completions
-WHERE id > :cursor
-ORDER BY id ASC
+WHERE id < :cursor
+ORDER BY id DESC
 LIMIT :limit;
 """
 
@@ -93,8 +93,8 @@ SELECT
     created_at,
     last_updated_at
 FROM verified_completions
-WHERE api_key = :api_key AND id > :cursor
-ORDER BY id ASC
+WHERE api_key = :api_key AND id < :cursor
+ORDER BY id DESC
 LIMIT :limit;
 """
 
@@ -127,6 +127,7 @@ class VerifiedCompletionsRepository:
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read
 
+    # pylint: disable=R0913, W0622
     @async_timer(
         "verified_completions_repository.insert_verified_completion", logger=logger
     )
@@ -164,7 +165,7 @@ class VerifiedCompletionsRepository:
     ) -> List[VerifiedCompletion]:
         data = {
             "limit": limit,
-            "cursor": str(cursor) if cursor else "00000000-0000-0000-0000-000000000000",
+            "cursor": str(cursor) if cursor else "ffffffff-ffff-ffff-ffff-ffffffffffff",
         }
         result = []
         async with self._session_provider_read.get() as session:
@@ -194,7 +195,7 @@ class VerifiedCompletionsRepository:
         data = {
             "api_key": api_key,
             "limit": limit,
-            "cursor": str(cursor) if cursor else "00000000-0000-0000-0000-000000000000",
+            "cursor": str(cursor) if cursor else "ffffffff-ffff-ffff-ffff-ffffffffffff",
         }
         result = []
         async with self._session_provider_read.get() as session:

@@ -38,6 +38,7 @@ router.tags = [TAG]
 logger = api_logger.get()
 
 
+# pylint: disable=R0913
 @router.post(
     "/completions",
     summary="Creates a model response for the given chat conversation.",
@@ -65,6 +66,7 @@ async def completions(
     )
 
 
+# pylint: disable=W0622,
 @router.get(
     "/completions",
     summary="Retrieves all agent verified chat completions.",
@@ -82,7 +84,7 @@ async def get_completions(
         None,
         description="Filter completions. Use `mine` to retrieve your own completions.",
     ),
-    user: User = Depends(authentication.validate_api_key_header),
+    _: User = Depends(authentication.validate_api_key_header),
     verified_completions_repository=Depends(
         dependencies.get_verified_completions_repository
     ),
@@ -107,7 +109,7 @@ async def get_completions(
 )
 async def get_completion_by_hash(
     hash: str = Path(..., description="The hash of the verified completion."),
-    user: User = Depends(authentication.validate_api_key_header),
+    _: User = Depends(authentication.validate_api_key_header),
     verified_completions_repository=Depends(
         dependencies.get_verified_completions_repository
     ),
