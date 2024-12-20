@@ -145,7 +145,9 @@ def init_globals():
         )
     if settings.TEE_API_BASE_URL and settings.OPENAI_API_KEY:
         _tee_api_repository = TeeApiRepository(
-            settings.TEE_API_BASE_URL, settings.OPENAI_API_KEY
+            settings.TEE_API_BASE_URL,
+            settings.TEE_API_BASE_URL_2,
+            settings.OPENAI_API_KEY,
         )
     if (
         settings.SOLANA_PROGRAM_ID

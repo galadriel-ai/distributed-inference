@@ -17,3 +17,4 @@ tests/reports/
 scripts/openapi.json
 
 .credentials
+solana.key

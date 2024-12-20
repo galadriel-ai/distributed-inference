@@ -161,6 +161,7 @@ GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", None)
 
 # TEE API
 TEE_API_BASE_URL = os.getenv("TEE_API_BASE_URL", None)
+TEE_API_BASE_URL_2 = os.getenv("TEE_API_BASE_URL_2", None)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
 
 # If it is False, it will still run the noise job
