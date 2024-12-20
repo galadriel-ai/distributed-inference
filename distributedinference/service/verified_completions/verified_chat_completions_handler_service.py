@@ -31,7 +31,9 @@ async def execute(
     verified_completions_repository: VerifiedCompletionsRepository,
 ) -> Dict:
     if request.stream:
-        raise NotImplementedError
+        raise error_responses.UnsupportedRequestParameterError(
+            "Streaming is not yet supported for verified completions."
+        )
     response_body = await tee_repository.completions(
         request.model_dump(exclude_unset=True)
     )
