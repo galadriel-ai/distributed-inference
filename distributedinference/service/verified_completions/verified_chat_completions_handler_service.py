@@ -1,45 +1,88 @@
 from typing import Dict
+from uuid import UUID
 
 import hashlib
 
 from fastapi import Response
 
+import settings
 from distributedinference import api_logger
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
+from distributedinference.domain.rate_limit import rate_limit_use_case
+from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
+from distributedinference.domain.user.entities import User
 from distributedinference.repository.blockchain_proof_repository import (
     AttestationProof,
     BlockchainProofRepository,
 )
+from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tee_api_repository import TeeApiRepository
+from distributedinference.repository.tokens_queue_repository import (
+    DailyUserModelUsageIncrement,
+    TokensQueueRepository,
+)
+from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.repository.tokens_repository import UsageTokens
 from distributedinference.repository.utils import utcnow
 from distributedinference.repository.verified_completions_repository import (
     VerifiedCompletionsRepository,
 )
 from distributedinference.service import error_responses
+from distributedinference.service.completions.utils import rate_limit_to_headers
+from distributedinference.service.error_responses import RateLimitError
 from distributedinference.service.verified_completions.entities import (
     ChatCompletionRequest,
 )
+
+
+MODEL_NAME = "verified_completion"
 
 logger = api_logger.get()
 
 
 async def execute(
     api_key: str,
+    user: User,
     request: ChatCompletionRequest,
     response: Response,
+    rate_limit_repository: RateLimitRepository,
     tee_repository: TeeApiRepository,
+    tokens_repository: TokensRepository,
+    tokens_queue_repository: TokensQueueRepository,
     blockchain_proof_repository: BlockchainProofRepository,
     verified_completions_repository: VerifiedCompletionsRepository,
+    analytics: Analytics,
 ) -> Dict:
     if request.stream:
         raise error_responses.UnsupportedRequestParameterError(
             "Streaming is not yet supported for verified completions."
         )
+    rate_limit_info = await rate_limit_use_case.execute(
+        MODEL_NAME, user, tokens_repository, rate_limit_repository
+    )
+    rate_limit_headers = rate_limit_to_headers(rate_limit_info)
+    if rate_limit_info.rate_limit_reason:
+        analytics.track_event(
+            user.uid,
+            AnalyticsEvent(
+                EventName.USER_RATE_LIMITED,
+                {
+                    "model": request.model,
+                    "reason": rate_limit_info.rate_limit_reason.value,
+                },
+            ),
+        )
+        raise RateLimitError(rate_limit_headers)
+
     response_body = await tee_repository.completions(
         request.model_dump(exclude_unset=True)
     )
     if not response_body:
         raise error_responses.InternalServerAPIError()
 
+    await _save_usage(tokens_queue_repository, user.uid, response_body.get("usage", {}))
     try:
         attestation_doc = response_body["attestation"]
         attestation_hash = hashlib.sha256(attestation_doc.encode()).digest()
@@ -90,4 +133,27 @@ async def _log_verified_completion(
         signature=response["signature"],
         attestation=response["attestation"],
         tx_hash=response["tx_hash"],
+    )
+
+
+async def _save_usage(
+    tokens_queue_repository: TokensQueueRepository, user_uid: UUID, usage: Dict
+):
+    await tokens_queue_repository.push_token_usage(
+        UsageTokens(
+            consumer_user_profile_id=user_uid,
+            producer_node_info_id=settings.GALADRIEL_NODE_INFO_ID,
+            model_name=MODEL_NAME,
+            prompt_tokens=usage.get("prompt_tokens", 0),
+            completion_tokens=usage.get("completion_tokens", 0),
+            total_tokens=usage.get("total_tokens", 0),
+        )
+    )
+    await tokens_queue_repository.push_daily_usage(
+        DailyUserModelUsageIncrement(
+            user_profile_id=user_uid,
+            model_name=MODEL_NAME,
+            tokens_count=usage.get("total_tokens", 0),
+            requests_count=1,
+        )
     )
