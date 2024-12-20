@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 from typing import Union
 
 from fastapi import Response
@@ -10,7 +10,6 @@ from distributedinference.analytics.analytics import EventName
 from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.domain.rate_limit import rate_limit_use_case
-from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
@@ -32,6 +31,7 @@ from distributedinference.service.completions.entities import ChatCompletionRequ
 from distributedinference.service.completions.streaming_response import (
     StreamingResponseWithStatusCode,
 )
+from distributedinference.service.completions.utils import rate_limit_to_headers
 from distributedinference.service.error_responses import RateLimitError
 from distributedinference.utils.timer import async_timer
 
@@ -105,32 +105,6 @@ async def execute(
         tokens_queue_repository=tokens_queue_repository,
         analytics=analytics,
     )
-
-
-def rate_limit_to_headers(rate_limit: UserRateLimitResponse) -> Dict[str, str]:
-    headers = {
-        "x-ratelimit-limit-requests": str(rate_limit.rate_limit_day.max_requests),
-        "x-ratelimit-limit-tokens": str(rate_limit.rate_limit_minute.max_tokens or 0),
-        "x-ratelimit-remaining-requests": str(
-            rate_limit.rate_limit_day.remaining_requests or 0
-        ),
-        "x-ratelimit-remaining-tokens": str(
-            rate_limit.rate_limit_minute.remaining_tokens or 0
-        ),
-        "x-ratelimit-reset-requests": (
-            f"{rate_limit.rate_limit_day.reset_requests}s"
-            if rate_limit.rate_limit_day.reset_requests is not None
-            else "0s"
-        ),
-        "x-ratelimit-reset-tokens": (
-            f"{rate_limit.rate_limit_minute.reset_tokens}s"
-            if rate_limit.rate_limit_minute.reset_tokens is not None
-            else "0s"
-        ),
-    }
-    if rate_limit.retry_after:
-        headers["retry-after"] = str(rate_limit.retry_after)
-    return headers
 
 
 def _match_model_name(user_input: str) -> str:

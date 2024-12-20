@@ -17,7 +17,12 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
 )
+from distributedinference.repository.rate_limit_repository import RateLimitRepository
 from distributedinference.repository.tee_api_repository import TeeApiRepository
+from distributedinference.repository.tokens_queue_repository import (
+    TokensQueueRepository,
+)
+from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.auth import authentication
 from distributedinference.service.verified_completions import (
     verified_chat_completions_handler_service,
@@ -54,7 +59,14 @@ async def completions(
     request: ChatCompletionRequest,
     response: Response,
     user: User = Depends(authentication.validate_api_key_header),
+    rate_limit_repository: RateLimitRepository = Depends(
+        dependencies.get_rate_limit_repository
+    ),
     tee_repository: TeeApiRepository = Depends(dependencies.get_tee_repository),
+    tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
+    tokens_queue_repository: TokensQueueRepository = Depends(
+        dependencies.get_tokens_queue_repository
+    ),
     blockchain_proof_repository: BlockchainProofRepository = Depends(
         dependencies.get_blockchain_proof_repository
     ),
@@ -69,11 +81,16 @@ async def completions(
     api_key = _get_api_key(api_request)
     return await verified_chat_completions_handler_service.execute(
         api_key,
+        user,
         request,
         response,
+        rate_limit_repository,
         tee_repository,
+        tokens_repository,
+        tokens_queue_repository,
         blockchain_proof_repository,
         verified_completions_repository,
+        analytics,
     )
 
 
