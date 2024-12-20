@@ -81,14 +81,14 @@ if __name__ == "__main__":
         description="Add or remove authority to/from Solana contract"
     )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-a", "--add", help="Public key to add as authority")
-    group.add_argument("-r", "--remove", help="Public key to remove as authority")
+    group.add_argument("-a", "--add", help="Add a public key as authority")
+    group.add_argument("-r", "--remove", help="Remove a public key from authority")
     group.add_argument(
         "-t",
         "--transfer",
         nargs=2,
         metavar=("PUBKEY", "AMOUNT"),
-        help="Public key to transfer funds to",
+        help="Transfer Lamports to the provided account",
     )
     group.add_argument(
         "-p", "--pubkey", action="store_true", help="Print pubkey of the solana keypair"

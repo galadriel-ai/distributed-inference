@@ -5,6 +5,8 @@ import hashlib
 
 from fastapi import Response
 
+from prometheus_client import Counter
+
 import settings
 from distributedinference import api_logger
 from distributedinference.analytics.analytics import Analytics
@@ -37,9 +39,13 @@ from distributedinference.service.verified_completions.entities import (
 )
 
 
-MODEL_NAME = "verified_completion"
+MODEL_NAME = "verified_completions"
 
 logger = api_logger.get()
+
+blockchain_error_counter = Counter(
+    "blockchain_errors", "Total number of blockchain errors"
+)
 
 
 async def execute(
@@ -96,17 +102,22 @@ async def execute(
         tx_response = await blockchain_proof_repository.add_proof(proof)
 
         if not tx_response:
-            raise error_responses.InternalServerAPIError()
+            raise Exception("Failed to add proof to blockchain")
 
         response_body["tx_hash"] = str(tx_response.value)
 
-        await _log_verified_completion(
-            verified_completions_repository, api_key, request, response_body
-        )
-        return response_body
     except Exception as e:
+        # Fail gracefully if we can't add the proof to the blockchain
         logger.error(f"Error adding proof to blockchain: {e}")
-        raise error_responses.InternalServerAPIError()
+        blockchain_error_counter.inc()
+        # Set tx_hash to empty string
+        response_body["tx_hash"] = ""
+
+    await _log_verified_completion(
+        verified_completions_repository, api_key, request, response_body
+    )
+    response.headers.update(rate_limit_headers)
+    return response_body
 
 
 async def _log_verified_completion(
