@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 import settings
 from distributedinference import api_logger
-from distributedinference.repository import connection
+from distributedinference.repository.connection import SessionProvider
 
 sql_engine_pool_size = Gauge(
     "sql_engine_pool_size", "SQL engine pool size", ["postgres_ip"]
@@ -33,14 +33,13 @@ class SqlStatus:
     checked_out_connections: float
 
 
-async def execute():
+async def execute(db_session_provider: dict[str, SessionProvider]):
     clear()
 
-    engine: AsyncEngine = connection.connection["engine"]
-    set_values(engine, settings.DB_HOST)
-
-    engine: AsyncEngine = connection.connection_read["engine"]
-    set_values(engine, settings.DB_HOST_READ)
+    # Set values for write and read connections
+    set_values(engine=db_session_provider["write"].engine, db_host=settings.DB_HOST)
+    # Set values for read-only connections
+    set_values(engine=db_session_provider["read"].engine, db_host=settings.DB_HOST_READ)
 
 
 def set_values(engine: AsyncEngine, db_host: str):
