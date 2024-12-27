@@ -17,9 +17,9 @@ DEFAULT_POOL_TIMEOUT = 1
 class SessionProvider:
     def __init__(
         self,
-        engine: AsyncEngine = None,
-        session_maker: async_sessionmaker = None,
-        logger: logging.Logger = None,
+        engine: AsyncEngine,
+        session_maker: async_sessionmaker,
+        logger: logging.Logger,
     ):
         self.engine = engine
         self.session_maker = session_maker
@@ -73,7 +73,7 @@ db_session_provider = {
         password=settings.DB_PASSWORD,
         db=settings.DB_DATABASE,
         host=settings.DB_HOST,
-        port=settings.DB_PORT,
+        port=int(settings.DB_PORT),
     ),
     "read": SessionProvider.start_connection(
         logger=api_logger.get(),
@@ -81,6 +81,6 @@ db_session_provider = {
         password=settings.DB_PASSWORD_READ,
         db=settings.DB_DATABASE_READ,
         host=settings.DB_HOST_READ,
-        port=settings.DB_PORT_READ,
+        port=int(settings.DB_PORT_READ),
     ),
 }
