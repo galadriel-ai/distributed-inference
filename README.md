@@ -91,7 +91,7 @@ First, create a `.env` file in the root directory
 ```shell
 cp template.env .env
 ```
-Create the solana wallet keypair file in the following path:
+Create a dummy solana wallet keypair file in the following path:
 ```shell
 ./.credentials/solana-keypair.json
 ```
