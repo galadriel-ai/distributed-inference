@@ -59,7 +59,9 @@ class SessionProvider:
 
     def get(self) -> AsyncSession:
         if not self.session_maker:
-            raise Exception("Session provider not initialized")  # pylint: disable=broad-exception-raised
+            raise Exception(
+                "Session provider not initialized"
+            )  # pylint: disable=broad-exception-raised
         return self.session_maker()
 
 
