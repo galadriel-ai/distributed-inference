@@ -66,7 +66,10 @@ _token_repository_instance: TokensRepository
 
 
 # pylint: disable=W0603
-def init_globals(db_session_provider_write: SessionProvider, db_session_provider_read: SessionProvider):
+def init_globals(
+    db_session_provider_write: SessionProvider,
+    db_session_provider_read: SessionProvider,
+):
     # TODO: refactor this, we shouldn't use globals
     global _node_repository_instance
     global _connected_node_repository_instance
@@ -90,33 +93,53 @@ def init_globals(db_session_provider_write: SessionProvider, db_session_provider
     global _user_repository_instance
     global _token_repository_instance
 
-    _node_repository_instance = NodeRepository(session_provider=db_session_provider_write,
-                                               session_provider_read=db_session_provider_read)
+    _node_repository_instance = NodeRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
     _connected_node_repository_instance = ConnectedNodeRepository(
         settings.MAX_PARALLEL_REQUESTS_PER_NODE,
         settings.MAX_PARALLEL_REQUESTS_PER_DATACENTER_NODE,
         settings.HOSTNAME,
     )
-    _user_node_repository_instance = UserNodeRepository(session_provider=db_session_provider_write,
-                                                        session_provider_read=db_session_provider_read)
-    _node_stats_repository_instance = NodeStatsRepository(session_provider=db_session_provider_write,
-                                                          session_provider_read=db_session_provider_read)
-    _benchmark_repository_instance = BenchmarkRepository(session_provider=db_session_provider_write,
-                                                         session_provider_read=db_session_provider_read)
+    _user_node_repository_instance = UserNodeRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
+    _node_stats_repository_instance = NodeStatsRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
+    _benchmark_repository_instance = BenchmarkRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
     _metrics_queue_repository = MetricsQueueRepository()
-    _metrics_repository = MetricsRepository(session_provider=db_session_provider_write,
-                                            session_provider_read=db_session_provider_read)
-    _rate_limit_repository = RateLimitRepository(session_provider=db_session_provider_write,
-                                                 session_provider_read=db_session_provider_read)
-    _billing_repository = BillingRepository(session_provider=db_session_provider_write,
-                                            session_provider_read=db_session_provider_read)
-    _verified_completions_repository = VerifiedCompletionsRepository(session_provider=db_session_provider_write,
-                                                                     session_provider_read=db_session_provider_read)
-    _user_repository_instance = UserRepository(session_provider=db_session_provider_write,
-                                               session_provider_read=db_session_provider_read)
+    _metrics_repository = MetricsRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
+    _rate_limit_repository = RateLimitRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
+    _billing_repository = BillingRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
+    _verified_completions_repository = VerifiedCompletionsRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
+    _user_repository_instance = UserRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
     _tokens_queue_repository = TokensQueueRepository()
-    _token_repository_instance = TokensRepository(session_provider=db_session_provider_write,
-                                                  session_provider_read=db_session_provider_read)
+    _token_repository_instance = TokensRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
 
     _analytics = Analytics(
         posthog=init_posthog(

@@ -14,8 +14,10 @@ logger = api_logger.get()
 
 
 async def start_cron_jobs():
-    dependencies.init_globals(db_session_provider_write=db_session_provider["write"],
-                              db_session_provider_read=db_session_provider["read"])
+    dependencies.init_globals(
+        db_session_provider_write=db_session_provider["write"],
+        db_session_provider_read=db_session_provider["read"],
+    )
 
     tasks = [
         (_run_api_usage_job, "API usage noise", 300),

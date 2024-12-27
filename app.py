@@ -33,8 +33,10 @@ logger = api_logger.get()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    dependencies.init_globals(db_session_provider_write=db_session_provider["write"],
-                              db_session_provider_read=db_session_provider["read"])
+    dependencies.init_globals(
+        db_session_provider_write=db_session_provider["write"],
+        db_session_provider_read=db_session_provider["read"],
+    )
 
     metrics_task = asyncio.create_task(
         metrics_update_job.execute(

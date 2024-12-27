@@ -12,6 +12,7 @@ mock_engine_read = MagicMock()
 mock_engine_read.engine.pool.status.return_value = "Pool size: 51  Connections in pool: 50 Current Overflow: 6 Current Checked out connections: 13"
 db_session_provider = {"write": mock_engine_write, "read": mock_engine_read}
 
+
 def setup_function():
     global DB_HOST_VALUE
     global DB_HOST_READ_VALUE
@@ -19,6 +20,7 @@ def setup_function():
     DB_HOST_READ_VALUE = settings.DB_HOST_READ
     settings.DB_HOST = "db_host"
     settings.DB_HOST_READ = "db_host_read"
+
 
 def teardown_function():
     settings.DB_HOST = DB_HOST_VALUE
