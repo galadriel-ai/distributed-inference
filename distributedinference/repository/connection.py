@@ -26,7 +26,7 @@ class SessionProvider:
         self.logger = logger
 
     @classmethod
-    def start_connection(
+    def start_connection(  # pylint: disable=too-many-arguments
         cls,
         logger: logging.Logger,
         user: str,
@@ -59,7 +59,7 @@ class SessionProvider:
 
     def get(self) -> AsyncSession:
         if not self.session_maker:
-            raise Exception("Session provider not initialized")
+            raise Exception("Session provider not initialized")  # pylint: disable=broad-exception-raised
         return self.session_maker()
 
 
