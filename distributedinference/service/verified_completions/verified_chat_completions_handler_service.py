@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 from uuid import UUID
 
 import hashlib
@@ -40,6 +40,7 @@ from distributedinference.service.verified_completions.entities import (
 
 
 MODEL_NAME = "verified_completions"
+FINE_TUNE_MODEL_NAME = "fine_tune_verified_completions"
 
 logger = api_logger.get()
 
@@ -50,6 +51,7 @@ blockchain_error_counter = Counter(
 
 async def execute(
     api_key: str,
+    fine_tune_api_key: Optional[str],
     user: User,
     request: ChatCompletionRequest,
     response: Response,
@@ -83,12 +85,15 @@ async def execute(
         raise RateLimitError(rate_limit_headers)
 
     response_body = await tee_repository.completions(
-        request.model_dump(exclude_unset=True)
+        fine_tune_api_key, request.model_dump(exclude_unset=True)
     )
     if not response_body:
         raise error_responses.InternalServerAPIError()
 
-    await _save_usage(tokens_queue_repository, user.uid, response_body.get("usage", {}))
+    is_fine_tune_model = True if fine_tune_api_key else False
+    await _save_usage(
+        tokens_queue_repository, user.uid, response_body.get("usage", {}), is_fine_tune_model
+    )
     try:
         attestation_doc = response_body["attestation"]
         attestation_hash = hashlib.sha256(attestation_doc.encode()).digest()
@@ -148,13 +153,16 @@ async def _log_verified_completion(
 
 
 async def _save_usage(
-    tokens_queue_repository: TokensQueueRepository, user_uid: UUID, usage: Dict
+    tokens_queue_repository: TokensQueueRepository,
+    user_uid: UUID,
+    usage: Dict,
+    is_fine_tune_model: bool,
 ):
     await tokens_queue_repository.push_token_usage(
         UsageTokens(
             consumer_user_profile_id=user_uid,
             producer_node_info_id=settings.GALADRIEL_NODE_INFO_ID,
-            model_name=MODEL_NAME,
+            model_name=FINE_TUNE_MODEL_NAME if is_fine_tune_model else MODEL_NAME,
             prompt_tokens=usage.get("prompt_tokens", 0),
             completion_tokens=usage.get("completion_tokens", 0),
             total_tokens=usage.get("total_tokens", 0),
@@ -163,7 +171,7 @@ async def _save_usage(
     await tokens_queue_repository.push_daily_usage(
         DailyUserModelUsageIncrement(
             user_profile_id=user_uid,
-            model_name=MODEL_NAME,
+            model_name=FINE_TUNE_MODEL_NAME if is_fine_tune_model else MODEL_NAME,
             tokens_count=usage.get("total_tokens", 0),
             requests_count=1,
         )

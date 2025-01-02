@@ -19,13 +19,14 @@ class TeeApiRepository:
         self.api_key = api_key
 
     @async_timer("tee_api_repository.completions", logger=logger)
-    async def completions(self, request: Dict) -> Optional[Dict]:
+    async def completions(self, api_key: Optional[str], request: Dict) -> Optional[Dict]:
         for api_base_url in self.api_base_urls:
             connected = await self._connectivity(api_base_url)
             if not connected:
                 logger.error(f"TEE API not connected: {api_base_url}")
                 continue
-            return await self._completions(request, api_base_url)
+            # Use the user's API key if provided, otherwise use the default API key
+            return await self._completions(request, api_key or self.api_key, api_base_url)
         return None
 
     @async_timer("tee_api_repository._connectivity", logger=logger)
@@ -48,7 +49,7 @@ class TeeApiRepository:
             return False
 
     @async_timer("tee_api_repository._completions", logger=logger)
-    async def _completions(self, request: Dict, api_base_url: str) -> Optional[Dict]:
+    async def _completions(self, request: Dict, api_key: str, api_base_url: str) -> Optional[Dict]:
         """
         :param request: Dict so it is formatted as little as possible
         :return: Dict response, again to have as little formatting on it as possible
@@ -58,7 +59,7 @@ class TeeApiRepository:
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 response = await session.post(
                     urljoin(api_base_url, "v1/chat/completions"),
-                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    headers={"Authorization": f"Bearer {api_key}"},
                     json=request,
                 )
                 if response.status != 200:
