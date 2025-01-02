@@ -92,7 +92,10 @@ async def execute(
 
     is_fine_tune_model = True if fine_tune_api_key else False
     await _save_usage(
-        tokens_queue_repository, user.uid, response_body.get("usage", {}), is_fine_tune_model
+        tokens_queue_repository,
+        user.uid,
+        response_body.get("usage", {}),
+        is_fine_tune_model,
     )
     try:
         attestation_doc = response_body["attestation"]
