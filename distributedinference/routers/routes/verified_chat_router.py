@@ -78,9 +78,13 @@ async def completions(
     analytics.track_event(
         user.uid, AnalyticsEvent(EventName.VERIFIED_CHAT_COMPLETIONS, {})
     )
-    api_key = _get_api_key(api_request)
+    galadriel_api_key = _get_galadriel_api_key(api_request)
+
+    fine_tune_api_key = _get_fine_tune_api_key(api_request)
+
     return await verified_chat_completions_handler_service.execute(
-        api_key,
+        galadriel_api_key,
+        fine_tune_api_key,
         user,
         request,
         response,
@@ -119,7 +123,7 @@ async def get_completions(
 ):
     request = VerifiedChatCompletionsRequest(limit=limit, cursor=cursor)
     if filter == VerifiedChatCompletionFilter.MINE:
-        api_key = _get_api_key(api_request)
+        api_key = _get_galadriel_api_key(api_request)
         return await get_verified_completions_by_api_key.execute(
             api_key, request, verified_completions_repository
         )
@@ -147,9 +151,17 @@ async def get_completion_by_hash(
     )
 
 
-def _get_api_key(
+def _get_galadriel_api_key(
     request: Request,
 ) -> str:
     api_key_header = request.headers.get("Authorization") or ""
     api_key_header = api_key_header.replace("Bearer ", "")
     return api_key_header
+
+
+# Get user's API key for the fine-tune models of OpenAI or Anthropic
+def _get_fine_tune_api_key(
+    request: Request,
+) -> Optional[str]:
+    api_key_header = request.headers.get("Fine-Tune-Authorization")
+    return api_key_header.replace("Bearer ", "") if api_key_header else None
