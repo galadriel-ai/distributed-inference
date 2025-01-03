@@ -114,7 +114,7 @@ class ChatCompletionRequest(BaseModel):
         ..., description="A list of messages comprising the conversation so far. "
     )
     model: str = Field(
-        description="ID of the model to use. Get ID for available [models](/for-developers/models)."
+        description="ID of the model to use. The requested model is forwarded to OpenAI without modifications."
     )
     frequency_penalty: Optional[float] = Field(
         description="Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.",
