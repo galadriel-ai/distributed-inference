@@ -23,6 +23,7 @@ from distributedinference.repository.tokens_queue_repository import (
     TokensQueueRepository,
 )
 from distributedinference.repository.tokens_repository import TokensRepository
+from distributedinference.service import error_responses
 from distributedinference.service.auth import authentication
 from distributedinference.service.verified_completions import (
     verified_chat_completions_handler_service,
@@ -32,12 +33,17 @@ from distributedinference.service.verified_completions import (
 )
 from distributedinference.service.verified_completions.entities import ChatCompletion
 from distributedinference.service.verified_completions.entities import (
+    APIProvider,
     ChatCompletionRequest,
     VerifiedChatCompletion,
     VerifiedChatCompletionFilter,
     VerifiedChatCompletionsRequest,
     VerifiedChatCompletionsResponse,
 )
+
+API_PROVIDER_HEADER = "API-Provider"
+FINE_TUNE_AUTH_HEADER = "Fine-Tune-Authorization"
+GALADRIEL_AUTH_HEADER = "Authorization"
 
 TAG = "Verified Chat"
 router = APIRouter(prefix="/verified/chat")
@@ -81,6 +87,8 @@ async def completions(
     galadriel_api_key = _get_galadriel_api_key(api_request)
 
     fine_tune_api_key = _get_fine_tune_api_key(api_request)
+
+    api_provider = _get_api_provider(api_request)
 
     return await verified_chat_completions_handler_service.execute(
         galadriel_api_key,
@@ -154,7 +162,7 @@ async def get_completion_by_hash(
 def _get_galadriel_api_key(
     request: Request,
 ) -> str:
-    api_key_header = request.headers.get("Authorization") or ""
+    api_key_header = request.headers.get(GALADRIEL_AUTH_HEADER) or ""
     api_key_header = api_key_header.replace("Bearer ", "")
     return api_key_header
 
@@ -163,5 +171,16 @@ def _get_galadriel_api_key(
 def _get_fine_tune_api_key(
     request: Request,
 ) -> Optional[str]:
-    api_key_header = request.headers.get("Fine-Tune-Authorization")
+    api_key_header = request.headers.get(FINE_TUNE_AUTH_HEADER)
     return api_key_header.replace("Bearer ", "") if api_key_header else None
+
+
+# Get API provider from the request headers, by default it is OpenAI
+def _get_api_provider(request: Request) -> APIProvider:
+    provider = request.headers.get(API_PROVIDER_HEADER)
+    try:
+        return APIProvider(provider.lower()) if provider else APIProvider.OPENAI
+    except ValueError:
+        raise error_responses.InvalidRequestParameterError(
+            f"Invalid API provider. Must be one of: {[p.value for p in APIProvider]}"
+        )

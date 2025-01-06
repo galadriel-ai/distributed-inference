@@ -35,6 +35,7 @@ from distributedinference.service import error_responses
 from distributedinference.service.completions.utils import rate_limit_to_headers
 from distributedinference.service.error_responses import RateLimitError
 from distributedinference.service.verified_completions.entities import (
+    APIProvider,
     ChatCompletionRequest,
 )
 
@@ -50,6 +51,7 @@ blockchain_error_counter = Counter(
 
 
 async def execute(
+    api_provider: APIProvider,
     api_key: str,
     fine_tune_api_key: Optional[str],
     user: User,

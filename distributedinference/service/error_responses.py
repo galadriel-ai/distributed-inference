@@ -107,6 +107,20 @@ class InvalidCredentialsAPIError(APIErrorResponse):
         return result
 
 
+class InvalidRequestParameterError(APIErrorResponse):
+    def __init__(self, message: str):
+        self.message = message
+
+    def to_status_code(self) -> int:
+        return status.HTTP_400_BAD_REQUEST
+
+    def to_code(self) -> str:
+        return "invalid_request_parameter"
+
+    def to_message(self) -> str:
+        return self.message
+
+
 class NotFoundAPIError(APIErrorResponse):
     def __init__(self, message_extra: Optional[str] = None):
         self.message_extra = message_extra
