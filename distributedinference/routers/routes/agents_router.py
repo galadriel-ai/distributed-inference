@@ -17,19 +17,35 @@ from distributedinference.service.auth import authentication
 from distributedinference.service.agent import create_agent_service
 from distributedinference.service.agent import delete_agent_service
 from distributedinference.service.agent import get_agent_service
+from distributedinference.service.agent import get_user_agents_service
 from distributedinference.service.agent import update_agent_service
 from distributedinference.service.agent.entities import CreateAgentRequest
 from distributedinference.service.agent.entities import CreateAgentResponse
 from distributedinference.service.agent.entities import DeleteAgentResponse
 from distributedinference.service.agent.entities import GetAgentResponse
+from distributedinference.service.agent.entities import GetAgentsResponse
 from distributedinference.service.agent.entities import UpdateAgentRequest
 from distributedinference.service.agent.entities import UpdateAgentResponse
 
 TAG = "Agent"
-router = APIRouter(prefix="/agent")
+router = APIRouter(prefix="/agents")
 router.tags = [TAG]
 
 logger = api_logger.get()
+
+
+@router.get(
+    "/",
+    summary="Gets all agents for the user",
+    description="",
+    response_description="Agent information",
+    response_model=GetAgentsResponse,
+)
+async def get_user_agents(
+    user: User = Depends(authentication.validate_api_key_header),
+    agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+):
+    return await get_user_agents_service.execute(agent_repository, user)
 
 
 @router.get(

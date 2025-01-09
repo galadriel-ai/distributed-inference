@@ -10,14 +10,24 @@ from pydantic import Field
 from distributedinference.service.entities import ApiResponse
 
 
+class Agent(BaseModel):
+    agent_id: UUID = Field(description="Agent ID")
+    name: str = Field(description="Name")
+    updated_at: datetime = Field(description="Updated at")
+    docker_image: str = Field(description="Docker image")
+    pcr0_hash: str = Field(description="PCR0")
+
+
 class GetAgentRequest(BaseModel):
     agent_id: UUID = Field(description="Agent ID")
 
 
-class GetAgentResponse(ApiResponse):
-    updated_at: datetime = Field(description="Updated at")
-    docker_image: str = Field(description="Docker image")
-    pcr0_hash: str = Field(description="PCR0")
+class GetAgentResponse(ApiResponse, Agent):
+    pass
+
+
+class GetAgentsResponse(ApiResponse):
+    agents: List[Agent] = Field(description="Agents")
 
 
 class CreateAgentRequest(BaseModel):

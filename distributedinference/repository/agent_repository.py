@@ -1,6 +1,7 @@
 import json
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from uuid import UUID
 
@@ -46,6 +47,19 @@ SELECT
     last_updated_at
 FROM agents
 WHERE id = :id AND is_deleted = FALSE;
+"""
+
+SQL_GET_USER_AGENTS = """
+SELECT
+    id,
+    name,
+    user_profile_id,
+    docker_image,
+    env_vars,
+    created_at,
+    last_updated_at
+FROM agents
+WHERE user_profile_id = :user_profile_id AND is_deleted = FALSE;
 """
 
 SQL_UPDATE_AGENT = """
@@ -108,6 +122,25 @@ class AgentRepository:
                     last_updated_at=row.last_updated_at,
                 )
         return None
+
+    async def get_user_agents(self, user_profile_id: UUID) -> List[Agent]:
+        data = {"user_profile_id": user_profile_id}
+        results = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_USER_AGENTS), data)
+            for row in rows:
+                results.append(
+                    Agent(
+                        agent_id=row.id,
+                        name=row.name,
+                        user_profile_id=row.user_profile_id,
+                        docker_image=row.docker_image,
+                        env_vars=row.env_vars,
+                        created_at=row.created_at,
+                        last_updated_at=row.last_updated_at,
+                    )
+                )
+        return results
 
     async def update_agent(
         self,

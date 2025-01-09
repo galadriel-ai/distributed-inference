@@ -17,6 +17,8 @@ async def execute(
 
     # TODO retrieve pcr0 hash from the TEE host service
     return GetAgentResponse(
+        agent_id=agent.agent_id,
+        name=agent.name,
         updated_at=agent.last_updated_at,
         docker_image=agent.docker_image,
         pcr0_hash="mock_hash",
