@@ -12,6 +12,7 @@ from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
 
+# pylint: disable=R0801
 SQL_INSERT_AGENT = """
 INSERT INTO agents (
     id,
@@ -127,7 +128,7 @@ class AgentRepository:
             await session.commit()
             print(result)
 
-    async def delete_agent(self, agent_id: UUID, user_id: UUID) -> None:
+    async def delete_agent(self, agent_id: UUID) -> None:
         data = {"id": agent_id}
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_DELETE_AGENT), data)

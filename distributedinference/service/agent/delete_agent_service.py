@@ -15,6 +15,6 @@ async def execute(
     if agent is None or agent.user_profile_id != user.uid:
         raise error_responses.NotFoundAPIError("Agent not found")
 
-    await delete_agent_use_case.execute(repository, agent_id, user.uid)
+    await delete_agent_use_case.execute(repository, agent_id)
     # TODO stop any running TEE instances
     return DeleteAgentResponse()
