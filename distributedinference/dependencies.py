@@ -8,6 +8,7 @@ from distributedinference.analytics.posthog import init_posthog
 from distributedinference.repository.authentication_api_repository import (
     AuthenticationApiRepository,
 )
+from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.repository.billing_repository import BillingRepository
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
@@ -63,6 +64,7 @@ _blockchain_proof_repository: BlockchainProofRepository
 _google_cloud_storage_client: GoogleCloudStorage
 
 _verified_completions_repository: VerifiedCompletionsRepository
+_agent_repository: AgentRepository
 
 
 # pylint: disable=W0603
@@ -87,6 +89,7 @@ def init_globals():
     global _blockchain_proof_repository
     global _google_cloud_storage_client
     global _verified_completions_repository
+    global _agent_repository
 
     _node_repository_instance = NodeRepository(
         get_session_provider(),
@@ -121,6 +124,9 @@ def init_globals():
         get_session_provider(), get_session_provider_read()
     )
     _tokens_queue_repository = TokensQueueRepository()
+    _agent_repository = AgentRepository(
+        get_session_provider(), get_session_provider_read()
+    )
 
     _analytics = Analytics(
         posthog=init_posthog(
@@ -244,3 +250,7 @@ def get_tokens_queue_repository() -> TokensQueueRepository:
 
 def get_verified_completions_repository() -> VerifiedCompletionsRepository:
     return _verified_completions_repository
+
+
+def get_agent_repository() -> AgentRepository:
+    return _agent_repository

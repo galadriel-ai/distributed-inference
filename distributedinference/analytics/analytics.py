@@ -55,6 +55,11 @@ class EventName(Enum):
     # Tool
     TOOL_CALL = "tool_call"
 
+    # Agent
+    CREATE_AGENT = "create_agent"
+    UPDATE_AGENT = "update_agent"
+    DELETE_AGENT = "delete_agent"
+
 
 @dataclass
 class AnalyticsEvent:
