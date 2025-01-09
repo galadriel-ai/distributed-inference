@@ -67,6 +67,12 @@ cd database
 cp template.env .env
 docker-compose up --build -d
 ```
+Run DB migrations to create the tables:
+
+```shell
+cd database
+alembic upgrade head
+```
 
 ### Insert Dummy Data
 
@@ -81,7 +87,16 @@ the `id` from `user_profile` table.
 For now this has to be done manually but in future we will automate this.
 
 ### Run the server:
+First, create a `.env` file in the root directory
+```shell
+cp template.env .env
+```
+Create a dummy solana wallet keypair file in the following path:
+```shell
+./.credentials/solana-keypair.json
+```
 
+Finally, run the following command to start the server:
 ```shell
 python wsgi.py
 ```

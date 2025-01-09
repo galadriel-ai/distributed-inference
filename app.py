@@ -14,7 +14,7 @@ from distributedinference.domain.node.jobs import health_check_job
 from distributedinference.domain.node.jobs import metrics_update_job
 from distributedinference.domain.node.jobs import save_daily_usage_job
 from distributedinference.domain.node.jobs import save_tokens_job
-from distributedinference.repository import connection
+from distributedinference.repository.connection import db_session_provider
 from distributedinference.routers import main_router
 from distributedinference.service.exception_handlers.exception_handlers import (
     custom_exception_handler,
@@ -33,8 +33,10 @@ logger = api_logger.get()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    connection.init_defaults()
-    dependencies.init_globals()
+    dependencies.init_globals(
+        db_session_provider_write=db_session_provider["write"],
+        db_session_provider_read=db_session_provider["read"],
+    )
 
     metrics_task = asyncio.create_task(
         metrics_update_job.execute(

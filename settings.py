@@ -113,7 +113,7 @@ MIN_TIME_TO_FIRST_TOKEN_BIG_SEC = float(
     os.getenv("MIN_TIME_TO_FIRST_TOKEN_BIG_SEC", 8.0)
 )
 
-EMBEDDING_API_BASE_URL = os.getenv("EMBEDDING_API_BASE_URL", None)
+EMBEDDING_API_BASE_URL = os.getenv("EMBEDDING_API_BASE_URL", "")
 SUPPORTED_EMBEDDING_MODELS = [
     # https://huggingface.co/Alibaba-NLP/gte-large-en-v1.5
     "gte-large-en-v1.5",

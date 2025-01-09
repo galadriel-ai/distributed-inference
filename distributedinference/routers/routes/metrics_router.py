@@ -20,6 +20,7 @@ from distributedinference.domain.node.entities import NodeBenchmark
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
 )
+from distributedinference.repository.connection import db_session_provider
 from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
 
@@ -130,7 +131,7 @@ async def get_metrics(
 
     await _set_node_tokens(metrics_repository)
     await _set_node_costs(nodes)
-    await sql_engine_metrics.execute()
+    await sql_engine_metrics.execute(db_session_provider=db_session_provider)
     await node_status_metrics.execute(metrics_repository)
     metrics_data = generate_latest(registry)
     return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)

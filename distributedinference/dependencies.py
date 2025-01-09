@@ -12,9 +12,7 @@ from distributedinference.repository.billing_repository import BillingRepository
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
 )
-
-from distributedinference.repository.connection import get_session_provider
-from distributedinference.repository.connection import get_session_provider_read
+from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.embedding_api_repository import (
     EmbeddingApiRepository,
 )
@@ -63,10 +61,15 @@ _blockchain_proof_repository: BlockchainProofRepository
 _google_cloud_storage_client: GoogleCloudStorage
 
 _verified_completions_repository: VerifiedCompletionsRepository
+_user_repository_instance: UserRepository
+_token_repository_instance: TokensRepository
 
 
 # pylint: disable=W0603
-def init_globals():
+def init_globals(
+    db_session_provider_write: SessionProvider,
+    db_session_provider_read: SessionProvider,
+):
     # TODO: refactor this, we shouldn't use globals
     global _node_repository_instance
     global _connected_node_repository_instance
@@ -87,10 +90,12 @@ def init_globals():
     global _blockchain_proof_repository
     global _google_cloud_storage_client
     global _verified_completions_repository
+    global _user_repository_instance
+    global _token_repository_instance
 
     _node_repository_instance = NodeRepository(
-        get_session_provider(),
-        get_session_provider_read(),
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _connected_node_repository_instance = ConnectedNodeRepository(
         settings.MAX_PARALLEL_REQUESTS_PER_NODE,
@@ -98,29 +103,43 @@ def init_globals():
         settings.HOSTNAME,
     )
     _user_node_repository_instance = UserNodeRepository(
-        get_session_provider(),
-        get_session_provider_read(),
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _node_stats_repository_instance = NodeStatsRepository(
-        get_session_provider(), get_session_provider_read()
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _benchmark_repository_instance = BenchmarkRepository(
-        get_session_provider(), get_session_provider_read()
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _metrics_queue_repository = MetricsQueueRepository()
     _metrics_repository = MetricsRepository(
-        get_session_provider(), get_session_provider_read()
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _rate_limit_repository = RateLimitRepository(
-        get_session_provider(), get_session_provider_read()
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _billing_repository = BillingRepository(
-        get_session_provider(), get_session_provider_read()
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _verified_completions_repository = VerifiedCompletionsRepository(
-        get_session_provider(), get_session_provider_read()
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
+    _user_repository_instance = UserRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
     )
     _tokens_queue_repository = TokensQueueRepository()
+    _token_repository_instance = TokensRepository(
+        session_provider=db_session_provider_write,
+        session_provider_read=db_session_provider_read,
+    )
 
     _analytics = Analytics(
         posthog=init_posthog(
@@ -183,11 +202,11 @@ def get_benchmark_repository() -> BenchmarkRepository:
 
 
 def get_user_repository() -> UserRepository:
-    return UserRepository(get_session_provider(), get_session_provider_read())
+    return _user_repository_instance
 
 
 def get_tokens_repository() -> TokensRepository:
-    return TokensRepository(get_session_provider(), get_session_provider_read())
+    return _token_repository_instance
 
 
 def get_metrics_queue_repository() -> MetricsQueueRepository:
