@@ -21,7 +21,7 @@ async def execute(
         raise ValueError(f"Agent with id {agent_id} already has a TEE instance")
     agent_instance_id = uuid7()
     tee = await repository.create_tee(
-        tee_name=agent_instance_id,
+        tee_name=str(agent_instance_id),
         docker_hub_image=agent.docker_image,
         env_vars=agent.env_vars,
     )

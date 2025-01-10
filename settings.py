@@ -206,3 +206,7 @@ SOLANA_KEYPAIR_DIR = os.getenv("SOLANA_KEYPAIR_DIR", "solana.key")
 TEE_MONITORING_TIMEOUT_BETWEEN_RUNS_SECONDS = int(
     os.getenv("TEE_MONITORING_TIMEOUT_BETWEEN_RUNS_SECONDS", "15")
 )
+
+
+# TEE orchestration settings
+TEE_HOST_BASE_URL = os.getenv("TEE_HOST_BASE_URL", None)

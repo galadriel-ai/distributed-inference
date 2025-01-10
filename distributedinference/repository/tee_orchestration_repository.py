@@ -25,8 +25,9 @@ class TeeOrchestrationRepository:
             "enclave_name": tee_name,
             "docker_hub_image": docker_hub_image,
         }
-        response = self._post("/tee/deploy", data)
-        return TEE(enclave_name=tee_name, enclave_cid="mock_cid")
+        response = await self._post("tee/deploy", data)
+        enclave_cid = response["result"]["EnclaveID"]
+        return TEE(enclave_name=tee_name, enclave_cid=enclave_cid)
 
     @async_timer("tee_repository.completions", logger=logger)
     async def get_all_tees(
@@ -39,7 +40,7 @@ class TeeOrchestrationRepository:
         ]
 
     async def _post(self, url: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(self.base_url + url, json=data)
             response.raise_for_status()
             data = response.json()

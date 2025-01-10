@@ -171,7 +171,9 @@ def init_globals():
             settings.SOLANA_KEYPAIR_DIR,
         )
     _google_cloud_storage_client = GoogleCloudStorage()
-    _tee_orchestration_repository = TeeOrchestrationRepository("dummy")
+    _tee_orchestration_repository = TeeOrchestrationRepository(
+        settings.TEE_HOST_BASE_URL
+    )
 
 
 def get_node_repository() -> NodeRepository:

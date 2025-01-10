@@ -111,6 +111,17 @@ INSERT INTO agent_instance (
 );
 """
 
+SQL_GET_AGENT_INSTANCES = """
+SELECT
+    id,
+    agent_id,
+    enclave_cid,
+    is_deleted,
+    created_at,
+    last_updated_at
+FROM agent_instance;
+"""
+
 SQL_GET_AGENT_INSTANCE_BY_AGENT_ID = """
 SELECT
     id,
@@ -247,9 +258,7 @@ class AgentRepository:
     async def get_agent_instances(self) -> List[AgentInstance]:
         results = []
         async with self._session_provider_read.get() as session:
-            rows = await session.execute(
-                sqlalchemy.text(SQL_GET_AGENT_INSTANCE_BY_AGENT_ID)
-            )
+            rows = await session.execute(sqlalchemy.text(SQL_GET_AGENT_INSTANCES))
             for row in rows:
                 results.append(
                     AgentInstance(
@@ -263,7 +272,7 @@ class AgentRepository:
         return results
 
     async def get_agent_instance(self, agent_id: UUID) -> Optional[AgentInstance]:
-        data = {"id": agent_id}
+        data = {"agent_id": agent_id}
         async with self._session_provider_read.get() as session:
             result = await session.execute(
                 sqlalchemy.text(SQL_GET_AGENT_INSTANCE_BY_AGENT_ID), data
