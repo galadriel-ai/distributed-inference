@@ -13,6 +13,9 @@ from distributedinference.analytics.analytics import (
 )
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.agent_repository import AgentRepository
+from distributedinference.repository.tee_orchestration_repository import (
+    TeeOrchestrationRepository,
+)
 from distributedinference.service.auth import authentication
 from distributedinference.service.agent import create_agent_service
 from distributedinference.service.agent import delete_agent_service
@@ -74,9 +77,14 @@ async def create_agent(
     request: CreateAgentRequest,
     user: User = Depends(authentication.validate_api_key_header),
     agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+    tee_orchestration_repository: TeeOrchestrationRepository = Depends(
+        dependencies.get_tee_orchestration_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
-    response = await create_agent_service.execute(agent_repository, user, request)
+    response = await create_agent_service.execute(
+        agent_repository, tee_orchestration_repository, user, request
+    )
     analytics.track_event(
         user.uid,
         AnalyticsEvent(EventName.CREATE_AGENT, {"agent_id": response.agent_id}),

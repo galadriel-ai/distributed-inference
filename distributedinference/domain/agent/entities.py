@@ -7,7 +7,7 @@ from uuid import UUID
 
 @dataclass
 class Agent:
-    agent_id: UUID
+    id: UUID
     name: str
     created_at: datetime
     docker_image: str
@@ -18,11 +18,11 @@ class Agent:
 
 @dataclass
 class AgentInstance:
+    id: UUID
     agent_id: UUID
-    instance_id: UUID
+    enclave_cid: str
     created_at: datetime
     last_updated_at: datetime
-    status: str
 
 
 @dataclass
