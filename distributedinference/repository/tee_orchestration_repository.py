@@ -2,6 +2,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+import httpx
+
 from distributedinference import api_logger
 from distributedinference.utils.timer import async_timer
 from distributedinference.domain.orchestration.entities import TEE
@@ -19,6 +21,11 @@ class TeeOrchestrationRepository:
     async def create_tee(
         self, tee_name: str, docker_hub_image: str, env_vars: Dict[str, Any]
     ) -> TEE:
+        data = {
+            "enclave_name": tee_name,
+            "docker_hub_image": docker_hub_image,
+        }
+        response = self._post("/tee/deploy", data)
         return TEE(enclave_name=tee_name, enclave_cid="mock_cid")
 
     @async_timer("tee_repository.completions", logger=logger)
@@ -30,3 +37,10 @@ class TeeOrchestrationRepository:
             TEE(enclave_name="mock_name_2", enclave_cid="mock_cid_2"),
             TEE(enclave_name="mock_name_3", enclave_cid="mock_cid_3"),
         ]
+
+    async def _post(self, url: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(self.base_url + url, json=data)
+            response.raise_for_status()
+            data = response.json()
+        return data

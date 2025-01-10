@@ -229,8 +229,9 @@ class AgentRepository:
             await session.execute(sqlalchemy.text(SQL_DELETE_AGENT), data)
             await session.commit()
 
-    async def insert_agent_instance(self, agent_id: UUID, enclave_cid: str) -> UUID:
-        agent_instance_id = uuid7()
+    async def insert_agent_instance(
+        self, agent_id: UUID, agent_instance_id: UUID, enclave_cid: str
+    ) -> UUID:
         data = {
             "id": agent_instance_id,
             "agent_id": agent_id,
@@ -241,7 +242,7 @@ class AgentRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_INSERT_AGENT_INSTANCE), data)
             await session.commit()
-            return agent_id
+            return agent_instance_id
 
     async def get_agent_instances(self) -> List[AgentInstance]:
         results = []
