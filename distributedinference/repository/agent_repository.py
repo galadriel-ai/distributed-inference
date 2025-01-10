@@ -9,6 +9,7 @@ import sqlalchemy
 from uuid_extensions import uuid7
 
 from distributedinference.domain.agent.entities import Agent
+from distributedinference.domain.agent.entities import AgentInstance
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
@@ -49,6 +50,18 @@ FROM agents
 WHERE id = :id AND is_deleted = FALSE;
 """
 
+SQL_GET_ALL_AGENTS = """
+SELECT
+    id,
+    name,
+    user_profile_id,
+    docker_image,
+    env_vars,
+    created_at,
+    last_updated_at
+FROM agents;
+"""
+
 SQL_GET_USER_AGENTS = """
 SELECT
     id,
@@ -77,6 +90,37 @@ SQL_DELETE_AGENT = """
 UPDATE agents
 SET is_deleted = true
 WHERE id = :id;
+"""
+
+# pylint: disable=R0801
+SQL_INSERT_AGENT_INSTANCE = """
+INSERT INTO agent_instance (
+    id,
+    agent_id,
+    enclave_cid,
+    is_deleted,
+    created_at,
+    last_updated_at
+) VALUES (
+    :id,
+    :agent_id,
+    :enclave_cid,
+    FALSE,
+    :created_at,
+    :last_updated_at
+);
+"""
+
+SQL_GET_AGENT_INSTANCE_BY_AGENT_ID = """
+SELECT
+    id,
+    agent_id,
+    enclave_cid,
+    is_deleted,
+    created_at,
+    last_updated_at
+FROM agent_instance
+WHERE agent_id = :agent_id AND is_deleted = FALSE;
 """
 
 
@@ -113,7 +157,7 @@ class AgentRepository:
             row = result.first()
             if row:
                 return Agent(
-                    agent_id=row.id,
+                    id=row.id,
                     name=row.name,
                     user_profile_id=row.user_profile_id,
                     docker_image=row.docker_image,
@@ -131,7 +175,25 @@ class AgentRepository:
             for row in rows:
                 results.append(
                     Agent(
-                        agent_id=row.id,
+                        id=row.id,
+                        name=row.name,
+                        user_profile_id=row.user_profile_id,
+                        docker_image=row.docker_image,
+                        env_vars=row.env_vars,
+                        created_at=row.created_at,
+                        last_updated_at=row.last_updated_at,
+                    )
+                )
+        return results
+
+    async def get_all_agents(self) -> List[Agent]:
+        results = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET_ALL_AGENTS))
+            for row in rows:
+                results.append(
+                    Agent(
+                        id=row.id,
                         name=row.name,
                         user_profile_id=row.user_profile_id,
                         docker_image=row.docker_image,
@@ -166,3 +228,52 @@ class AgentRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_DELETE_AGENT), data)
             await session.commit()
+
+    async def insert_agent_instance(self, agent_id: UUID, enclave_cid: str) -> UUID:
+        agent_instance_id = uuid7()
+        data = {
+            "id": agent_instance_id,
+            "agent_id": agent_id,
+            "enclave_cid": enclave_cid,
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT_AGENT_INSTANCE), data)
+            await session.commit()
+            return agent_id
+
+    async def get_agent_instances(self) -> List[AgentInstance]:
+        results = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_AGENT_INSTANCE_BY_AGENT_ID)
+            )
+            for row in rows:
+                results.append(
+                    AgentInstance(
+                        id=row.id,
+                        agent_id=row.id,
+                        enclave_cid=row.enclave_cid,
+                        created_at=row.created_at,
+                        last_updated_at=row.last_updated_at,
+                    )
+                )
+        return results
+
+    async def get_agent_instance(self, agent_id: UUID) -> Optional[AgentInstance]:
+        data = {"id": agent_id}
+        async with self._session_provider_read.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_AGENT_INSTANCE_BY_AGENT_ID), data
+            )
+            row = result.first()
+            if row:
+                return AgentInstance(
+                    id=row.id,
+                    agent_id=row.id,
+                    enclave_cid=row.enclave_cid,
+                    created_at=row.created_at,
+                    last_updated_at=row.last_updated_at,
+                )
+        return None

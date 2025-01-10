@@ -15,7 +15,7 @@ async def execute(repository: AgentRepository, user: User) -> GetAgentsResponse:
     return GetAgentsResponse(
         agents=[
             Agent(
-                agent_id=agent.agent_id,
+                agent_id=agent.id,
                 name=agent.name,
                 docker_image=agent.docker_image,
                 updated_at=agent.last_updated_at,

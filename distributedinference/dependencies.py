@@ -28,6 +28,9 @@ from distributedinference.repository.metrics_repository import MetricsRepository
 from distributedinference.repository.node_repository import NodeRepository
 from distributedinference.repository.node_stats_repository import NodeStatsRepository
 from distributedinference.repository.tee_api_repository import TeeApiRepository
+from distributedinference.repository.tee_orchestration_repository import (
+    TeeOrchestrationRepository,
+)
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_queue_repository import (
     TokensQueueRepository,
@@ -60,6 +63,7 @@ _protocol_handler: ProtocolHandler
 
 _grafana_api_repository: GrafanaApiRepository
 _tee_api_repository: TeeApiRepository
+_tee_orchestration_repository: TeeOrchestrationRepository
 _blockchain_proof_repository: BlockchainProofRepository
 _google_cloud_storage_client: GoogleCloudStorage
 
@@ -86,6 +90,7 @@ def init_globals():
     global _protocol_handler
     global _grafana_api_repository
     global _tee_api_repository
+    global _tee_orchestration_repository
     global _blockchain_proof_repository
     global _google_cloud_storage_client
     global _verified_completions_repository
@@ -166,6 +171,7 @@ def init_globals():
             settings.SOLANA_KEYPAIR_DIR,
         )
     _google_cloud_storage_client = GoogleCloudStorage()
+    _tee_orchestration_repository = TeeOrchestrationRepository("dummy")
 
 
 def get_node_repository() -> NodeRepository:
@@ -254,3 +260,7 @@ def get_verified_completions_repository() -> VerifiedCompletionsRepository:
 
 def get_agent_repository() -> AgentRepository:
     return _agent_repository
+
+
+def get_tee_orchestration_repository() -> TeeOrchestrationRepository:
+    return _tee_orchestration_repository
