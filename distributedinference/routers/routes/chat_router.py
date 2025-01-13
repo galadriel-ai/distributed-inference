@@ -6,8 +6,6 @@ from fastapi import Response
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.analytics.analytics import Analytics
-from distributedinference.analytics.analytics import AnalyticsEvent
-from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.connected_node_repository import (
     ConnectedNodeRepository,
@@ -62,7 +60,7 @@ async def completions(
     ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
-    analytics.track_event(user.uid, AnalyticsEvent(EventName.CHAT_COMPLETIONS, {}))
+    # analytics.track_event(user.uid, AnalyticsEvent(EventName.CHAT_COMPLETIONS, {}))
     return await chat_completions_handler_service.execute(
         request,
         response,

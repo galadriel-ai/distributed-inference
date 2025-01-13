@@ -6,9 +6,7 @@ from starlette.responses import StreamingResponse
 
 import settings
 from distributedinference import api_logger
-from distributedinference.analytics.analytics import EventName
 from distributedinference.analytics.analytics import Analytics
-from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.domain.rate_limit import rate_limit_use_case
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.connected_node_repository import (
@@ -61,16 +59,16 @@ async def execute(
     )
     rate_limit_headers = rate_limit_to_headers(rate_limit_info)
     if rate_limit_info.rate_limit_reason:
-        analytics.track_event(
-            user.uid,
-            AnalyticsEvent(
-                EventName.USER_RATE_LIMITED,
-                {
-                    "model": request.model,
-                    "reason": rate_limit_info.rate_limit_reason.value,
-                },
-            ),
-        )
+        # analytics.track_event(
+        #     user.uid,
+        #     AnalyticsEvent(
+        #         EventName.USER_RATE_LIMITED,
+        #         {
+        #             "model": request.model,
+        #             "reason": rate_limit_info.rate_limit_reason.value,
+        #         },
+        #     ),
+        # )
         raise RateLimitError(rate_limit_headers)
     if request.stream:
         headers = {
