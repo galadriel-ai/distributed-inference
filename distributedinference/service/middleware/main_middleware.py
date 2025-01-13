@@ -9,11 +9,6 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 from distributedinference import api_logger
-from distributedinference import dependencies
-from distributedinference.analytics.analytics import (
-    AnalyticsEvent,
-    EventName,
-)
 from distributedinference.domain.node.entities import InferenceErrorStatusCodes
 from distributedinference.utils import http_headers
 from distributedinference.service.error_responses import APIErrorResponse
@@ -39,7 +34,6 @@ class MainMiddleware(BaseHTTPMiddleware):
         request_id = util.get_state(request, RequestStateKey.REQUEST_ID)
         ip_address = util.get_state(request, RequestStateKey.IP_ADDRESS)
         country = util.get_state(request, RequestStateKey.COUNTRY)
-        analytics = dependencies.get_analytics()
 
         try:
             logger.info(
@@ -51,24 +45,23 @@ class MainMiddleware(BaseHTTPMiddleware):
             )
             before = time.time()
             response: Response = await call_next(request)
-            user_id = util.get_state(request, RequestStateKey.USER_ID)
+            # user_id = util.get_state(request, RequestStateKey.USER_ID)
 
             response_status_codes_counter.labels(
                 request.url.path, response.status_code
             ).inc()
-            if user_id:
-                analytics.track_event(
-                    user_id,
-                    AnalyticsEvent(
-                        EventName.API_RESPONSE,
-                        {
-                            "request_id": request_id,
-                            "request_path": request.url.path,
-                            "error_message": "",
-                            "status_code": response.status_code,
-                        },
-                    ),
-                )
+            # analytics.track_event(
+            #     user_id,
+            #     AnalyticsEvent(
+            #         EventName.API_RESPONSE,
+            #         {
+            #             "request_id": request_id,
+            #             "request_path": request.url.path,
+            #             "error_message": "",
+            #             "status_code": response.status_code,
+            #         },
+            #     ),
+            # )
 
             process_time = (time.time() - before) * 1000
             formatted_process_time = "{0:.2f}".format(process_time)
@@ -89,20 +82,20 @@ class MainMiddleware(BaseHTTPMiddleware):
                     request.url.path, error_status_code
                 ).inc()
 
-                user_id = util.get_state(request, RequestStateKey.USER_ID)
-                if user_id:
-                    analytics.track_event(
-                        user_id,
-                        AnalyticsEvent(
-                            EventName.API_RESPONSE,
-                            {
-                                "request_id": request_id,
-                                "request_path": request.url.path,
-                                "error_message": error.to_message(),
-                                "status_code": error_status_code,
-                            },
-                        ),
-                    )
+                # user_id = util.get_state(request, RequestStateKey.USER_ID)
+                # if user_id:
+                #     analytics.track_event(
+                #         user_id,
+                #         AnalyticsEvent(
+                #             EventName.API_RESPONSE,
+                #             {
+                #                 "request_id": request_id,
+                #                 "request_path": request.url.path,
+                #                 "error_message": error.to_message(),
+                #                 "status_code": error_status_code,
+                #             },
+                #         ),
+                #     )
 
                 is_exc_info = error_status_code == 500
                 logger.error(
@@ -120,20 +113,20 @@ class MainMiddleware(BaseHTTPMiddleware):
                     InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR.value,
                 ).inc()
 
-                user_id = util.get_state(request, RequestStateKey.USER_ID)
-                if user_id:
-                    analytics.track_event(
-                        user_id,
-                        AnalyticsEvent(
-                            EventName.API_RESPONSE,
-                            {
-                                "request_id": request_id,
-                                "request_path": request.url.path,
-                                "error_message": "internal_server_error",
-                                "status_code": InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR.value,
-                            },
-                        ),
-                    )
+                # user_id = util.get_state(request, RequestStateKey.USER_ID)
+                # if user_id:
+                #     analytics.track_event(
+                #         user_id,
+                #         AnalyticsEvent(
+                #             EventName.API_RESPONSE,
+                #             {
+                #                 "request_id": request_id,
+                #                 "request_path": request.url.path,
+                #                 "error_message": "internal_server_error",
+                #                 "status_code": InferenceErrorStatusCodes.INTERNAL_SERVER_ERROR.value,
+                #             },
+                #         ),
+                #     )
                 logger.error(
                     f"Error while handling request. request_id={request_id} "
                     f"request_path={request.url.path} ",
