@@ -133,7 +133,7 @@ class ChatCompletionRequest(BaseModel):
         default=None,
     )
     max_tokens: Optional[int] = Field(
-        description="The maximum number of tokens to generate in the chat completion. [Models](/for-developers/models) specific.",
+        description="The maximum number of tokens to generate in the chat completion.",
         default=None,
     )
     n: Optional[int] = Field(
