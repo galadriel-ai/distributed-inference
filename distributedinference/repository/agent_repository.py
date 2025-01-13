@@ -134,6 +134,12 @@ FROM agent_instance
 WHERE agent_id = :agent_id AND is_deleted = FALSE;
 """
 
+SQL_DELETE_AGENT_INSTANCE = """
+UPDATE agent_instance
+SET is_deleted = true
+WHERE id = :id;
+"""
+
 
 class AgentRepository:
 
@@ -287,3 +293,9 @@ class AgentRepository:
                     last_updated_at=row.last_updated_at,
                 )
         return None
+
+    async def delete_agent_instance(self, agent_instance_id: UUID) -> None:
+        data = {"id": agent_instance_id}
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_DELETE_AGENT_INSTANCE), data)
+            await session.commit()

@@ -1,8 +1,14 @@
-from uuid import UUID
+from enum import Enum
 from dataclasses import dataclass
+
+
+class TEEStatus(str, Enum):
+    RUNNING = "RUNNING"
+    TERMINATING = "TERMINATING"
 
 
 @dataclass
 class TEE:
-    enclave_name: str
-    enclave_cid: str
+    name: str
+    cid: str
+    status: TEEStatus
