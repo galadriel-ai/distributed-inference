@@ -1,6 +1,7 @@
 from uuid import UUID
 from uuid_extensions import uuid7
 
+from distributedinference.domain.agent.entities import Agent
 from distributedinference.domain.orchestration.entities import TEE
 from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.repository.tee_orchestration_repository import (
@@ -11,14 +12,11 @@ from distributedinference.repository.tee_orchestration_repository import (
 async def execute(
     repository: TeeOrchestrationRepository,
     agent_repository: AgentRepository,
-    agent_id: UUID,
+    agent: Agent,
 ) -> TEE:
-    agent = await agent_repository.get_agent(agent_id)
-    if agent is None:
-        raise ValueError(f"Agent with id {agent_id} does not exist")
-    agent_instance = await agent_repository.get_agent_instance(agent_id)
+    agent_instance = await agent_repository.get_agent_instance(agent.id)
     if agent_instance:
-        raise ValueError(f"Agent with id {agent_id} already has a TEE instance")
+        raise ValueError(f"Agent with id {agent.id} already has a TEE instance")
     agent_instance_id = uuid7()
     tee = await repository.create_tee(
         tee_name=str(agent_instance_id),
@@ -28,6 +26,6 @@ async def execute(
     await agent_repository.insert_agent_instance(
         agent_id=agent.id,
         agent_instance_id=agent_instance_id,
-        enclave_cid=tee.enclave_cid,
+        enclave_cid=tee.cid,
     )
     return tee
