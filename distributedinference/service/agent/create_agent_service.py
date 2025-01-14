@@ -26,7 +26,7 @@ async def execute(
 
     # launch the agent in a TEE
     await deploy_tee_agent_use_case.execute(
-        tee_orchestration_repository, repository, output.agent_id
+        tee_orchestration_repository, repository, output.agent
     )
 
-    return CreateAgentResponse(agent_id=output.agent_id)
+    return CreateAgentResponse(agent_id=output.agent.id)

@@ -37,7 +37,7 @@ class CreateAgentInput:
 
 @dataclass
 class CreateAgentOutput:
-    agent_id: UUID
+    agent: Agent
 
 
 @dataclass
