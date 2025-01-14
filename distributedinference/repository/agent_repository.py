@@ -13,7 +13,6 @@ from distributedinference.domain.agent.entities import AgentInstance
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
-
 # pylint: disable=R0801
 SQL_INSERT_AGENT = """
 INSERT INTO agents (
@@ -47,7 +46,7 @@ SELECT
     created_at,
     last_updated_at
 FROM agents
-WHERE id = :id AND is_deleted = FALSE;
+WHERE id = :id AND (is_deleted = :is_deleted OR :is_deleted IS NULL);
 """
 
 SQL_GET_ALL_AGENTS = """
@@ -167,8 +166,10 @@ class AgentRepository:
             await session.commit()
             return agent_id
 
-    async def get_agent(self, agent_id: UUID) -> Optional[Agent]:
-        data = {"id": agent_id}
+    async def get_agent(
+        self, agent_id: UUID, is_deleted: Optional[bool] = False
+    ) -> Optional[Agent]:
+        data = {"id": agent_id, "is_deleted": is_deleted}
         async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_AGENT_BY_ID), data)
             row = result.first()

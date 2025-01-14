@@ -1,0 +1,93 @@
+from typing import List
+
+import sqlalchemy
+from uuid_extensions import uuid7
+
+from distributedinference.domain.agent.entities import AgentLogInput
+from distributedinference.domain.agent.entities import AgentLogOutput
+from distributedinference.domain.agent.entities import GetAgentLogsInput
+from distributedinference.repository import utils
+from distributedinference.repository.connection import SessionProvider
+
+SQL_ADD = """
+INSERT INTO agent_logs (
+    id,
+    agent_id,
+    text,
+    log_created_at,
+    created_at,
+    last_updated_at
+) VALUES (
+    :id,
+    :agent_id,
+    :text,
+    :log_created_at,
+    :created_at,
+    :last_updated_at
+);
+"""
+
+SQL_GET = """
+SELECT
+    id,
+    text,
+    log_created_at
+FROM agent_logs
+WHERE 
+    id < :cursor 
+    AND agent_id = :agent_id
+ORDER BY id DESC
+LIMIT :limit;
+"""
+
+
+class AgentLogsRepository:
+
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
+        self._session_provider = session_provider
+        self._session_provider_read = session_provider_read
+
+    async def add(
+        self,
+        agent_logs: AgentLogInput,
+    ) -> None:
+        created_at = utils.utcnow()
+        data = [
+            {
+                "id": uuid7(),
+                "agent_id": agent_logs.agent_id,
+                "text": log.text,
+                "log_created_at": utils.utc_from_timestamp(log.timestamp),
+                "created_at": created_at,
+                "last_updated_at": created_at,
+            }
+            for log in agent_logs.logs
+        ]
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_ADD), data)
+            await session.commit()
+
+    async def get(self, request: GetAgentLogsInput) -> List[AgentLogOutput]:
+        data = {
+            "agent_id": request.agent_id,
+            "limit": request.limit,
+            "cursor": (
+                str(request.cursor)
+                if request.cursor
+                else "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            ),
+        }
+        result = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(sqlalchemy.text(SQL_GET), data)
+            for row in rows:
+                result.append(
+                    AgentLogOutput(
+                        id=row.id,
+                        text=row.text,
+                        timestamp=int(row.log_created_at.timestamp()),
+                    )
+                )
+        return result

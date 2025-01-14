@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 from typing import Any
 from typing import Dict
@@ -52,3 +53,35 @@ class UpdateAgentResponse(ApiResponse):
 
 class DeleteAgentResponse(ApiResponse):
     pass
+
+
+class Log(BaseModel):
+    # TODO: pick some reasonable length?
+    text: str = Field(description="Log content", max_length=5000)
+    timestamp: int = Field(description="Log creation timestamp in seconds")
+
+
+class AddLogsRequest(BaseModel):
+    logs: List[Log] = Field(
+        description="Agent logs",
+        max_length=20,
+    )
+
+
+class AddLogsResponse(ApiResponse):
+    pass
+
+
+class GetLogsRequest(BaseModel):
+    agent_id: UUID = Field(description="Agent ID")
+    limit: Optional[int] = Field(
+        description="List of verified chat completions.", default=50
+    )
+    cursor: Optional[UUID] = Field(description="Cursor for pagination.", default=None)
+
+
+class GetLogsResponse(ApiResponse):
+    logs: List[Log] = Field(description="Agent logs")
+    cursor: Optional[UUID] = Field(
+        description="Cursor for pagination.",
+    )

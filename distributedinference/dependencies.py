@@ -1,4 +1,5 @@
 import settings
+from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
 )
@@ -69,6 +70,7 @@ _google_cloud_storage_client: GoogleCloudStorage
 
 _verified_completions_repository: VerifiedCompletionsRepository
 _agent_repository: AgentRepository
+_agent_logs_repository: AgentLogsRepository
 
 
 # pylint: disable=W0603
@@ -95,6 +97,7 @@ def init_globals():
     global _google_cloud_storage_client
     global _verified_completions_repository
     global _agent_repository
+    global _agent_logs_repository
 
     _node_repository_instance = NodeRepository(
         get_session_provider(),
@@ -130,6 +133,9 @@ def init_globals():
     )
     _tokens_queue_repository = TokensQueueRepository()
     _agent_repository = AgentRepository(
+        get_session_provider(), get_session_provider_read()
+    )
+    _agent_logs_repository = AgentLogsRepository(
         get_session_provider(), get_session_provider_read()
     )
 
@@ -262,6 +268,10 @@ def get_verified_completions_repository() -> VerifiedCompletionsRepository:
 
 def get_agent_repository() -> AgentRepository:
     return _agent_repository
+
+
+def get_agent_logs_repository() -> AgentLogsRepository:
+    return _agent_logs_repository
 
 
 def get_tee_orchestration_repository() -> TeeOrchestrationRepository:

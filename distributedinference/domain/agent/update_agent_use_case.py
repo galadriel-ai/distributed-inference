@@ -1,4 +1,3 @@
-from distributedinference.domain.agent.entities import Agent
 from distributedinference.domain.agent.entities import UpdateAgentInput
 from distributedinference.repository.agent_repository import AgentRepository
 
