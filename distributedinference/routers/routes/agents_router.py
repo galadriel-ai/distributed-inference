@@ -1,34 +1,43 @@
-from uuid import UUID
 from typing import Annotated
+from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Path
+from fastapi import Query
 
-from distributedinference import api_logger, dependencies
-from distributedinference.analytics.analytics import (
-    Analytics,
-    AnalyticsEvent,
-    EventName,
-)
+import settings
+from distributedinference import api_logger
+from distributedinference import dependencies
+from distributedinference.analytics.analytics import Analytics
+from distributedinference.analytics.analytics import AnalyticsEvent
+from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
+from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.repository.tee_orchestration_repository import (
     TeeOrchestrationRepository,
 )
-from distributedinference.service.auth import authentication
 from distributedinference.service.agent import create_agent_service
 from distributedinference.service.agent import delete_agent_service
 from distributedinference.service.agent import get_agent_service
 from distributedinference.service.agent import get_user_agents_service
 from distributedinference.service.agent import update_agent_service
+from distributedinference.service.agent.entities import AddLogsRequest
+from distributedinference.service.agent.entities import AddLogsResponse
 from distributedinference.service.agent.entities import CreateAgentRequest
 from distributedinference.service.agent.entities import CreateAgentResponse
 from distributedinference.service.agent.entities import DeleteAgentResponse
 from distributedinference.service.agent.entities import GetAgentResponse
 from distributedinference.service.agent.entities import GetAgentsResponse
+from distributedinference.service.agent.entities import GetLogsRequest
+from distributedinference.service.agent.entities import GetLogsResponse
 from distributedinference.service.agent.entities import UpdateAgentRequest
 from distributedinference.service.agent.entities import UpdateAgentResponse
+from distributedinference.service.agent.logs import add_agent_logs_service
+from distributedinference.service.agent.logs import get_agent_logs_service
+from distributedinference.service.auth import authentication
 
 TAG = "Agent"
 router = APIRouter(prefix="/agents")
@@ -140,3 +149,60 @@ async def delete_agent(
         AnalyticsEvent(EventName.DELETE_AGENT, {"agent_id": agent_id}),
     )
     return response
+
+
+@router.post(
+    "/logs/{agent_id}",
+    summary="Append agent logs",
+    description="Append-only agent logs addition",
+    response_description="Agent ID",
+    response_model=AddLogsResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def add_logs(
+    agent_id: Annotated[UUID, Path(..., description="Agent ID")],
+    request: AddLogsRequest,
+    # TODO: authorization, TEE specific API keys?
+    _: User = Depends(authentication.validate_api_key_header),
+    agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+    logs_repository: AgentLogsRepository = Depends(
+        dependencies.get_agent_logs_repository
+    ),
+):
+    return await add_agent_logs_service.execute(
+        agent_id, request, agent_repository, logs_repository
+    )
+
+
+@router.get(
+    "/logs/{agent_id}",
+    summary="Get agent logs",
+    description="Get agent logs, newest first",
+    response_description="Agent ID",
+    response_model=GetLogsResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def get_logs(
+    # pylint: disable=R0913
+    agent_id: Annotated[UUID, Path(..., description="Agent ID")],
+    limit: Optional[int] = Query(
+        50, description="The maximum number of logs to retrieve."
+    ),
+    cursor: Optional[UUID] = Query(None, description="The cursor for pagination."),
+    user: User = Depends(authentication.validate_api_key_header),
+    agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+    logs_repository: AgentLogsRepository = Depends(
+        dependencies.get_agent_logs_repository
+    ),
+):
+    request = GetLogsRequest(
+        agent_id=agent_id,
+        limit=limit,
+        cursor=cursor,
+    )
+    return await get_agent_logs_service.execute(
+        request,
+        user,
+        agent_repository,
+        logs_repository,
+    )

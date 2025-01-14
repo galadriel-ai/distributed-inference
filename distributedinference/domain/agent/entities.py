@@ -2,6 +2,8 @@ from datetime import datetime
 from dataclasses import dataclass
 from typing import Any
 from typing import Dict
+from typing import List
+from typing import Optional
 from uuid import UUID
 
 
@@ -44,3 +46,35 @@ class UpdateAgentInput:
     name: str
     docker_image: str
     env_vars: Dict[str, Any]
+
+
+@dataclass
+class AgentLog:
+    text: str
+    timestamp: int
+
+
+@dataclass
+class AgentLogInput:
+    agent_id: UUID
+    logs: List[AgentLog]
+
+
+@dataclass
+class GetAgentLogsInput:
+    agent_id: UUID
+    limit: int
+    cursor: Optional[UUID]
+
+
+@dataclass
+class AgentLogOutput:
+    id: UUID
+    text: str
+    timestamp: int
+
+
+@dataclass
+class GetAgentLogsOutput:
+    logs: List[AgentLogOutput]
+    cursor: Optional[UUID]

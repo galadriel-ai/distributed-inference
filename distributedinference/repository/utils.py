@@ -19,6 +19,12 @@ def utctoday() -> date:
     return datetime.now(timezone.utc).date()
 
 
+def utc_from_timestamp(timestamp: int) -> datetime:
+    utc = datetime.fromtimestamp(timestamp, timezone.utc)
+    utc_without_tz = utc.replace(tzinfo=None)
+    return utc_without_tz
+
+
 def historic_uuid(hours_back: int) -> UUID:
     return uuid7(time.time_ns() - (hours_back * 60 * 60 * 10**9))
 
