@@ -23,6 +23,9 @@ from distributedinference.service.exception_handlers.exception_handlers import (
 from distributedinference.service.middleware.client_version_validation_middleware import (
     ClientVersionValidationMiddleware,
 )
+from distributedinference.service.middleware.ip_whitelist_middleware import (
+    IpWhitelistMiddleware,
+)
 from distributedinference.service.middleware.main_middleware import MainMiddleware
 from distributedinference.service.middleware.request_enrichment_middleware import (
     RequestEnrichmentMiddleware,
@@ -157,6 +160,7 @@ app.add_middleware(
 )
 app.add_middleware(MainMiddleware)
 app.add_middleware(ClientVersionValidationMiddleware)
+app.add_middleware(IpWhitelistMiddleware)
 app.add_middleware(RequestEnrichmentMiddleware)
 
 # exception handlers run AFTER the middlewares!

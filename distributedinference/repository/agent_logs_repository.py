@@ -1,4 +1,5 @@
 from typing import List
+from uuid import UUID
 
 import sqlalchemy
 from uuid_extensions import uuid7
@@ -8,6 +9,7 @@ from distributedinference.domain.agent.entities import AgentLogOutput
 from distributedinference.domain.agent.entities import GetAgentLogsInput
 from distributedinference.repository import utils
 from distributedinference.repository.connection import SessionProvider
+from distributedinference.repository.utils import historic_uuid_seconds
 
 SQL_ADD = """
 INSERT INTO agent_logs (
@@ -38,6 +40,16 @@ WHERE
     AND agent_id = :agent_id
 ORDER BY id DESC
 LIMIT :limit;
+"""
+
+SQL_GET_COUNT_BY_TIME_AND_AGENT_ID = """
+SELECT
+    count(*) AS count
+FROM
+    agent_logs
+WHERE
+    agent_id = :agent_id
+    AND id > :start_id;
 """
 
 
@@ -91,3 +103,18 @@ class AgentLogsRepository:
                     )
                 )
         return result
+
+    async def get_count_by_agent(self, agent_id: UUID, seconds: int = 60) -> int:
+        data = {
+            "agent_id": agent_id,
+            "start_id": historic_uuid_seconds(seconds),
+        }
+        async with self._session_provider_read.get() as session:
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_COUNT_BY_TIME_AND_AGENT_ID),
+                data,
+            )
+            row = result.first()
+            if row:
+                return row.count  # type: ignore
+        return 0
