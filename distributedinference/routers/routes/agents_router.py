@@ -159,18 +159,18 @@ async def delete_agent(
     response_model=AddLogsResponse,
     include_in_schema=not settings.is_production(),
 )
+# Endpoint "authentication" is checked in IpWhitelistMiddleware
 async def add_logs(
     agent_id: Annotated[UUID, Path(..., description="Agent ID")],
     request: AddLogsRequest,
-    # TODO: authorization, TEE specific API keys?
-    _: User = Depends(authentication.validate_api_key_header),
+    user: User = Depends(authentication.validate_api_key_header),
     agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
     logs_repository: AgentLogsRepository = Depends(
         dependencies.get_agent_logs_repository
     ),
 ):
     return await add_agent_logs_service.execute(
-        agent_id, request, agent_repository, logs_repository
+        agent_id, request, user, agent_repository, logs_repository
     )
 
 
