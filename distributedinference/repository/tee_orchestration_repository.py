@@ -12,6 +12,8 @@ from distributedinference.domain.orchestration.entities import TEEStatus
 
 logger = api_logger.get()
 
+TIMEOUT = 240
+
 
 class TeeOrchestrationRepository:
 
@@ -56,7 +58,7 @@ class TeeOrchestrationRepository:
         return response.get("Terminated", False)
 
     async def _post(self, url: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        async with httpx.AsyncClient(timeout=90) as client:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             response = await client.post(self.base_url + url, json=data)
             response.raise_for_status()
             data = response.json()
@@ -65,7 +67,7 @@ class TeeOrchestrationRepository:
     async def _get(
         self, url: str, params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        async with httpx.AsyncClient(timeout=90) as client:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             response = await client.get(self.base_url + url, params=params)
             response.raise_for_status()
             data = response.json()
