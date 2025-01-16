@@ -28,6 +28,7 @@ class TeeOrchestrationRepository:
         data = {
             "enclave_name": tee_name,
             "docker_hub_image": docker_hub_image,
+            "env_vars": env_vars,
         }
         response = await self._post("tee/deploy", data)
         enclave_cid = response["result"]["EnclaveCID"]
