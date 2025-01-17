@@ -41,10 +41,10 @@ async def execute(
             agent_instance_id=agent_instance_id,
             enclave_cid=tee.cid,
         )
+
+        return tee
     except Exception as e:
         await aws_storage_repository.cleanup_user_and_bucket_access(
             str(agent_instance_id)
         )
         raise ValueError(f"Failed to deploy TEE for agent {agent.id}: {e}")
-
-    return tee
