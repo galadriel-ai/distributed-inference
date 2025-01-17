@@ -7,6 +7,7 @@ from fastapi import Depends
 from fastapi import Path
 from fastapi import Query
 
+from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
@@ -89,10 +90,11 @@ async def create_agent(
     tee_orchestration_repository: TeeOrchestrationRepository = Depends(
         dependencies.get_tee_orchestration_repository
     ),
+    aws_storage_repository: AWSStorageRepository = Depends(dependencies.get_aws_storage_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     response = await create_agent_service.execute(
-        agent_repository, tee_orchestration_repository, user, request
+        agent_repository, tee_orchestration_repository, aws_storage_repository, user, request
     )
     analytics.track_event(
         user.uid,
@@ -139,10 +141,11 @@ async def delete_agent(
     tee_orchestration_repository: TeeOrchestrationRepository = Depends(
         dependencies.get_tee_orchestration_repository
     ),
+    aws_storage_repository: AWSStorageRepository = Depends(dependencies.get_aws_storage_repository),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     response = await delete_agent_service.execute(
-        agent_repository, tee_orchestration_repository, user, agent_id
+        agent_repository, tee_orchestration_repository, aws_storage_repository, user, agent_id
     )
     analytics.track_event(
         user.uid,

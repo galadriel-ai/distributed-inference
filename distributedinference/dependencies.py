@@ -1,3 +1,4 @@
+from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 import settings
 from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.blockchain_proof_repository import (
@@ -67,6 +68,7 @@ _tee_api_repository: TeeApiRepository
 _tee_orchestration_repository: TeeOrchestrationRepository
 _blockchain_proof_repository: BlockchainProofRepository
 _google_cloud_storage_client: GoogleCloudStorage
+_aws_storage_repository: AWSStorageRepository
 
 _verified_completions_repository: VerifiedCompletionsRepository
 _agent_repository: AgentRepository
@@ -95,6 +97,7 @@ def init_globals():
     global _tee_orchestration_repository
     global _blockchain_proof_repository
     global _google_cloud_storage_client
+    global _aws_storage_repository
     global _verified_completions_repository
     global _agent_repository
     global _agent_logs_repository
@@ -180,6 +183,7 @@ def init_globals():
     _tee_orchestration_repository = TeeOrchestrationRepository(
         settings.TEE_HOST_BASE_URL
     )
+    _aws_storage_repository = AWSStorageRepository(settings.AGENTS_MEMORY_STORAGE_BUCKET)
 
 
 def get_node_repository() -> NodeRepository:
@@ -276,3 +280,7 @@ def get_agent_logs_repository() -> AgentLogsRepository:
 
 def get_tee_orchestration_repository() -> TeeOrchestrationRepository:
     return _tee_orchestration_repository
+
+
+def get_aws_storage_repository() -> AWSStorageRepository:
+    return _aws_storage_repository

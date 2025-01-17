@@ -8,6 +8,7 @@ from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.repository.tee_orchestration_repository import (
     TeeOrchestrationRepository,
 )
+from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 from distributedinference.service import error_responses
 from distributedinference.service.agent.entities import DeleteAgentResponse
 
@@ -15,6 +16,7 @@ from distributedinference.service.agent.entities import DeleteAgentResponse
 async def execute(
     repository: AgentRepository,
     tee_orchestration_repository: TeeOrchestrationRepository,
+    aws_storage_repository: AWSStorageRepository,
     user: User,
     agent_id: UUID,
 ) -> DeleteAgentResponse:
@@ -23,7 +25,7 @@ async def execute(
         raise error_responses.NotFoundAPIError("Agent not found")
 
     await stop_agent_tee_use_case.execute(
-        tee_orchestration_repository, repository, agent
+        tee_orchestration_repository, repository, aws_storage_repository, agent
     )
     await delete_agent_use_case.execute(repository, agent_id)
     return DeleteAgentResponse()
