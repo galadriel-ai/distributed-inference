@@ -89,7 +89,8 @@ class AWSStorageRepository:
             for policy_name in policies:
                 await loop.run_in_executor(
                     None,
-                    lambda policy_name=policy_name: self.iam_client.delete_user_policy(
+                    # pylint: disable=cell-var-from-loop
+                    lambda: self.iam_client.delete_user_policy(
                         UserName=agent_id, PolicyName=policy_name
                     ),
                 )
@@ -103,10 +104,9 @@ class AWSStorageRepository:
             for access_key in access_keys:
                 await loop.run_in_executor(
                     None,
-                    lambda access_key_id=access_key[
-                        "AccessKeyId"
-                    ]: self.iam_client.delete_access_key(
-                        UserName=agent_id, AccessKeyId=access_key_id
+                    # pylint: disable=cell-var-from-loop
+                    lambda: self.iam_client.delete_access_key(
+                        UserName=agent_id, AccessKeyId=access_key["AccessKeyId"]
                     ),
                 )
 
