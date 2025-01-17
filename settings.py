@@ -212,4 +212,6 @@ TEE_MONITORING_TIMEOUT_BETWEEN_RUNS_SECONDS = int(
 TEE_HOST_BASE_URL = os.getenv("TEE_HOST_BASE_URL", None)
 
 # Agents storage settings
-AGENTS_MEMORY_STORAGE_BUCKET = os.getenv("AGENTS_MEMORY_STORAGE_BUCKET", "agents-memory-storage")
+AGENTS_MEMORY_STORAGE_BUCKET = os.getenv(
+    "AGENTS_MEMORY_STORAGE_BUCKET", "agents-memory-storage"
+)

@@ -1,7 +1,7 @@
 from typing import Dict, Optional
-import boto3
 import json
 import asyncio
+import boto3
 from distributedinference import api_logger
 from distributedinference.utils.timer import async_timer
 
@@ -14,14 +14,19 @@ class AWSStorageRepository:
         self.s3_client = boto3.client("s3")
         self.bucket_name = bucket_name
 
-    async def create_user_and_bucket_access(self, agent_id: str) -> Optional[Dict[str, str]]:
+    @async_timer("aws_storage_repository.create_user_and_bucket_access", logger=logger)
+    async def create_user_and_bucket_access(
+        self, agent_id: str
+    ) -> Optional[Dict[str, str]]:
         folder_name = agent_id
         loop = asyncio.get_event_loop()
 
         try:
             # Create the IAM user
             logger.info(f"Creating IAM user: {agent_id}")
-            await loop.run_in_executor(None, lambda: self.iam_client.create_user(UserName=agent_id))
+            await loop.run_in_executor(
+                None, lambda: self.iam_client.create_user(UserName=agent_id)
+            )
 
             # Create access keys for the IAM user
             logger.info("Creating access keys for the user...")
@@ -35,7 +40,10 @@ class AWSStorageRepository:
             folder_key = f"{folder_name}/"
             logger.info(f"Creating folder: {folder_key} in bucket {self.bucket_name}")
             await loop.run_in_executor(
-                None, lambda: self.s3_client.put_object(Bucket=self.bucket_name, Key=folder_key)
+                None,
+                lambda: self.s3_client.put_object(
+                    Bucket=self.bucket_name, Key=folder_key
+                ),
             )
 
             # Attach an inline policy to the user to allow full access to the specific folder
@@ -66,6 +74,7 @@ class AWSStorageRepository:
             logger.error(f"Error creating user and bucket access: {e}")
             return None
 
+    @async_timer("aws_storage_repository.cleanup_user_and_bucket_access", logger=logger)
     async def cleanup_user_and_bucket_access(self, agent_id: str) -> bool:
         folder_name = agent_id
         loop = asyncio.get_event_loop()
@@ -80,7 +89,7 @@ class AWSStorageRepository:
             for policy_name in policies:
                 await loop.run_in_executor(
                     None,
-                    lambda: self.iam_client.delete_user_policy(
+                    lambda policy_name=policy_name: self.iam_client.delete_user_policy(
                         UserName=agent_id, PolicyName=policy_name
                     ),
                 )
@@ -94,14 +103,18 @@ class AWSStorageRepository:
             for access_key in access_keys:
                 await loop.run_in_executor(
                     None,
-                    lambda: self.iam_client.delete_access_key(
-                        UserName=agent_id, AccessKeyId=access_key["AccessKeyId"]
+                    lambda access_key_id=access_key[
+                        "AccessKeyId"
+                    ]: self.iam_client.delete_access_key(
+                        UserName=agent_id, AccessKeyId=access_key_id
                     ),
                 )
 
             # Delete the IAM user
             logger.info(f"Deleting IAM user: {agent_id}")
-            await loop.run_in_executor(None, lambda: self.iam_client.delete_user(UserName=agent_id))
+            await loop.run_in_executor(
+                None, lambda: self.iam_client.delete_user(UserName=agent_id)
+            )
 
             # Delete the S3 folder
             logger.info(f"Deleting folder: {folder_name} in bucket {self.bucket_name}")

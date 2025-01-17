@@ -1,5 +1,5 @@
-from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 import settings
+from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
@@ -75,7 +75,7 @@ _agent_repository: AgentRepository
 _agent_logs_repository: AgentLogsRepository
 
 
-# pylint: disable=W0603
+# pylint: disable=W0603, R0915
 def init_globals():
     # TODO: refactor this, we shouldn't use globals
     global _node_repository_instance
@@ -183,7 +183,9 @@ def init_globals():
     _tee_orchestration_repository = TeeOrchestrationRepository(
         settings.TEE_HOST_BASE_URL
     )
-    _aws_storage_repository = AWSStorageRepository(settings.AGENTS_MEMORY_STORAGE_BUCKET)
+    _aws_storage_repository = AWSStorageRepository(
+        settings.AGENTS_MEMORY_STORAGE_BUCKET
+    )
 
 
 def get_node_repository() -> NodeRepository:
