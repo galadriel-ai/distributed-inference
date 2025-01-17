@@ -17,7 +17,7 @@ async def execute(
     if not agent_instance:
         raise ValueError(f"Agent with id {agent.id} doesn't have a TEE instance")
     await repository.delete_tee(str(agent_instance.id))
-    await aws_storage_repository.cleanup_user_and_bucket_access(str(agent.id))
+    await aws_storage_repository.cleanup_user_and_bucket_access(str(agent_instance.id))
     await agent_repository.delete_agent_instance(
         agent_instance.id,
     )
