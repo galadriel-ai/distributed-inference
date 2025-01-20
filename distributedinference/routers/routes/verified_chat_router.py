@@ -168,6 +168,7 @@ async def get_completion_by_hash(
 async def post_verified_log(
     api_request: Request,
     request: PostVerifiedLogRequest,
+    _: User = Depends(authentication.validate_api_key_header),
     verified_completions_repository=Depends(
         dependencies.get_verified_completions_repository
     ),

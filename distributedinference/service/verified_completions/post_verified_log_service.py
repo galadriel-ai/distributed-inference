@@ -19,15 +19,15 @@ async def execute(
     try:
         await verified_completions_repository.insert_verified_completion(
             api_key=api_key,
-            request={"request": request.request},
-            response={"response": request.response},
+            request=request.request,
+            response=request.response,
             hash=request.hash,
             public_key=request.public_key,
             signature=request.signature,
             attestation=request.attestation,
         )
-        return PostVerifiedLogResponse(success=True)
+        return PostVerifiedLogResponse(success=True, error=None)
     except sqlalchemy.exc.IntegrityError:
         return PostVerifiedLogResponse(success=False, error="Hash is not unique")
-    except:
-        return PostVerifiedLogResponse(success=False, error="Server error")
+    except Exception as exc:
+        return PostVerifiedLogResponse(success=False, error=str(exc))
