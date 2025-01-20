@@ -165,7 +165,7 @@ async def get_completion_by_hash(
     response_description="Post Verified Log Response",
     response_model=PostVerifiedLogResponse,
 )
-async def create_agent(
+async def post_verified_log(
     api_request: Request,
     request: PostVerifiedLogRequest,
     verified_completions_repository=Depends(
