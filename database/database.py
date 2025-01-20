@@ -353,7 +353,7 @@ class VerifiedCompletions(Base):
     public_key = Column(String(), nullable=False)
     signature = Column(String(), nullable=False)
     attestation = Column(String(), nullable=False)
-    tx_hash = Column(String(), nullable=False)
+    tx_hash = Column(String(), nullable=True)
     created_at = Column(DateTime, nullable=False)
     last_updated_at = Column(DateTime, nullable=False)
 

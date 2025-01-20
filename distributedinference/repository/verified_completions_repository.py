@@ -140,7 +140,7 @@ class VerifiedCompletionsRepository:
         public_key: str,
         signature: str,
         attestation: str,
-        tx_hash: str,
+        tx_hash: Optional[str] = None,
     ):
         data = {
             "id": uuid7(),
