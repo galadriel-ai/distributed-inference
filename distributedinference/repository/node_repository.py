@@ -465,6 +465,7 @@ class NodeRepository:
     @async_timer("node_repository.set_nodes_inactive", logger=logger)
     async def set_nodes_inactive(self, nodes: List[ConnectedNode]):
         data = {
+            "id": UUID(),
             "connected_at": None,
             "connected_host": None,
             "last_updated_at": utcnow(),
