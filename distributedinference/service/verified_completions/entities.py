@@ -330,16 +330,12 @@ class PostVerifiedLogRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "request": {
-                    "something": "value"
-                },
-                "response": {
-                    "something_else": "value"
-                },
+                "request": {"something": "value"},
+                "response": {"something_else": "value"},
                 "hash": "sha256 hash of request + response",
                 "public_key": "PublicKey",
                 "signature": "Signature",
-                "attestation": "Attestation"
+                "attestation": "Attestation",
             }
         }
 
