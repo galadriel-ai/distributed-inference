@@ -1,3 +1,5 @@
+import sqlalchemy
+
 from distributedinference.repository.verified_completions_repository import (
     VerifiedCompletionsRepository,
 )
@@ -25,5 +27,7 @@ async def execute(
             attestation=request.attestation,
         )
         return PostVerifiedLogResponse(success=True)
+    except sqlalchemy.exc.IntegrityError:
+        return PostVerifiedLogResponse(success=False, error="Hash is not unique")
     except:
-        return PostVerifiedLogResponse(success=False)
+        return PostVerifiedLogResponse(success=False, error="Server error")

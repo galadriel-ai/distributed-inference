@@ -314,8 +314,8 @@ class VerifiedChatCompletionsResponse(BaseModel):
 
 
 class PostVerifiedLogRequest(BaseModel):
-    request: str = Field("Request")
-    response: str = Field("Response")
+    request: Dict = Field("Request")
+    response: Dict = Field("Response")
     hash: str = Field(
         description="The SHA-256 hash of the request and response",
     )
@@ -327,6 +327,23 @@ class PostVerifiedLogRequest(BaseModel):
         description="The attestation document.",
     )
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "request": {
+                    "something": "value"
+                },
+                "response": {
+                    "something_else": "value"
+                },
+                "hash": "sha256 hash of request + response",
+                "public_key": "PublicKey",
+                "signature": "Signature",
+                "attestation": "Attestation"
+            }
+        }
+
 
 class PostVerifiedLogResponse(BaseModel):
     success: bool = Field(description="Indicates if the request was successful or not")
+    error: Optional[str] = Field(description="Optional error message")

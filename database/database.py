@@ -346,7 +346,7 @@ class VerifiedCompletions(Base):
         primary_key=True,
         nullable=False,
     )
-    hash = Column(String(), nullable=False, index=True)
+    hash = Column(String(), nullable=False, index=True, unique=True)
     api_key = Column(String(), nullable=False, index=True)
     request = Column(JSON, nullable=False)
     response = Column(JSON, nullable=False)
