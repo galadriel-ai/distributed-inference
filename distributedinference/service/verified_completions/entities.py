@@ -314,8 +314,8 @@ class VerifiedChatCompletionsResponse(BaseModel):
 
 
 class PostVerifiedLogRequest(BaseModel):
-    request: Dict = Field("Request")
-    response: Dict = Field("Response")
+    request: Dict = Field(description="Request")
+    response: Dict = Field(description="Response")
     hash: str = Field(
         description="The SHA-256 hash of the request and response",
     )
