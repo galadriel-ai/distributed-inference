@@ -346,14 +346,14 @@ class VerifiedCompletions(Base):
         primary_key=True,
         nullable=False,
     )
-    hash = Column(String(), nullable=False, index=True)
+    hash = Column(String(), nullable=False, index=True, unique=True)
     api_key = Column(String(), nullable=False, index=True)
     request = Column(JSON, nullable=False)
     response = Column(JSON, nullable=False)
     public_key = Column(String(), nullable=False)
     signature = Column(String(), nullable=False)
     attestation = Column(String(), nullable=False)
-    tx_hash = Column(String(), nullable=False)
+    tx_hash = Column(String(), nullable=True)
     created_at = Column(DateTime, nullable=False)
     last_updated_at = Column(DateTime, nullable=False)
 

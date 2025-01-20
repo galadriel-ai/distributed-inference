@@ -24,6 +24,7 @@ from distributedinference.repository.tokens_queue_repository import (
 )
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.service.auth import authentication
+from distributedinference.service.verified_completions import post_verified_log_service
 from distributedinference.service.verified_completions import (
     verified_chat_completions_handler_service,
     get_verified_completions,
@@ -37,6 +38,12 @@ from distributedinference.service.verified_completions.entities import (
     VerifiedChatCompletionFilter,
     VerifiedChatCompletionsRequest,
     VerifiedChatCompletionsResponse,
+)
+from distributedinference.service.verified_completions.entities import (
+    PostVerifiedLogRequest,
+)
+from distributedinference.service.verified_completions.entities import (
+    PostVerifiedLogResponse,
 )
 
 TAG = "Verified Chat"
@@ -148,6 +155,29 @@ async def get_completion_by_hash(
 ):
     return await get_verified_completion_by_hash.execute(
         hash, verified_completions_repository
+    )
+
+
+@router.post(
+    "/log",
+    summary="Creates a new verified log entry",
+    description="",
+    response_description="Post Verified Log Response",
+    response_model=PostVerifiedLogResponse,
+)
+async def post_verified_log(
+    api_request: Request,
+    request: PostVerifiedLogRequest,
+    _: User = Depends(authentication.validate_api_key_header),
+    verified_completions_repository=Depends(
+        dependencies.get_verified_completions_repository
+    ),
+):
+    galadriel_api_key = _get_galadriel_api_key(api_request)
+    return await post_verified_log_service.execute(
+        api_key=galadriel_api_key,
+        request=request,
+        verified_completions_repository=verified_completions_repository,
     )
 
 

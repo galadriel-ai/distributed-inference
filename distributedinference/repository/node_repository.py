@@ -464,15 +464,15 @@ class NodeRepository:
 
     @async_timer("node_repository.set_nodes_inactive", logger=logger)
     async def set_nodes_inactive(self, nodes: List[ConnectedNode]):
-        data = {
-            "connected_at": None,
-            "connected_host": None,
-            "last_updated_at": utcnow(),
-        }
         async with self._session_provider.get() as session:
             for node in nodes:
-                data["id"] = node.uid
-                data["status"] = node.node_status.value
+                data = {
+                    "id": node.uid,
+                    "status": node.node_status.value,
+                    "connected_at": None,
+                    "connected_host": None,
+                    "last_updated_at": utcnow(),
+                }
                 await session.execute(
                     sqlalchemy.text(SQL_UPDATE_NODE_CONNECTION_TIMESTAMP_AND_STATUS),
                     data,
