@@ -3,6 +3,7 @@ from distributedinference.domain.agent import create_agent_use_case
 from distributedinference.domain.agent.entities import CreateAgentInput
 from distributedinference.domain.orchestration import deploy_tee_agent_use_case
 from distributedinference.repository.agent_repository import AgentRepository
+from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 from distributedinference.repository.tee_orchestration_repository import (
     TeeOrchestrationRepository,
 )
@@ -13,6 +14,7 @@ from distributedinference.service.agent.entities import CreateAgentResponse
 async def execute(
     repository: AgentRepository,
     tee_orchestration_repository: TeeOrchestrationRepository,
+    aws_storage_repository: AWSStorageRepository,
     user: User,
     request: CreateAgentRequest,
 ) -> CreateAgentResponse:
@@ -26,7 +28,7 @@ async def execute(
 
     # launch the agent in a TEE
     await deploy_tee_agent_use_case.execute(
-        tee_orchestration_repository, repository, output.agent
+        tee_orchestration_repository, repository, aws_storage_repository, output.agent
     )
 
     return CreateAgentResponse(agent_id=output.agent.id)

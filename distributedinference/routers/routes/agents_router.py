@@ -16,6 +16,7 @@ from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.agent_repository import AgentRepository
+from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 from distributedinference.repository.tee_orchestration_repository import (
     TeeOrchestrationRepository,
 )
@@ -75,6 +76,7 @@ async def get_agent(
     return await get_agent_service.execute(agent_repository, user, agent_id)
 
 
+# pylint: disable=too-many-arguments
 @router.post(
     "/",
     summary="Creates a new agent",
@@ -89,10 +91,17 @@ async def create_agent(
     tee_orchestration_repository: TeeOrchestrationRepository = Depends(
         dependencies.get_tee_orchestration_repository
     ),
+    aws_storage_repository: AWSStorageRepository = Depends(
+        dependencies.get_aws_storage_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     response = await create_agent_service.execute(
-        agent_repository, tee_orchestration_repository, user, request
+        agent_repository,
+        tee_orchestration_repository,
+        aws_storage_repository,
+        user,
+        request,
     )
     analytics.track_event(
         user.uid,
@@ -125,6 +134,7 @@ async def update_agent(
     return response
 
 
+# pylint: disable=too-many-arguments
 @router.delete(
     "/{agent_id}",
     summary="Deletes an agent",
@@ -139,10 +149,17 @@ async def delete_agent(
     tee_orchestration_repository: TeeOrchestrationRepository = Depends(
         dependencies.get_tee_orchestration_repository
     ),
+    aws_storage_repository: AWSStorageRepository = Depends(
+        dependencies.get_aws_storage_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     response = await delete_agent_service.execute(
-        agent_repository, tee_orchestration_repository, user, agent_id
+        agent_repository,
+        tee_orchestration_repository,
+        aws_storage_repository,
+        user,
+        agent_id,
     )
     analytics.track_event(
         user.uid,
