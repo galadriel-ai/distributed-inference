@@ -12,13 +12,16 @@ from distributedinference.domain.user.entities import User
 from distributedinference.service import error_responses
 from distributedinference.service.agent.entities import AddLogsRequest
 from distributedinference.service.agent.entities import Log
+from distributedinference.service.agent.entities import SUPPORTED_LOG_LEVELS
 from distributedinference.service.agent.logs import add_agent_logs_service as service
 
 AGENT_ID = UUID("067865aa-8f86-7cb9-8000-f86624c51873")
 
 
 def _get_request_input() -> AddLogsRequest:
-    return AddLogsRequest(logs=[Log(text="text", timestamp=1)])
+    return AddLogsRequest(
+        logs=[Log(text="text", level=SUPPORTED_LOG_LEVELS[0], timestamp=1)]
+    )
 
 
 def _get_user() -> User:
@@ -60,6 +63,7 @@ async def test_success():
             logs=[
                 AgentLog(
                     text="text",
+                    level=SUPPORTED_LOG_LEVELS[0],
                     timestamp=1,
                 )
             ],

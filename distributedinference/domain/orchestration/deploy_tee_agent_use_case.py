@@ -21,6 +21,7 @@ async def execute(
         raise ValueError(f"Agent with id {agent.id} already has a TEE instance")
 
     agent_instance_id = uuid7()
+    agent.env_vars.update({"AGENT_INSTANCE_ID": str(agent_instance_id)})
     # Create user and bucket access for the agent
     aws_user_credentials = await aws_storage_repository.create_user_and_bucket_access(
         str(agent_instance_id)

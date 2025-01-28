@@ -7,8 +7,10 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.service import error_responses
+from distributedinference.service import utils
 from distributedinference.service.agent.entities import AddLogsRequest
 from distributedinference.service.agent.entities import AddLogsResponse
+from distributedinference.service.agent.entities import SUPPORTED_LOG_LEVELS
 
 RATE_LIMIT_TIME_SECONDS = 60
 MAX_COUNT_IN_TIME = 60
@@ -42,8 +44,22 @@ def _format_input(agent_id: UUID, request: AddLogsRequest) -> AgentLogInput:
         logs=[
             AgentLog(
                 text=log.text,
-                timestamp=log.timestamp,
+                level=_format_log_level(log.level),
+                timestamp=_format_timestamp(log.timestamp),
             )
             for log in request.logs
         ],
     )
+
+
+def _format_timestamp(timestamp: int) -> int:
+    if not timestamp or timestamp < 0:
+        return utils.get_current_timestamp()
+    return timestamp
+
+
+def _format_log_level(level: str) -> str:
+    formatted_level = level.strip().lower()
+    if formatted_level in SUPPORTED_LOG_LEVELS:
+        return formatted_level
+    return "info"

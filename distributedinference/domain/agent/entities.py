@@ -51,6 +51,7 @@ class UpdateAgentInput:
 @dataclass
 class AgentLog:
     text: str
+    level: str
     timestamp: int
 
 
@@ -64,14 +65,13 @@ class AgentLogInput:
 class GetAgentLogsInput:
     agent_id: UUID
     limit: int
+    levels: List[str]
     cursor: Optional[UUID]
 
 
 @dataclass
-class AgentLogOutput:
+class AgentLogOutput(AgentLog):
     id: UUID
-    text: str
-    timestamp: int
 
 
 @dataclass

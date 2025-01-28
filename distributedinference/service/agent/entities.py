@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from typing import Optional
 from uuid import UUID
 from typing import Any
@@ -55,9 +56,36 @@ class DeleteAgentResponse(ApiResponse):
     pass
 
 
+SUPPORTED_LOG_LEVELS_TYPE = Literal[
+    "debug",
+    "info",
+    "warning",
+    "warn",
+    "error",
+    "fatal",
+    "critical",
+    "thought",
+]
+SUPPORTED_LOG_LEVEL_STANDALONE: SUPPORTED_LOG_LEVELS_TYPE = "thought"
+SUPPORTED_LOG_LEVELS: List[SUPPORTED_LOG_LEVELS_TYPE] = [
+    "debug",
+    "info",
+    "warning",
+    "warn",
+    "error",
+    "fatal",
+    "critical",
+    SUPPORTED_LOG_LEVEL_STANDALONE,
+]
+
+
 class Log(BaseModel):
     # TODO: pick some reasonable length?
     text: str = Field(description="Log content", max_length=5000)
+    level: str = Field(
+        description='Log level, possible options: debug, info, warning, critical, error or special case "thought", '
+        'defaults to "info" on an invalid value'
+    )
     timestamp: int = Field(description="Log creation timestamp in seconds")
 
 
@@ -77,6 +105,7 @@ class GetLogsRequest(BaseModel):
     limit: Optional[int] = Field(
         description="List of verified chat completions.", default=50
     )
+    level: Optional[SUPPORTED_LOG_LEVELS_TYPE] = Field()
     cursor: Optional[UUID] = Field(description="Cursor for pagination.", default=None)
 
 

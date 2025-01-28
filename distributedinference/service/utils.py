@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timezone
 from uuid import UUID
 
 from distributedinference.service import error_responses
@@ -20,3 +21,8 @@ def parse_uuid(uid: str) -> UUID:
         raise error_responses.ValidationTypeError("Error, id is not a valid type")
     except Exception:
         raise error_responses.ValidationTypeError("Failed to process id")
+
+
+def get_current_timestamp() -> int:
+    utc = datetime.now(timezone.utc)
+    return int(utc.timestamp())
