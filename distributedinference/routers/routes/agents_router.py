@@ -1,4 +1,5 @@
 from typing import Annotated
+from typing import Literal
 from typing import Optional
 from uuid import UUID
 
@@ -34,6 +35,7 @@ from distributedinference.service.agent.entities import GetAgentResponse
 from distributedinference.service.agent.entities import GetAgentsResponse
 from distributedinference.service.agent.entities import GetLogsRequest
 from distributedinference.service.agent.entities import GetLogsResponse
+from distributedinference.service.agent.entities import SUPPORTED_LOG_LEVELS_TYPE
 from distributedinference.service.agent.entities import UpdateAgentRequest
 from distributedinference.service.agent.entities import UpdateAgentResponse
 from distributedinference.service.agent.logs import add_agent_logs_service
@@ -205,6 +207,9 @@ async def get_logs(
     limit: Optional[int] = Query(
         50, description="The maximum number of logs to retrieve."
     ),
+    level: Optional[Literal[SUPPORTED_LOG_LEVELS_TYPE]] = Query(
+        "info", description='Log level, "thought" returns only "though" level logs'
+    ),
     cursor: Optional[UUID] = Query(None, description="The cursor for pagination."),
     user: User = Depends(authentication.validate_api_key_header),
     agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
@@ -215,6 +220,7 @@ async def get_logs(
     request = GetLogsRequest(
         agent_id=agent_id,
         limit=limit,
+        level=level,
         cursor=cursor,
     )
     return await get_agent_logs_service.execute(

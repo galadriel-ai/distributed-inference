@@ -16,6 +16,7 @@ INSERT INTO agent_logs (
     id,
     agent_id,
     text,
+    level,
     log_created_at,
     created_at,
     last_updated_at
@@ -23,6 +24,7 @@ INSERT INTO agent_logs (
     :id,
     :agent_id,
     :text,
+    :level,
     :log_created_at,
     :created_at,
     :last_updated_at
@@ -33,11 +35,13 @@ SQL_GET = """
 SELECT
     id,
     text,
+    level,
     log_created_at
 FROM agent_logs
 WHERE 
     id < :cursor 
     AND agent_id = :agent_id
+    AND level = ANY(:levels)
 ORDER BY id DESC
 LIMIT :limit;
 """
@@ -71,6 +75,7 @@ class AgentLogsRepository:
                 "id": uuid7(),
                 "agent_id": agent_logs.agent_id,
                 "text": log.text,
+                "level": log.level,
                 "log_created_at": utils.utc_from_timestamp(log.timestamp),
                 "created_at": created_at,
                 "last_updated_at": created_at,
@@ -85,6 +90,7 @@ class AgentLogsRepository:
         data = {
             "agent_id": request.agent_id,
             "limit": request.limit,
+            "levels": request.levels,
             "cursor": (
                 str(request.cursor)
                 if request.cursor
@@ -99,6 +105,7 @@ class AgentLogsRepository:
                     AgentLogOutput(
                         id=row.id,
                         text=row.text,
+                        level=row.level,
                         timestamp=int(row.log_created_at.timestamp()),
                     )
                 )
