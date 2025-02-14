@@ -20,6 +20,7 @@ INSERT INTO agents (
     name,
     user_profile_id,
     docker_image,
+    docker_image_hash,
     env_vars,
     is_deleted,
     created_at,
@@ -29,8 +30,29 @@ INSERT INTO agents (
     :name,
     :user_profile_id,
     :docker_image,
+    :docker_image_hash,
     :env_vars,
     FALSE,
+    :created_at,
+    :last_updated_at
+);
+"""
+
+SQL_INSERT_AGENT_VERSION = """
+INSERT INTO agent_version (
+    id,
+    agent_id,
+    docker_image,
+    docker_image_hash,
+    env_vars,
+    created_at,
+    last_updated_at
+) VALUES (
+    :id,
+    :agent_id,
+    :docker_image,
+    :docker_image_hash,
+    :env_vars,
     :created_at,
     :last_updated_at
 );
@@ -42,6 +64,7 @@ SELECT
     name,
     user_profile_id,
     docker_image,
+    docker_image_hash,
     env_vars,
     created_at,
     last_updated_at
@@ -55,6 +78,7 @@ SELECT
     name,
     user_profile_id,
     docker_image,
+    docker_image_hash,
     env_vars,
     created_at,
     last_updated_at
@@ -67,6 +91,7 @@ SELECT
     name,
     user_profile_id,
     docker_image,
+    docker_image_hash,
     env_vars,
     created_at,
     last_updated_at
@@ -79,7 +104,8 @@ UPDATE
     agents
 SET 
     name = :name, 
-    docker_image = :docker_image,
+    docker_image = COALESCE(:docker_image, docker_image),
+    docker_image_hash = COALESCE(:docker_image_hash, docker_image_hash),
     env_vars = :env_vars,
     last_updated_at = :last_updated_at
 WHERE id = :id AND is_deleted = FALSE;
@@ -149,7 +175,7 @@ class AgentRepository:
         self._session_provider_read = session_provider_read
 
     async def insert_agent(
-        self, user_id: UUID, name: str, docker_image: str, env_vars: Dict[str, Any]
+        self, user_id: UUID, name: str, docker_image: str, docker_image_hash: str, env_vars: Dict[str, Any]
     ) -> UUID:
         agent_id = uuid7()
         data = {
@@ -157,6 +183,7 @@ class AgentRepository:
             "name": name,
             "user_profile_id": user_id,
             "docker_image": docker_image,
+            "docker_image_hash": docker_image_hash,
             "env_vars": json.dumps(env_vars),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
@@ -165,6 +192,24 @@ class AgentRepository:
             await session.execute(sqlalchemy.text(SQL_INSERT_AGENT), data)
             await session.commit()
             return agent_id
+        
+    async def insert_agent_version(
+        self, agent_id: UUID, docker_image: str, docker_image_hash: str, env_vars: Dict[str, Any]
+    ) -> UUID:
+        agent_version_id = uuid7()
+        data = {
+            "id": agent_version_id,
+            "agent_id": agent_id,
+            "docker_image": docker_image,
+            "docker_image_hash": docker_image_hash,
+            "env_vars": json.dumps(env_vars),
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT_AGENT_VERSION), data)
+            await session.commit()
+            return agent_version_id
 
     async def get_agent(
         self, agent_id: UUID, is_deleted: Optional[bool] = False
@@ -179,6 +224,7 @@ class AgentRepository:
                     name=row.name,
                     user_profile_id=row.user_profile_id,
                     docker_image=row.docker_image,
+                    docker_image_hash=row.docker_image_hash,
                     env_vars=row.env_vars,
                     created_at=row.created_at,
                     last_updated_at=row.last_updated_at,
@@ -197,6 +243,7 @@ class AgentRepository:
                         name=row.name,
                         user_profile_id=row.user_profile_id,
                         docker_image=row.docker_image,
+                        docker_image_hash=row.docker_image_hash,
                         env_vars=row.env_vars,
                         created_at=row.created_at,
                         last_updated_at=row.last_updated_at,
@@ -215,6 +262,7 @@ class AgentRepository:
                         name=row.name,
                         user_profile_id=row.user_profile_id,
                         docker_image=row.docker_image,
+                        docker_image_hash=row.docker_image_hash,
                         env_vars=row.env_vars,
                         created_at=row.created_at,
                         last_updated_at=row.last_updated_at,
@@ -227,19 +275,20 @@ class AgentRepository:
         agent_id: UUID,
         name: str,
         docker_image: Optional[str],
+        docker_image_hash: Optional[str],
         env_vars: Dict[str, Any],
     ) -> None:
         data = {
             "id": agent_id,
             "name": name,
             "docker_image": docker_image,
+            "docker_image_hash": docker_image_hash,
             "env_vars": json.dumps(env_vars),
             "last_updated_at": utcnow(),
         }
         async with self._session_provider.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_UPDATE_AGENT), data)
+            await session.execute(sqlalchemy.text(SQL_UPDATE_AGENT), data)
             await session.commit()
-            print(result)
 
     async def delete_agent(self, agent_id: UUID) -> None:
         data = {"id": agent_id}
