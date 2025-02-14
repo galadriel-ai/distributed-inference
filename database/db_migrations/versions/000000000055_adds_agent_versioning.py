@@ -35,7 +35,9 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
     op.add_column("agents", sa.Column("docker_image_hash", sa.String(), nullable=True))
-    op.execute("UPDATE agents SET docker_image_hash = 'unknown' WHERE docker_image_hash IS NULL")
+    op.execute(
+        "UPDATE agents SET docker_image_hash = 'unknown' WHERE docker_image_hash IS NULL"
+    )
     op.alter_column(
         "agents", "docker_image_hash", existing_type=sa.String(), nullable=False
     )

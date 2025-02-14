@@ -174,8 +174,14 @@ class AgentRepository:
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read
 
+    # pylint: disable=R0913
     async def insert_agent(
-        self, user_id: UUID, name: str, docker_image: str, docker_image_hash: str, env_vars: Dict[str, Any]
+        self,
+        user_id: UUID,
+        name: str,
+        docker_image: str,
+        docker_image_hash: str,
+        env_vars: Dict[str, Any],
     ) -> UUID:
         agent_id = uuid7()
         data = {
@@ -192,9 +198,13 @@ class AgentRepository:
             await session.execute(sqlalchemy.text(SQL_INSERT_AGENT), data)
             await session.commit()
             return agent_id
-        
+
     async def insert_agent_version(
-        self, agent_id: UUID, docker_image: str, docker_image_hash: str, env_vars: Dict[str, Any]
+        self,
+        agent_id: UUID,
+        docker_image: str,
+        docker_image_hash: str,
+        env_vars: Dict[str, Any],
     ) -> UUID:
         agent_version_id = uuid7()
         data = {
@@ -270,6 +280,7 @@ class AgentRepository:
                 )
         return results
 
+    # pylint: disable=R0913
     async def update_agent(
         self,
         agent_id: UUID,
