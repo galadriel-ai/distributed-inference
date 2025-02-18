@@ -22,6 +22,7 @@ async def execute(
         user_id=user.uid,
         name=request.name,
         docker_image=request.docker_image,
+        docker_image_hash=request.docker_image_hash,
         env_vars=request.env_vars,
     )
     output = await create_agent_use_case.execute(repository, input)

@@ -17,6 +17,7 @@ class Agent(BaseModel):
     name: str = Field(description="Name")
     updated_at: datetime = Field(description="Updated at")
     docker_image: str = Field(description="Docker image")
+    docker_image_hash: str = Field(description="Docker image hash")
     pcr0_hash: str = Field(description="PCR0")
 
 
@@ -35,6 +36,7 @@ class GetAgentsResponse(ApiResponse):
 class CreateAgentRequest(BaseModel):
     name: str = Field(description="Name")
     docker_image: str = Field(description="Docker image")
+    docker_image_hash: str = Field(description="Docker image hash")
     env_vars: Dict[str, Any] = Field(description="Environment variables")
 
 
@@ -45,6 +47,7 @@ class CreateAgentResponse(ApiResponse):
 class UpdateAgentRequest(BaseModel):
     name: str = Field(description="Name")
     docker_image: str = Field(description="Docker image")
+    docker_image_hash: str = Field(description="Docker image hash")
     env_vars: Dict[str, Any] = Field(description="Environment variables")
 
 
