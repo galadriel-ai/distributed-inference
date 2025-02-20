@@ -97,6 +97,7 @@ INSERT INTO agent_instance (
     id,
     agent_id,
     enclave_cid,
+    instance_env_vars,
     is_deleted,
     created_at,
     last_updated_at
@@ -104,6 +105,7 @@ INSERT INTO agent_instance (
     :id,
     :agent_id,
     :enclave_cid,
+    :instance_env_vars,
     FALSE,
     :created_at,
     :last_updated_at
@@ -115,6 +117,7 @@ SELECT
     id,
     agent_id,
     enclave_cid,
+    instance_env_vars,
     is_deleted,
     created_at,
     last_updated_at
@@ -126,6 +129,7 @@ SELECT
     id,
     agent_id,
     enclave_cid,
+    instance_env_vars,
     is_deleted,
     created_at,
     last_updated_at
@@ -248,12 +252,17 @@ class AgentRepository:
             await session.commit()
 
     async def insert_agent_instance(
-        self, agent_id: UUID, agent_instance_id: UUID, enclave_cid: str
+        self,
+        agent_id: UUID,
+        agent_instance_id: UUID,
+        enclave_cid: str,
+        instance_env_vars: Dict[str, Any],
     ) -> UUID:
         data = {
             "id": agent_instance_id,
             "agent_id": agent_id,
             "enclave_cid": enclave_cid,
+            "instance_env_vars": json.dumps(instance_env_vars),
             "created_at": utcnow(),
             "last_updated_at": utcnow(),
         }
@@ -272,6 +281,7 @@ class AgentRepository:
                         id=row.id,
                         agent_id=row.id,
                         enclave_cid=row.enclave_cid,
+                        instance_env_vars=row.instance_env_vars,
                         created_at=row.created_at,
                         last_updated_at=row.last_updated_at,
                     )
@@ -290,6 +300,7 @@ class AgentRepository:
                     id=row.id,
                     agent_id=row.id,
                     enclave_cid=row.enclave_cid,
+                    instance_env_vars=row.instance_env_vars,
                     created_at=row.created_at,
                     last_updated_at=row.last_updated_at,
                 )
