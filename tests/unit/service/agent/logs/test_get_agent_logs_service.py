@@ -42,6 +42,7 @@ def _get_agent(user_uid: UUID) -> Agent:
         name="name",
         created_at=datetime(2020, 1, 1),
         docker_image="docker_image",
+        docker_image_hash="docker_image_hash",
         env_vars={},
         last_updated_at=datetime(2020, 1, 2),
         user_profile_id=user_uid,

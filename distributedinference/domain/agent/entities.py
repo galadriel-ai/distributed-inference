@@ -13,6 +13,7 @@ class Agent:
     name: str
     created_at: datetime
     docker_image: str
+    docker_image_hash: str
     env_vars: Dict[str, Any]
     last_updated_at: datetime
     user_profile_id: UUID
@@ -33,6 +34,7 @@ class CreateAgentInput:
     user_id: UUID
     name: str
     docker_image: str
+    docker_image_hash: str
     env_vars: Dict[str, Any]
 
 
@@ -46,6 +48,7 @@ class UpdateAgentInput:
     agent_id: UUID
     name: str
     docker_image: str
+    docker_image_hash: str
     env_vars: Dict[str, Any]
 
 

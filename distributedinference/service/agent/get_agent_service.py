@@ -21,5 +21,6 @@ async def execute(
         name=agent.name,
         updated_at=agent.last_updated_at,
         docker_image=agent.docker_image,
+        docker_image_hash=agent.docker_image_hash,
         pcr0_hash="mock_hash",
     )
