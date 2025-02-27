@@ -24,6 +24,7 @@ class AgentInstance:
     id: UUID
     agent_id: UUID
     enclave_cid: str
+    instance_env_vars: Dict[str, Any]
     created_at: datetime
     last_updated_at: datetime
 
