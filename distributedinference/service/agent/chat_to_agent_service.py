@@ -1,15 +1,13 @@
-"""
-Service for proxying chat completion requests to agent TEE instances.
-"""
+from uuid import UUID
+from typing import Any
+from typing import Dict
 
 import httpx
-from typing import Dict, Any, AsyncGenerator
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
-from uuid import UUID
 
-from distributedinference import api_logger
 import settings
+from distributedinference import api_logger
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.agent_repository import AgentRepository
 
@@ -59,7 +57,9 @@ async def execute(
     agent_instance_id = str(agent_instance.id)
 
     # Construct the target URL for chat completions
-    target_url = f"{settings.TEE_HOST_BASE_URL}tee/enclave/{agent_instance_id}/chat/completions"
+    target_url = (
+        f"{settings.TEE_HOST_BASE_URL}tee/enclave/{agent_instance_id}/chat/completions"
+    )
 
     # Get query parameters
     params = dict(request.query_params)
