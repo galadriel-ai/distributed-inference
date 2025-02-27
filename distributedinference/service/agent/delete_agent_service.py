@@ -25,7 +25,11 @@ async def execute(
         raise error_responses.NotFoundAPIError("Agent not found")
 
     await stop_agent_tee_use_case.execute(
-        tee_orchestration_repository, repository, aws_storage_repository, agent
+        tee_orchestration_repository,
+        repository,
+        aws_storage_repository,
+        agent,
+        delete_agent_instance=True,
     )
     await delete_agent_use_case.execute(repository, agent_id)
     return DeleteAgentResponse()
