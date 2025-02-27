@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Path
 from fastapi import Query
+from fastapi import Request
 
 import settings
 from distributedinference import api_logger
@@ -21,6 +22,7 @@ from distributedinference.repository.aws_storage_repository import AWSStorageRep
 from distributedinference.repository.tee_orchestration_repository import (
     TeeOrchestrationRepository,
 )
+from distributedinference.service.agent import chat_to_agent_service
 from distributedinference.service.agent import create_agent_service
 from distributedinference.service.agent import delete_agent_service
 from distributedinference.service.agent import get_agent_service
@@ -228,4 +230,43 @@ async def get_logs(
         user,
         agent_repository,
         logs_repository,
+    )
+
+
+@router.get(
+    "/{agent_id}/chat/completions",
+    summary="Proxy chat completions to agent instance",
+    description="Forwards chat completion requests to the agent's TEE instance",
+    response_description="Streaming response from the agent instance",
+)
+async def chat_completions(
+    request: Request,
+    agent_id: Annotated[UUID, Path(..., description="Agent ID")],
+    user: User = Depends(authentication.validate_api_key_header),
+    agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+):
+    """
+    Proxy chat completion requests to the agent's TEE instance.
+
+    This endpoint forwards requests to the TEE instance running the agent,
+    supporting streaming responses for chat completions.
+
+    Args:
+        request: The incoming request
+        agent_id: The ID of the agent
+        user: The authenticated user
+        agent_repository: Repository for agent operations
+
+    Returns:
+        Streaming response from the agent instance
+
+    Raises:
+        HTTPException: If the agent doesn't exist, doesn't belong to the user,
+                      doesn't have a running instance, or if the proxy request fails
+    """
+    return await chat_to_agent_service.execute(
+        request,
+        agent_id,
+        user,
+        agent_repository,
     )
