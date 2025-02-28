@@ -196,4 +196,5 @@ def get_api_info() -> ApiInfo:
     response_model=ApiInfo,
 )
 def root():
+    # test
     return get_api_info()
