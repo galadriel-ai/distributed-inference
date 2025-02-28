@@ -11,6 +11,7 @@ from distributedinference.routers.routes import network_router
 from distributedinference.routers.routes import node_router
 from distributedinference.routers.routes import metrics_router
 from distributedinference.routers.routes import models_router
+from distributedinference.routers.routes import faucet_router
 from distributedinference.routers.routes import tool_router
 from distributedinference.routers.routes import verified_chat_router
 from distributedinference.routers.routes.dashboard import authentication_router
@@ -30,6 +31,7 @@ routers_to_include: List[APIRouter] = [
     tool_router.router,
     node_router.router,
     network_router.router,
+    faucet_router.router,
     authentication_router.router,
     dashboard_router.router,
     metrics_router.router,
