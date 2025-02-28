@@ -69,12 +69,15 @@ async def execute(
     headers.pop("host", None)
     headers.pop("authorization", None)
 
+    # Get body
+    body = await request.body()
+
     # Stream the response
-    return await _stream_response(target_url, params, headers)
+    return await _stream_response(target_url, params, headers, body)
 
 
 async def _stream_response(
-    target_url: str, params: Dict[str, Any], headers: Dict[str, str]
+    target_url: str, params: Dict[str, Any], headers: Dict[str, str], body: bytes
 ) -> StreamingResponse:
     """
     Stream a response from the target URL.
@@ -93,10 +96,11 @@ async def _stream_response(
     client = httpx.AsyncClient(timeout=None)  # No timeout for streaming responses
 
     try:
-        response = await client.get(
+        response = await client.post(
             target_url,
             params=params,
             headers=headers,
+            content=body,
             follow_redirects=True,
         )
 

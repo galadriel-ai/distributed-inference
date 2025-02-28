@@ -233,7 +233,7 @@ async def get_logs(
     )
 
 
-@router.get(
+@router.post(
     "/{agent_id}/chat/completions",
     summary="Proxy chat completions to agent instance",
     description="Forwards chat completion requests to the agent's TEE instance",
