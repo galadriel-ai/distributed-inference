@@ -2,10 +2,10 @@ from pydantic import BaseModel, Field
 
 
 class SolanaFaucetRequestModel(BaseModel):
-    """Request model for Solana faucet request"""
+    """Request model for faucet request"""
 
     address: str = Field(
-        description="Solana address to receive SOL",
+        description="Address to receive tokens",
     )
 
 

@@ -6,8 +6,8 @@ from distributedinference.domain.user.entities import User
 from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
 )
-from distributedinference.repository.solana_faucet_repository import (
-    SolanaFaucetRepository,
+from distributedinference.repository.faucet_repository import (
+    FaucetRepository,
 )
 from distributedinference.service.auth import authentication
 from distributedinference.service.faucet import solana_faucet_service
@@ -34,9 +34,7 @@ logger = api_logger.get()
 async def solana_faucet(
     request: SolanaFaucetRequestModel,
     user: User = Depends(authentication.validate_api_key_header),
-    solana_faucet_repository: SolanaFaucetRepository = Depends(
-        dependencies.get_solana_faucet_repository
-    ),
+    faucet_repository: FaucetRepository = Depends(dependencies.get_faucet_repository),
     blockchain_repository: BlockchainProofRepository = Depends(
         dependencies.get_blockchain_proof_repository
     ),
@@ -48,7 +46,7 @@ async def solana_faucet(
     response = await solana_faucet_service.execute(
         request,
         user,
-        solana_faucet_repository,
+        faucet_repository,
         blockchain_repository,
     )
 

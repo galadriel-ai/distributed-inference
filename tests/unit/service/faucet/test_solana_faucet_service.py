@@ -1,18 +1,22 @@
 from unittest.mock import AsyncMock, patch
 from uuid import UUID
+from datetime import datetime, timezone
 
 import pytest
 
-from distributedinference.domain.faucet.entities import SolanaFaucetResponse
+from distributedinference.domain.faucet.entities import FaucetResponse, FaucetRequest
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
 )
-from distributedinference.repository.solana_faucet_repository import (
-    SolanaFaucetRepository,
+from distributedinference.repository.faucet_repository import (
+    FaucetRepository,
 )
 from distributedinference.service.faucet import solana_faucet_service
-from distributedinference.service.faucet.entities import SolanaFaucetRequestModel
+from distributedinference.service.faucet.entities import (
+    SolanaFaucetRequestModel,
+    SolanaFaucetResponseModel,
+)
 
 
 @pytest.fixture
@@ -37,7 +41,7 @@ def request_model(solana_address):
 
 @pytest.fixture
 def mock_repository():
-    return AsyncMock(spec=SolanaFaucetRepository)
+    return AsyncMock(spec=FaucetRepository)
 
 
 @pytest.fixture
@@ -47,7 +51,7 @@ def mock_blockchain_repository():
 
 @pytest.fixture
 def mock_use_case_response():
-    return SolanaFaucetResponse(
+    return FaucetResponse(
         success=True,
         transaction_signature="4B6YNfEAC6rysjKKcF7iiWEoRfUGvwvKEhQLkM35rpj1CmD7RoydkUHDL4tVmqXyXLoQTAyXEd2WCqxW2SVkgCeS",
         message="Successfully sent 0.0001 SOL",

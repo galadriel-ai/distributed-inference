@@ -429,23 +429,20 @@ class AgentLogs(Base):
     )
 
 
-class SolanaFaucetRequest(Base):
-    __tablename__ = "solana_faucet_request"
+class FaucetRequest(Base):
+    __tablename__ = "faucet_request"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
-    user_profile_id = Column(
-        UUID(as_uuid=True), ForeignKey(UserProfile.id), nullable=False
-    )
-    solana_address = Column(String(), nullable=False)
+    user_profile_id = Column(UUID(as_uuid=True), ForeignKey(UserProfile.id), nullable=False)
+    chain = Column(String(), nullable=False)
+    address = Column(String(), nullable=False)
     transaction_signature = Column(String(), nullable=True)
-    created_at = Column(
-        DateTime, default=datetime.datetime.now(datetime.UTC), nullable=False
-    )
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.UTC), nullable=False)
 
     # Index for querying recent requests by user and address
     __table_args__ = (
         Index("idx_faucet_user_time", "user_profile_id", "created_at"),
-        Index("idx_faucet_address_time", "solana_address", "created_at"),
+        Index("idx_faucet_address_time", "address", "created_at"),
     )
 
 
