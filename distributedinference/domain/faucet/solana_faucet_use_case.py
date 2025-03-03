@@ -11,7 +11,7 @@ from distributedinference.repository.blockchain_proof_repository import Blockcha
 from distributedinference.repository.solana_faucet_repository import SolanaFaucetRepository
 from distributedinference.service import error_responses
 
-from solders.pubkey import Pubkey  # type: ignore
+from solders.pubkey import Pubkey  # type: ignore # pylint: disable=import-error
 from solana.constants import LAMPORTS_PER_SOL
 
 # Amount of SOL to send from settings
@@ -53,9 +53,6 @@ async def execute(
         # Send the SOL to the provided address
         recipient_pubkey = Pubkey.from_string(solana_address)
 
-        if not recipient_pubkey:
-            raise error_responses.ValidationError({"error": "Invalid Solana address format"})
-
         # Execute the transfer
         tx_result = await blockchain_repository.transfer(recipient_pubkey, lamports)
 
@@ -76,6 +73,8 @@ async def execute(
         )
     except error_responses.APIErrorResponse as e:
         raise e
+    except ValueError as e:
+        raise error_responses.ValidationTypeError(str(e)) from e
     except Exception as e:
         logger.error(f"Error sending SOL: {str(e)}")
         raise error_responses.InternalServerAPIError()
