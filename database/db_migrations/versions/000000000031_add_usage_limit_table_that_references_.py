@@ -98,7 +98,7 @@ def downgrade():
         ),
     )
     op.execute(
-        """
+        f"""
         UPDATE usage_tier 
         SET 
             max_tokens_per_minute = 40000,
