@@ -46,7 +46,9 @@ async def execute(
         )
 
     # Check if the address has received any airdrop in the last X hours based on settings
-    recent_address_request = await repository.get_recent_request_by_address(address, FAUCET_CHAIN)
+    recent_address_request = await repository.get_recent_request_by_address(
+        address, FAUCET_CHAIN
+    )
     if recent_address_request:
         raise error_responses.RateLimitError(
             {

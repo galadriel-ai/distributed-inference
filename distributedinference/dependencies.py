@@ -146,7 +146,9 @@ def init_globals():
     _agent_logs_repository = AgentLogsRepository(
         get_session_provider(), get_session_provider_read()
     )
-    _faucet_repository = FaucetRepository(get_session_provider(), get_session_provider_read())
+    _faucet_repository = FaucetRepository(
+        get_session_provider(), get_session_provider_read()
+    )
 
     _analytics = Analytics(
         posthog=init_posthog(

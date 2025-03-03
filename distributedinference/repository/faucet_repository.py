@@ -1,9 +1,7 @@
-from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
-from decimal import Decimal
 
 import settings
 from distributedinference import api_logger
@@ -69,18 +67,24 @@ logger = api_logger.get()
 
 class FaucetRepository:
 
-    def __init__(self, session_provider: SessionProvider, session_provider_read: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read
 
-    @async_timer("faucet_repository.get_recent_request_by_user_profile_id", logger=logger)
+    @async_timer(
+        "faucet_repository.get_recent_request_by_user_profile_id", logger=logger
+    )
     async def get_recent_request_by_user_profile_id(
         self, user_profile_id: UUID, chain: str
     ) -> Optional[FaucetRequest]:
         """Get the most recent faucet request by a user in the last X hours based on settings."""
         data = {"user_profile_id": user_profile_id, "chain": chain}
         async with self._session_provider_read.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_USER), data)
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_USER), data
+            )
             row = result.fetchone()
             if row:
                 return FaucetRequest(
@@ -100,7 +104,9 @@ class FaucetRepository:
         """Get the most recent faucet request for a specific address in the last X hours based on settings."""
         data = {"address": address, "chain": chain}
         async with self._session_provider_read.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_ADDRESS), data)
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_ADDRESS), data
+            )
             row = result.fetchone()
             if row:
                 return FaucetRequest(
@@ -118,7 +124,9 @@ class FaucetRepository:
         """Add a new faucet request to the database."""
         # Convert Signature object to string if necessary
         transaction_signature = request.transaction_signature
-        if transaction_signature is not None and not isinstance(transaction_signature, str):
+        if transaction_signature is not None and not isinstance(
+            transaction_signature, str
+        ):
             transaction_signature = str(transaction_signature)
 
         data = {

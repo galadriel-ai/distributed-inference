@@ -433,11 +433,15 @@ class FaucetRequest(Base):
     __tablename__ = "faucet_request"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
-    user_profile_id = Column(UUID(as_uuid=True), ForeignKey(UserProfile.id), nullable=False)
+    user_profile_id = Column(
+        UUID(as_uuid=True), ForeignKey(UserProfile.id), nullable=False
+    )
     chain = Column(String(), nullable=False)
     address = Column(String(), nullable=False)
     transaction_signature = Column(String(), nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.now(datetime.UTC), nullable=False)
+    created_at = Column(
+        DateTime, default=datetime.datetime.now(datetime.UTC), nullable=False
+    )
 
     # Index for querying recent requests by user and address
     __table_args__ = (

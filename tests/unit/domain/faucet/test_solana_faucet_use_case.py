@@ -67,8 +67,12 @@ async def test_execute_success(
     assert f"Successfully sent {settings.SOLANA_FAUCET_AMOUNT} SOL" in response.message
 
     # Verify repository calls
-    mock_repository.get_recent_request_by_user_profile_id.assert_called_once_with(user_id, "solana")
-    mock_repository.get_recent_request_by_address.assert_called_once_with(solana_address, "solana")
+    mock_repository.get_recent_request_by_user_profile_id.assert_called_once_with(
+        user_id, "solana"
+    )
+    mock_repository.get_recent_request_by_address.assert_called_once_with(
+        solana_address, "solana"
+    )
 
     # Verify blockchain call
     mock_blockchain_repository.transfer.assert_called_once()
@@ -104,7 +108,9 @@ async def test_execute_user_rate_limit(
         transaction_signature="some_signature",
         created_at=datetime.datetime.now(),
     )
-    mock_repository.get_recent_request_by_user_profile_id.return_value = mock_recent_request
+    mock_repository.get_recent_request_by_user_profile_id.return_value = (
+        mock_recent_request
+    )
 
     # Execute and expect exception
     with pytest.raises(error_responses.RateLimitError) as exc_info:
