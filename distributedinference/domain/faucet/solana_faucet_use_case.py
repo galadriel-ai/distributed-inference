@@ -1,18 +1,22 @@
 from decimal import Decimal
 from uuid import UUID
 
+from solders.pubkey import Pubkey  # type: ignore # pylint: disable=import-error
+from solana.constants import LAMPORTS_PER_SOL
+
 import settings
 from distributedinference import api_logger
 from distributedinference.domain.faucet.entities import (
     SolanaFaucetRequest,
     SolanaFaucetResponse,
 )
-from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
-from distributedinference.repository.solana_faucet_repository import SolanaFaucetRepository
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
+from distributedinference.repository.solana_faucet_repository import (
+    SolanaFaucetRepository,
+)
 from distributedinference.service import error_responses
-
-from solders.pubkey import Pubkey  # type: ignore # pylint: disable=import-error
-from solana.constants import LAMPORTS_PER_SOL
 
 # Amount of SOL to send from settings
 FAUCET_AMOUNT = Decimal(settings.SOLANA_FAUCET_AMOUNT)
@@ -29,7 +33,9 @@ async def execute(
     """Process a Solana faucet request."""
 
     # Check if the user has made any request in the last X hours based on settings
-    recent_user_request = await repository.get_recent_request_by_user_profile_id(user_profile_id)
+    recent_user_request = await repository.get_recent_request_by_user_profile_id(
+        user_profile_id
+    )
     if recent_user_request:
         raise error_responses.RateLimitError(
             {
@@ -38,7 +44,9 @@ async def execute(
         )
 
     # Check if the address has received any airdrop in the last X hours based on settings
-    recent_address_request = await repository.get_recent_request_by_address(solana_address)
+    recent_address_request = await repository.get_recent_request_by_address(
+        solana_address
+    )
     if recent_address_request:
         raise error_responses.RateLimitError(
             {

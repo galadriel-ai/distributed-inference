@@ -6,8 +6,6 @@ Create Date: 2024-10-23 11:35:54.849570
 
 """
 
-import datetime
-
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -19,7 +17,7 @@ depends_on = None
 
 def upgrade():
     op.execute(
-        f"""
+        """
 INSERT INTO user_profile (
     id,
     name,

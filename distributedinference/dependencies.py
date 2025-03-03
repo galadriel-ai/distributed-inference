@@ -43,7 +43,9 @@ from distributedinference.repository.rate_limit_repository import RateLimitRepos
 from distributedinference.repository.verified_completions_repository import (
     VerifiedCompletionsRepository,
 )
-from distributedinference.repository.solana_faucet_repository import SolanaFaucetRepository
+from distributedinference.repository.solana_faucet_repository import (
+    SolanaFaucetRepository,
+)
 from distributedinference.service.node.protocol.protocol_handler import ProtocolHandler
 from distributedinference.utils.google_cloud_storage import GoogleCloudStorage
 

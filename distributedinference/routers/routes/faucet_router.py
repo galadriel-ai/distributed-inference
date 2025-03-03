@@ -1,16 +1,18 @@
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends
 
-import settings
 from distributedinference import api_logger
 from distributedinference import dependencies
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
-from distributedinference.repository.solana_faucet_repository import SolanaFaucetRepository
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
+from distributedinference.repository.solana_faucet_repository import (
+    SolanaFaucetRepository,
+)
 from distributedinference.service.auth import authentication
 from distributedinference.service.faucet import solana_faucet_service
 from distributedinference.service.faucet.entities import (
-    SolanaFaucetRequest,
+    SolanaFaucetRequestModel,
     SolanaFaucetResponseModel,
 )
 
@@ -30,7 +32,7 @@ logger = api_logger.get()
     response_model=SolanaFaucetResponseModel,
 )
 async def solana_faucet(
-    request: SolanaFaucetRequest,
+    request: SolanaFaucetRequestModel,
     user: User = Depends(authentication.validate_api_key_header),
     solana_faucet_repository: SolanaFaucetRepository = Depends(
         dependencies.get_solana_faucet_repository

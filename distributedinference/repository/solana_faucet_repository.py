@@ -1,9 +1,7 @@
-from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 import sqlalchemy
-from decimal import Decimal
 
 import settings
 from distributedinference import api_logger
@@ -64,22 +62,28 @@ logger = api_logger.get()
 
 
 class SolanaFaucetRepository:
-    def __init__(self, session_provider: SessionProvider, session_provider_read: SessionProvider):
+    def __init__(
+        self, session_provider: SessionProvider, session_provider_read: SessionProvider
+    ):
         self._session_provider = session_provider
         self._session_provider_read = session_provider_read
 
-    @async_timer("solana_faucet_repository.get_recent_request_by_user_profile_id", logger=logger)
+    @async_timer(
+        "solana_faucet_repository.get_recent_request_by_user_profile_id", logger=logger
+    )
     async def get_recent_request_by_user_profile_id(
         self, user_profile_id: UUID
     ) -> Optional[SolanaFaucetRequest]:
         """Get the most recent faucet request by a user in the last X hours based on settings."""
         data = {"user_profile_id": user_profile_id}
         async with self._session_provider_read.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_USER), data)
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_USER), data
+            )
             row = result.fetchone()
             if row:
                 return SolanaFaucetRequest(
-                    id=row.id,
+                    request_id=row.id,
                     user_profile_id=row.user_profile_id,
                     solana_address=row.solana_address,
                     transaction_signature=row.transaction_signature,
@@ -87,18 +91,22 @@ class SolanaFaucetRepository:
                 )
             return None
 
-    @async_timer("solana_faucet_repository.get_recent_request_by_address", logger=logger)
+    @async_timer(
+        "solana_faucet_repository.get_recent_request_by_address", logger=logger
+    )
     async def get_recent_request_by_address(
         self, solana_address: str
     ) -> Optional[SolanaFaucetRequest]:
         """Get the most recent faucet request for a specific Solana address in the last X hours based on settings."""
         data = {"solana_address": solana_address}
         async with self._session_provider_read.get() as session:
-            result = await session.execute(sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_ADDRESS), data)
+            result = await session.execute(
+                sqlalchemy.text(SQL_GET_RECENT_REQUEST_BY_ADDRESS), data
+            )
             row = result.fetchone()
             if row:
                 return SolanaFaucetRequest(
-                    id=row.id,
+                    request_id=row.id,
                     user_profile_id=row.user_profile_id,
                     solana_address=row.solana_address,
                     transaction_signature=row.transaction_signature,

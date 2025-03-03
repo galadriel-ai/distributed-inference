@@ -1,5 +1,5 @@
 import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 import pytest
 import settings
@@ -9,9 +9,16 @@ from solders.pubkey import Pubkey
 from solana.constants import LAMPORTS_PER_SOL
 
 from distributedinference.domain.faucet import solana_faucet_use_case
-from distributedinference.domain.faucet.entities import SolanaFaucetRequest, SolanaFaucetResponse
-from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
-from distributedinference.repository.solana_faucet_repository import SolanaFaucetRepository
+from distributedinference.domain.faucet.entities import (
+    SolanaFaucetRequest,
+    SolanaFaucetResponse,
+)
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
+)
+from distributedinference.repository.solana_faucet_repository import (
+    SolanaFaucetRepository,
+)
 from distributedinference.service import error_responses
 
 
@@ -37,9 +44,7 @@ def mock_repository():
 def mock_blockchain_repository():
     mock = AsyncMock(spec=BlockchainProofRepository)
     mock_tx_result = MagicMock()
-    mock_tx_result.value = (
-        "4B6YNfEAC6rysjKKcF7iiWEoRfUGvwvKEhQLkM35rpj1CmD7RoydkUHDL4tVmqXyXLoQTAyXEd2WCqxW2SVkgCeS"
-    )
+    mock_tx_result.value = "4B6YNfEAC6rysjKKcF7iiWEoRfUGvwvKEhQLkM35rpj1CmD7RoydkUHDL4tVmqXyXLoQTAyXEd2WCqxW2SVkgCeS"
     mock.transfer.return_value = mock_tx_result
     return mock
 
@@ -62,8 +67,12 @@ async def test_execute_success(
     assert f"Successfully sent {settings.SOLANA_FAUCET_AMOUNT} SOL" in response.message
 
     # Verify repository calls
-    mock_repository.get_recent_request_by_user_profile_id.assert_called_once_with(user_id)
-    mock_repository.get_recent_request_by_address.assert_called_once_with(solana_address)
+    mock_repository.get_recent_request_by_user_profile_id.assert_called_once_with(
+        user_id
+    )
+    mock_repository.get_recent_request_by_address.assert_called_once_with(
+        solana_address
+    )
 
     # Verify blockchain call
     mock_blockchain_repository.transfer.assert_called_once()
@@ -91,13 +100,15 @@ async def test_execute_user_rate_limit(
 ):
     # Setup - user has a recent request
     mock_recent_request = SolanaFaucetRequest(
-        id=UUID("218506ee-af34-4320-8a09-b6432dafc187"),
+        request_id=UUID("218506ee-af34-4320-8a09-b6432dafc187"),
         user_profile_id=user_id,
         solana_address=solana_address,
         transaction_signature="some_signature",
         created_at=datetime.datetime.now(),
     )
-    mock_repository.get_recent_request_by_user_profile_id.return_value = mock_recent_request
+    mock_repository.get_recent_request_by_user_profile_id.return_value = (
+        mock_recent_request
+    )
 
     # Execute and expect exception
     with pytest.raises(error_responses.RateLimitError) as exc_info:
@@ -120,7 +131,7 @@ async def test_execute_address_rate_limit(
 ):
     # Setup - address has a recent request
     mock_recent_request = SolanaFaucetRequest(
-        id=UUID("218506ee-af34-4320-8a09-b6432dafc187"),
+        request_id=UUID("218506ee-af34-4320-8a09-b6432dafc187"),
         user_profile_id=UUID("166e9449-c696-7462-8000-3196255ced8d"),  # different user
         solana_address=solana_address,
         transaction_signature="some_signature",
@@ -144,7 +155,9 @@ async def test_execute_address_rate_limit(
     mock_repository.add_request.assert_not_called()
 
 
-async def test_execute_invalid_address(user_id, mock_repository, mock_blockchain_repository):
+async def test_execute_invalid_address(
+    user_id, mock_repository, mock_blockchain_repository
+):
     # Setup - invalid address
     invalid_address = "invalid_address"
 

@@ -6,15 +6,16 @@ from uuid import UUID, uuid4
 class SolanaFaucetRequest:
     """Entity representing a Solana faucet request."""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         user_profile_id: UUID,
         solana_address: str,
         transaction_signature: str,
-        id: Optional[UUID] = None,
+        request_id: Optional[UUID] = None,
         created_at: Optional[datetime] = None,
     ):
-        self.id = id or uuid4()
+        self.id = request_id or uuid4()
         self.user_profile_id = user_profile_id
         self.solana_address = solana_address
         self.transaction_signature = transaction_signature

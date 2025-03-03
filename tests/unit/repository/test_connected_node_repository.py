@@ -1,7 +1,6 @@
 import asyncio
 import time
 from unittest.mock import MagicMock
-from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid1
 

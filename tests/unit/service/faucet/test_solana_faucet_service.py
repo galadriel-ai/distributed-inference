@@ -1,17 +1,18 @@
-import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from uuid import UUID
 
 import pytest
 
 from distributedinference.domain.faucet.entities import SolanaFaucetResponse
 from distributedinference.domain.user.entities import User
-from distributedinference.repository.blockchain_proof_repository import BlockchainProofRepository
-from distributedinference.repository.solana_faucet_repository import SolanaFaucetRepository
-from distributedinference.service.faucet import solana_faucet_service
-from distributedinference.service.faucet.entities import (
-    SolanaFaucetRequest as SolanaFaucetRequestModel,
+from distributedinference.repository.blockchain_proof_repository import (
+    BlockchainProofRepository,
 )
+from distributedinference.repository.solana_faucet_repository import (
+    SolanaFaucetRepository,
+)
+from distributedinference.service.faucet import solana_faucet_service
+from distributedinference.service.faucet.entities import SolanaFaucetRequestModel
 
 
 @pytest.fixture
