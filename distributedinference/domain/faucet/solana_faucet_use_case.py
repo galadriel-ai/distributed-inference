@@ -1,5 +1,8 @@
 from decimal import Decimal
+from datetime import datetime
+from datetime import UTC
 from uuid import UUID
+from uuid_extensions import uuid7
 
 from solders.pubkey import Pubkey  # type: ignore # pylint: disable=import-error
 from solana.constants import LAMPORTS_PER_SOL
@@ -68,10 +71,12 @@ async def execute(
 
         # Create and save the request with the transaction signature
         request = FaucetRequest(
+            request_id=uuid7(),
             user_profile_id=user_profile_id,
             chain=FAUCET_CHAIN,
             address=address,
             transaction_signature=str(tx_result.value),
+            created_at=datetime.now(UTC),
         )
 
         # Save the successful request to the database

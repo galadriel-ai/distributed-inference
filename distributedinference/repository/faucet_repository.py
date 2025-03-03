@@ -122,15 +122,10 @@ class FaucetRepository:
     @async_timer("faucet_repository.add_request", logger=logger)
     async def add_request(self, request: FaucetRequest) -> UUID:
         """Add a new faucet request to the database."""
-        # Convert Signature object to string if necessary
-        transaction_signature = request.transaction_signature
-        if transaction_signature is not None and not isinstance(
-            transaction_signature, str
-        ):
-            transaction_signature = str(transaction_signature)
+        transaction_signature = str(request.transaction_signature)
 
         data = {
-            "id": request.id,
+            "id": request.request_id,
             "user_profile_id": request.user_profile_id,
             "chain": request.chain,
             "address": request.address,

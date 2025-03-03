@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -15,11 +16,11 @@ class SolanaFaucetResponseModel(BaseModel):
     success: bool = Field(
         description="Whether the faucet request was successful",
     )
-    transaction_signature: str | None = Field(
+    transaction_signature: Optional[str] = Field(
         default=None,
         description="Signature of the Solana transaction",
     )
-    message: str | None = Field(
+    message: Optional[str] = Field(
         default=None,
         description="Additional information about the request",
     )
