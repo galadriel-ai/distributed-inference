@@ -215,3 +215,7 @@ TEE_HOST_BASE_URL = os.getenv("TEE_HOST_BASE_URL", None)
 AGENTS_MEMORY_STORAGE_BUCKET = os.getenv(
     "AGENTS_MEMORY_STORAGE_BUCKET", "agents-memory-storage"
 )
+
+# Solana Faucet settings
+SOLANA_FAUCET_AMOUNT = os.getenv("SOLANA_FAUCET_AMOUNT", "0.0001")
+SOLANA_FAUCET_RATE_LIMIT_HOURS = int(os.getenv("SOLANA_FAUCET_RATE_LIMIT_HOURS", "24"))

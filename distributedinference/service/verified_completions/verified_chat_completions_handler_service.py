@@ -13,7 +13,6 @@ from distributedinference.analytics.analytics import Analytics
 from distributedinference.analytics.analytics import AnalyticsEvent
 from distributedinference.analytics.analytics import EventName
 from distributedinference.domain.rate_limit import rate_limit_use_case
-from distributedinference.domain.rate_limit.entities import UserRateLimitResponse
 from distributedinference.domain.user.entities import User
 from distributedinference.repository.blockchain_proof_repository import (
     AttestationProof,
@@ -27,7 +26,6 @@ from distributedinference.repository.tokens_queue_repository import (
 )
 from distributedinference.repository.tokens_repository import TokensRepository
 from distributedinference.repository.tokens_repository import UsageTokens
-from distributedinference.repository.utils import utcnow
 from distributedinference.repository.verified_completions_repository import (
     VerifiedCompletionsRepository,
 )

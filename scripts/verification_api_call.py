@@ -63,7 +63,7 @@ def _verify_signature(public_key: str, signature: str, hash_value: str) -> bool:
         public_key = Ed25519PublicKey.from_public_bytes(public_key_bytes)
         public_key.verify(signature_bytes, hash_value_bytes)
         return True
-    except (InvalidSignature, ValueError) as e:
+    except (InvalidSignature, ValueError):
         return False
 
 

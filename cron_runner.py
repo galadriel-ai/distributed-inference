@@ -44,7 +44,7 @@ async def _cron_runner(
             await job_callback(*args)
             logger.debug(f"Finished {job_name} job, restarting in {timeout} seconds")
             await asyncio.sleep(timeout)
-        except Exception as e:
+        except Exception:
             logger.error(f"{job_name} job failed, restarting", exc_info=True)
             await asyncio.sleep(timeout)
 

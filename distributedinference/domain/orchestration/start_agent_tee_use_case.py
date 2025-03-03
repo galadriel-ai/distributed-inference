@@ -1,6 +1,5 @@
 from distributedinference import api_logger
 from distributedinference.domain.agent.entities import Agent
-from distributedinference.domain.orchestration.entities import TEE
 from distributedinference.domain.orchestration import get_tee_instance_status_use_case
 from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.repository.tee_orchestration_repository import (

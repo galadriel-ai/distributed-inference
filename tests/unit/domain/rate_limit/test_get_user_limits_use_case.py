@@ -6,7 +6,6 @@ import pytest
 
 import settings
 from distributedinference.domain.rate_limit import get_user_limits_use_case as use_case
-from distributedinference.domain.rate_limit.entities import RateLimitResult
 from distributedinference.domain.rate_limit.entities import UsageLimits
 from distributedinference.domain.rate_limit.entities import UsageTier
 from distributedinference.domain.rate_limit.entities import UserUsage
