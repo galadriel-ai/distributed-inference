@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 import pytest
 
 from distributedinference.domain.faucet.entities import FaucetResponse, FaucetRequest
-from distributedinference.domain.user.entities import User
 from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
 )
@@ -17,16 +16,6 @@ from distributedinference.service.faucet.entities import (
     SolanaFaucetRequestModel,
     SolanaFaucetResponseModel,
 )
-
-
-@pytest.fixture
-def user():
-    return User(
-        uid=UUID("066e9449-c696-7462-8000-3196255ced8d"),
-        name="Test User",
-        usage_tier_id=UUID("06706644-2409-7efd-8000-3371c5d632d3"),
-        email="test@example.com",
-    )
 
 
 @pytest.fixture
@@ -61,7 +50,6 @@ def mock_use_case_response():
 @patch("distributedinference.domain.faucet.solana_faucet_use_case.execute")
 async def test_execute_success(
     mock_execute,
-    user,
     request_model,
     mock_repository,
     mock_blockchain_repository,
@@ -72,7 +60,7 @@ async def test_execute_success(
 
     # Execute
     result = await solana_faucet_service.execute(
-        request_model, user, mock_repository, mock_blockchain_repository
+        request_model, mock_repository, mock_blockchain_repository
     )
 
     # Assert
@@ -80,7 +68,6 @@ async def test_execute_success(
 
     # Verify use case was called with correct parameters
     mock_execute.assert_called_once_with(
-        user.uid,
         request_model.address,
         mock_repository,
         mock_blockchain_repository,
@@ -90,7 +77,6 @@ async def test_execute_success(
 @patch("distributedinference.domain.faucet.solana_faucet_use_case.execute")
 async def test_execute_error_propagation(
     mock_execute,
-    user,
     request_model,
     mock_repository,
     mock_blockchain_repository,
@@ -102,7 +88,7 @@ async def test_execute_error_propagation(
     # Execute and assert exception is propagated
     with pytest.raises(ValueError) as exc_info:
         await solana_faucet_service.execute(
-            request_model, user, mock_repository, mock_blockchain_repository
+            request_model, mock_repository, mock_blockchain_repository
         )
 
     assert exc_info.value is test_error

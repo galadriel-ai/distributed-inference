@@ -8,7 +8,6 @@ from distributedinference.repository.blockchain_proof_repository import (
 from distributedinference.repository.faucet_repository import (
     FaucetRepository,
 )
-from distributedinference.service.auth import authentication
 from distributedinference.service.faucet import solana_faucet_service
 from distributedinference.service.faucet.entities import (
     SolanaFaucetRequestModel,

@@ -23,11 +23,6 @@ from distributedinference.service import error_responses
 
 
 @pytest.fixture
-def user_id():
-    return UUID("066e9449-c696-7462-8000-3196255ced8d")
-
-
-@pytest.fixture
 def solana_address():
     return "4kbGbZtfkfkRVGunkbKX4M7dGPm9MghJZodjbnRZbmug"
 
@@ -35,7 +30,6 @@ def solana_address():
 @pytest.fixture
 def mock_repository():
     mock = AsyncMock(spec=FaucetRepository)
-    mock.get_recent_request_by_user_profile_id.return_value = None
     mock.get_recent_request_by_address.return_value = None
     return mock
 
@@ -50,11 +44,11 @@ def mock_blockchain_repository():
 
 
 async def test_execute_success(
-    user_id, solana_address, mock_repository, mock_blockchain_repository
+    solana_address, mock_repository, mock_blockchain_repository
 ):
     # Execute
     response = await solana_faucet_use_case.execute(
-        user_id, solana_address, mock_repository, mock_blockchain_repository
+        solana_address, mock_repository, mock_blockchain_repository
     )
 
     # Assert
@@ -67,9 +61,6 @@ async def test_execute_success(
     assert f"Successfully sent {settings.SOLANA_FAUCET_AMOUNT} SOL" in response.message
 
     # Verify repository calls
-    mock_repository.get_recent_request_by_user_profile_id.assert_called_once_with(
-        user_id, "solana"
-    )
     mock_repository.get_recent_request_by_address.assert_called_once_with(
         solana_address, "solana"
     )
@@ -87,7 +78,6 @@ async def test_execute_success(
     mock_repository.add_request.assert_called_once()
     request = mock_repository.add_request.call_args[0][0]
     assert isinstance(request, FaucetRequest)
-    assert request.user_profile_id == user_id
     assert request.chain == "solana"
     assert request.address == solana_address
     assert (
@@ -96,45 +86,12 @@ async def test_execute_success(
     )
 
 
-async def test_execute_user_rate_limit(
-    user_id, solana_address, mock_repository, mock_blockchain_repository
-):
-    # Setup - user has a recent request
-    mock_recent_request = FaucetRequest(
-        request_id=UUID("218506ee-af34-4320-8a09-b6432dafc187"),
-        user_profile_id=user_id,
-        chain="solana",
-        address=solana_address,
-        transaction_signature="some_signature",
-        created_at=datetime.datetime.now(),
-    )
-    mock_repository.get_recent_request_by_user_profile_id.return_value = (
-        mock_recent_request
-    )
-
-    # Execute and expect exception
-    with pytest.raises(error_responses.RateLimitError) as exc_info:
-        await solana_faucet_use_case.execute(
-            user_id, solana_address, mock_repository, mock_blockchain_repository
-        )
-
-    # Assert error message contains rate limit info
-    assert f"{settings.SOLANA_FAUCET_RATE_LIMIT_HOURS} hours" in str(exc_info.value)
-
-    # Verify only the first repository call was made
-    mock_repository.get_recent_request_by_user_profile_id.assert_called_once()
-    mock_repository.get_recent_request_by_address.assert_not_called()
-    mock_blockchain_repository.transfer.assert_not_called()
-    mock_repository.add_request.assert_not_called()
-
-
 async def test_execute_address_rate_limit(
-    user_id, solana_address, mock_repository, mock_blockchain_repository
+    solana_address, mock_repository, mock_blockchain_repository
 ):
     # Setup - address has a recent request
     mock_recent_request = FaucetRequest(
         request_id=UUID("218506ee-af34-4320-8a09-b6432dafc187"),
-        user_profile_id=UUID("166e9449-c696-7462-8000-3196255ced8d"),  # different user
         chain="solana",
         address=solana_address,
         transaction_signature="some_signature",
@@ -145,40 +102,36 @@ async def test_execute_address_rate_limit(
     # Execute and expect exception
     with pytest.raises(error_responses.RateLimitError) as exc_info:
         await solana_faucet_use_case.execute(
-            user_id, solana_address, mock_repository, mock_blockchain_repository
+            solana_address, mock_repository, mock_blockchain_repository
         )
 
     # Assert error message contains rate limit info
     assert f"{settings.SOLANA_FAUCET_RATE_LIMIT_HOURS} hours" in str(exc_info.value)
 
     # Verify repository calls
-    mock_repository.get_recent_request_by_user_profile_id.assert_called_once()
     mock_repository.get_recent_request_by_address.assert_called_once()
     mock_blockchain_repository.transfer.assert_not_called()
     mock_repository.add_request.assert_not_called()
 
 
-async def test_execute_invalid_address(
-    user_id, mock_repository, mock_blockchain_repository
-):
+async def test_execute_invalid_address(mock_repository, mock_blockchain_repository):
     # Setup - invalid address
     invalid_address = "invalid_address"
 
     # Execute and expect exception
     with pytest.raises(error_responses.ValidationTypeError) as exc_info:
         await solana_faucet_use_case.execute(
-            user_id, invalid_address, mock_repository, mock_blockchain_repository
+            invalid_address, mock_repository, mock_blockchain_repository
         )
 
     # Verify repository calls
-    mock_repository.get_recent_request_by_user_profile_id.assert_called_once()
     mock_repository.get_recent_request_by_address.assert_called_once()
     mock_blockchain_repository.transfer.assert_not_called()
     mock_repository.add_request.assert_not_called()
 
 
 async def test_execute_blockchain_error(
-    user_id, solana_address, mock_repository, mock_blockchain_repository
+    solana_address, mock_repository, mock_blockchain_repository
 ):
     # Setup - blockchain error
     mock_blockchain_repository.transfer.side_effect = Exception("Blockchain error")
@@ -186,11 +139,10 @@ async def test_execute_blockchain_error(
     # Execute and expect exception
     with pytest.raises(error_responses.InternalServerAPIError):
         await solana_faucet_use_case.execute(
-            user_id, solana_address, mock_repository, mock_blockchain_repository
+            solana_address, mock_repository, mock_blockchain_repository
         )
 
     # Verify repository calls
-    mock_repository.get_recent_request_by_user_profile_id.assert_called_once()
     mock_repository.get_recent_request_by_address.assert_called_once()
     mock_blockchain_repository.transfer.assert_called_once()
     mock_repository.add_request.assert_not_called()

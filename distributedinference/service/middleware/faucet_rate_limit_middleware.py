@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
-import time
-from typing import Dict, Optional
+from typing import Dict
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
@@ -43,17 +42,24 @@ class FaucetRateLimitMiddleware(BaseHTTPMiddleware):
     ) -> None:
         super().__init__(app)
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         # Only apply rate limiting to Solana faucet endpoint
         if request.url.path.endswith("/faucet/solana") and request.method == "POST":
             # Get the original IP address
             ip_address = util.get_state(request, RequestStateKey.IP_ADDRESS)
 
+            # If the IP address is not set, use empty string as fallback
+            ip_address_str = ip_address or ""
+
             # Check if the IP has made a request in the last X minutes
-            is_rate_limited = self._check_rate_limit(ip_address)
+            is_rate_limited = self._check_rate_limit(ip_address_str)
 
             if is_rate_limited:
-                logger.info(f"Rate limiting Solana faucet request from IP: {ip_address}")
+                logger.info(
+                    f"Rate limiting Solana faucet request from IP: {ip_address_str}"
+                )
                 raise error_responses.RateLimitError(
                     {
                         "error": f"Rate limit exceeded. You can only make one request every {RATE_LIMIT_MINUTES} minutes from the same IP address."
@@ -61,7 +67,7 @@ class FaucetRateLimitMiddleware(BaseHTTPMiddleware):
                 )
 
             # Record this request timestamp
-            self._record_request(ip_address)
+            self._record_request(ip_address_str)
 
         return await call_next(request)
 
@@ -93,7 +99,9 @@ class FaucetRateLimitMiddleware(BaseHTTPMiddleware):
 
         # Create a list of IPs to remove
         expired_ips = [
-            ip for ip, timestamp in IP_RATE_LIMIT_STORE.items() if timestamp < expired_time
+            ip
+            for ip, timestamp in IP_RATE_LIMIT_STORE.items()
+            if timestamp < expired_time
         ]
 
         # Remove expired entries

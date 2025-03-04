@@ -156,7 +156,9 @@ async def test_dispatch_after_rate_limit_expired(mock_app, mock_request):
     assert response.status_code == 200
     assert test_ip in IP_RATE_LIMIT_STORE
     # The timestamp should be updated
-    assert (datetime.now(timezone.utc) - IP_RATE_LIMIT_STORE[test_ip]).total_seconds() < 1
+    assert (
+        datetime.now(timezone.utc) - IP_RATE_LIMIT_STORE[test_ip]
+    ).total_seconds() < 1
 
 
 @pytest.mark.asyncio
