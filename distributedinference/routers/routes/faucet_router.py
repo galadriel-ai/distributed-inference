@@ -2,14 +2,12 @@ from fastapi import APIRouter, Depends
 
 from distributedinference import api_logger
 from distributedinference import dependencies
-from distributedinference.domain.user.entities import User
 from distributedinference.repository.blockchain_proof_repository import (
     BlockchainProofRepository,
 )
 from distributedinference.repository.faucet_repository import (
     FaucetRepository,
 )
-from distributedinference.service.auth import authentication
 from distributedinference.service.faucet import solana_faucet_service
 from distributedinference.service.faucet.entities import (
     SolanaFaucetRequestModel,
@@ -33,7 +31,6 @@ logger = api_logger.get()
 )
 async def solana_faucet(
     request: SolanaFaucetRequestModel,
-    user: User = Depends(authentication.validate_api_key_header),
     faucet_repository: FaucetRepository = Depends(dependencies.get_faucet_repository),
     blockchain_repository: BlockchainProofRepository = Depends(
         dependencies.get_blockchain_proof_repository
@@ -41,11 +38,10 @@ async def solana_faucet(
 ) -> SolanaFaucetResponseModel:
     """Send 0.0001 SOL to the provided Solana address from the Galadriel faucet.
 
-    Rate limited to once per day per API key and per Solana address.
+    Rate limited per Solana address.
     """
     response = await solana_faucet_service.execute(
         request,
-        user,
         faucet_repository,
         blockchain_repository,
     )
