@@ -29,26 +29,13 @@ logger = api_logger.get()
 
 
 async def execute(
-    user_profile_id: UUID,
     address: str,
     repository: FaucetRepository,
     blockchain_repository: BlockchainProofRepository,
 ) -> FaucetResponse:
     """Process a Solana faucet request."""
 
-    # Check if the user has made any request in the last X hours based on settings
-    recent_user_request = await repository.get_recent_request_by_user_profile_id(
-        user_profile_id,
-        FAUCET_CHAIN,
-    )
-    if recent_user_request:
-        raise error_responses.RateLimitError(
-            {
-                "error": f"Rate limit exceeded. You can only make one request every {settings.SOLANA_FAUCET_RATE_LIMIT_HOURS} hours."
-            }
-        )
-
-    # Check if the address has received any airdrop in the last X hours based on settings
+    # Check if the address has received any airdrop recently
     recent_address_request = await repository.get_recent_request_by_address(
         address, FAUCET_CHAIN
     )
@@ -72,7 +59,6 @@ async def execute(
         # Create and save the request with the transaction signature
         request = FaucetRequest(
             request_id=uuid7(),
-            user_profile_id=user_profile_id,
             chain=FAUCET_CHAIN,
             address=address,
             transaction_signature=str(tx_result.value),

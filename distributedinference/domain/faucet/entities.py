@@ -11,7 +11,6 @@ class FaucetRequest:
     """Entity representing a faucet request."""
 
     request_id: UUID
-    user_profile_id: UUID
     chain: str
     address: str
     transaction_signature: str

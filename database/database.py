@@ -433,9 +433,6 @@ class FaucetRequest(Base):
     __tablename__ = "faucet_request"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
-    user_profile_id = Column(
-        UUID(as_uuid=True), ForeignKey(UserProfile.id), nullable=False
-    )
     chain = Column(String(), nullable=False)
     address = Column(String(), nullable=False)
     transaction_signature = Column(String(), nullable=True)
@@ -444,10 +441,7 @@ class FaucetRequest(Base):
     )
 
     # Index for querying recent requests by user and address
-    __table_args__ = (
-        Index("idx_faucet_user_time", "user_profile_id", "created_at"),
-        Index("idx_faucet_address_time", "address", "created_at"),
-    )
+    __table_args__ = (Index("idx_faucet_address_time", "address", "created_at"),)
 
 
 def get_connection() -> Session:
