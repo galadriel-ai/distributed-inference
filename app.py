@@ -30,6 +30,9 @@ from distributedinference.service.middleware.main_middleware import MainMiddlewa
 from distributedinference.service.middleware.request_enrichment_middleware import (
     RequestEnrichmentMiddleware,
 )
+from distributedinference.service.middleware.faucet_rate_limit_middleware import (
+    FaucetRateLimitMiddleware,
+)
 from distributedinference.service.node.protocol import protocol_handler
 
 logger = api_logger.get()
@@ -161,6 +164,7 @@ app.add_middleware(
 app.add_middleware(MainMiddleware)
 app.add_middleware(ClientVersionValidationMiddleware)
 app.add_middleware(IpWhitelistMiddleware)
+app.add_middleware(FaucetRateLimitMiddleware)
 app.add_middleware(RequestEnrichmentMiddleware)
 
 # exception handlers run AFTER the middlewares!
