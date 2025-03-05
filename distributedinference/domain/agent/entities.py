@@ -93,6 +93,11 @@ class DeployedAgent:
 
 
 @dataclass
+class DeployedAgentDetails(DeployedAgent):
+    is_deleted: bool
+
+
+@dataclass
 class AgentExplorerOutput:
     agent_count: int
     node_count: int
