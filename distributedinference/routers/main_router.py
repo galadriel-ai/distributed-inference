@@ -3,6 +3,7 @@ from typing import List
 from fastapi import APIRouter
 
 from distributedinference import api_logger
+from distributedinference.routers.routes import agents_dashboard_router
 from distributedinference.routers.routes import agents_router
 from distributedinference.routers.routes import chat_router
 from distributedinference.routers.routes import images_router
@@ -25,6 +26,7 @@ logger = api_logger.get()
 routers_to_include: List[APIRouter] = [
     # This is the order they show up in openapi.json
     agents_router.router,
+    agents_dashboard_router.router,
     chat_router.router,
     images_router.router,
     embedding_router.router,
