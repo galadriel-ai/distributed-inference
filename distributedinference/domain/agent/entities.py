@@ -82,3 +82,20 @@ class AgentLogOutput(AgentLog):
 class GetAgentLogsOutput:
     logs: List[AgentLogOutput]
     cursor: Optional[UUID]
+
+
+@dataclass
+class DeployedAgent:
+    id: UUID
+    name: str
+    docker_image: str
+    created_at: datetime
+
+
+@dataclass
+class AgentExplorerOutput:
+    agent_count: int
+    node_count: int
+    uptime_24h: int
+
+    latest_agents: List[DeployedAgent]

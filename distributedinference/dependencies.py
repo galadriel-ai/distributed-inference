@@ -1,4 +1,7 @@
 import settings
+from distributedinference.repository.agent_explorer_repository import (
+    AgentExplorerRepository,
+)
 from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.blockchain_proof_repository import (
@@ -75,6 +78,7 @@ _aws_storage_repository: AWSStorageRepository
 
 _verified_completions_repository: VerifiedCompletionsRepository
 _agent_repository: AgentRepository
+_agent_explorer_repository: AgentExplorerRepository
 _agent_logs_repository: AgentLogsRepository
 _faucet_repository: FaucetRepository
 
@@ -104,6 +108,7 @@ def init_globals():
     global _aws_storage_repository
     global _verified_completions_repository
     global _agent_repository
+    global _agent_explorer_repository
     global _agent_logs_repository
     global _faucet_repository
 
@@ -143,6 +148,7 @@ def init_globals():
     _agent_repository = AgentRepository(
         get_session_provider(), get_session_provider_read()
     )
+    _agent_explorer_repository = AgentExplorerRepository(get_session_provider_read())
     _agent_logs_repository = AgentLogsRepository(
         get_session_provider(), get_session_provider_read()
     )
@@ -282,6 +288,10 @@ def get_verified_completions_repository() -> VerifiedCompletionsRepository:
 
 def get_agent_repository() -> AgentRepository:
     return _agent_repository
+
+
+def get_agent_explorer_repository() -> AgentExplorerRepository:
+    return _agent_explorer_repository
 
 
 def get_agent_logs_repository() -> AgentLogsRepository:
