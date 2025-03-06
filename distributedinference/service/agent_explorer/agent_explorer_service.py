@@ -6,7 +6,7 @@ from distributedinference.repository.agent_explorer_repository import (
     AgentExplorerRepository,
 )
 from distributedinference.service.agent_explorer.entities import AgentExplorerResponse
-from distributedinference.service.agent_explorer.entities import DeployedAgentInstance
+from distributedinference.service.agent_explorer.entities import DeployedAgentModel
 
 
 async def execute(
@@ -17,16 +17,16 @@ async def execute(
         agent_count=response.agent_count,
         node_count=response.node_count,
         uptime_24h=response.uptime_24h,
-        latest_instances=_map_latest_instances(response.latest_agents),
+        latest_agents=_map_latest_agents(response.latest_agents),
     )
 
 
-def _map_latest_instances(
+def _map_latest_agents(
     latest_agents: List[DeployedAgent],
-) -> List[DeployedAgentInstance]:
+) -> List[DeployedAgentModel]:
     return [
-        DeployedAgentInstance(
-            instance_id=i.id,
+        DeployedAgentModel(
+            agent_id=i.id,
             name=i.name,
             docker_image=i.docker_image,
             created_at=int(i.created_at.timestamp()),

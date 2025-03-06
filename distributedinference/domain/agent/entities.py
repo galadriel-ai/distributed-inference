@@ -93,8 +93,16 @@ class DeployedAgent:
 
 
 @dataclass
-class DeployedAgentDetails(DeployedAgent):
+class ExplorerAgentInstance:
+    id: UUID
+    enclave_cid: str
     is_deleted: bool
+    created_at: datetime
+
+
+@dataclass
+class DeployedAgentDetails(DeployedAgent):
+    agent_instances: List[ExplorerAgentInstance]
 
 
 @dataclass
