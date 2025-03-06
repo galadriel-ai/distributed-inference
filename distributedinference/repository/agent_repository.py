@@ -228,7 +228,7 @@ class AgentRepository:
     async def get_agent(
         self, agent_id: UUID, is_deleted: Optional[bool] = False
     ) -> Optional[Agent]:
-        data = {"id": agent_id, "is_deleted": is_deleted}
+        data = {"agent_id": agent_id, "is_deleted": is_deleted}
         async with self._session_provider_read.get() as session:
             result = await session.execute(sqlalchemy.text(SQL_GET_AGENT_BY_ID), data)
             row = result.first()

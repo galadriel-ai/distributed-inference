@@ -25,6 +25,7 @@ async def execute(
     agent_instance_id = uuid7()
 
     instance_env_vars: Dict[str, Any] = {}
+    instance_env_vars["AGENT_ID"] = str(agent.id)
     instance_env_vars["AGENT_INSTANCE_ID"] = str(agent_instance_id)
 
     # Create user and bucket access for the agent

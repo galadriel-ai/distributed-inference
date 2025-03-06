@@ -93,6 +93,7 @@ class Log(BaseModel):
 
 
 class AddLogsRequest(BaseModel):
+    agent_instance_id: UUID = Field(description="Agent instance ID")
     logs: List[Log] = Field(
         description="Agent logs",
         max_length=20,

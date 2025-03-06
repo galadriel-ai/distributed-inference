@@ -16,11 +16,13 @@ from distributedinference.service.agent.entities import SUPPORTED_LOG_LEVELS
 from distributedinference.service.agent.logs import add_agent_logs_service as service
 
 AGENT_ID = UUID("067865aa-8f86-7cb9-8000-f86624c51873")
+AGENT_INSTANCE_ID = UUID("067865aa-8f86-7cb9-8000-f86624c51874")
 
 
 def _get_request_input() -> AddLogsRequest:
     return AddLogsRequest(
-        logs=[Log(text="text", level=SUPPORTED_LOG_LEVELS[0], timestamp=1)]
+        agent_instance_id=AGENT_INSTANCE_ID,
+        logs=[Log(text="text", level=SUPPORTED_LOG_LEVELS[0], timestamp=1)],
     )
 
 
@@ -61,6 +63,7 @@ async def test_success():
     service.add_agent_logs_use_case.execute.assert_called_once_with(
         AgentLogInput(
             agent_id=AGENT_ID,
+            agent_instance_id=AGENT_INSTANCE_ID,
             logs=[
                 AgentLog(
                     text="text",
