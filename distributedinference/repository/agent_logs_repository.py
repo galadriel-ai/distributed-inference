@@ -15,6 +15,7 @@ SQL_ADD = """
 INSERT INTO agent_logs (
     id,
     agent_id,
+    agent_instance_id,
     text,
     level,
     log_created_at,
@@ -74,6 +75,7 @@ class AgentLogsRepository:
             {
                 "id": uuid7(),
                 "agent_id": agent_logs.agent_id,
+                "agent_instance_id": agent_logs.agent_instance_id,
                 "text": log.text,
                 "level": log.level,
                 "log_created_at": utils.utc_from_timestamp(log.timestamp),

@@ -62,6 +62,7 @@ class AgentLog:
 @dataclass
 class AgentLogInput:
     agent_id: UUID
+    agent_instance_id: UUID
     logs: List[AgentLog]
 
 

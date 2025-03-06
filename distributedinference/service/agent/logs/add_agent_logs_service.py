@@ -41,6 +41,7 @@ async def execute(
 def _format_input(agent_id: UUID, request: AddLogsRequest) -> AgentLogInput:
     return AgentLogInput(
         agent_id=agent_id,
+        agent_instance_id=request.agent_instance_id,
         logs=[
             AgentLog(
                 text=log.text,

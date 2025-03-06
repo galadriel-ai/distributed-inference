@@ -418,6 +418,9 @@ class AgentLogs(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     agent_id = Column(UUID(as_uuid=True), ForeignKey(Agent.id), nullable=False)
+    agent_instance_id = Column(
+        UUID(as_uuid=True), ForeignKey(AgentInstance.id), nullable=False
+    )
 
     text = Column(String(), nullable=False)
     level = Column(String(), nullable=False)
