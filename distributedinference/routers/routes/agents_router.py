@@ -213,7 +213,6 @@ async def get_logs(
         "info", description='Log level, "thought" returns only "though" level logs'
     ),
     cursor: Optional[UUID] = Query(None, description="The cursor for pagination."),
-    user: User = Depends(authentication.validate_api_key_header),
     agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
     logs_repository: AgentLogsRepository = Depends(
         dependencies.get_agent_logs_repository
@@ -227,7 +226,6 @@ async def get_logs(
     )
     return await get_agent_logs_service.execute(
         request,
-        user,
         agent_repository,
         logs_repository,
     )

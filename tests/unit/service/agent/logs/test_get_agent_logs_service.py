@@ -8,7 +8,6 @@ from distributedinference.domain.agent.entities import Agent
 from distributedinference.domain.agent.entities import AgentLogOutput
 from distributedinference.domain.agent.entities import GetAgentLogsInput
 from distributedinference.domain.agent.entities import GetAgentLogsOutput
-from distributedinference.domain.user.entities import User
 from distributedinference.service import error_responses
 from distributedinference.service.agent.entities import GetLogsRequest
 from distributedinference.service.agent.entities import GetLogsResponse
@@ -24,15 +23,6 @@ AGENT_ID = UUID("067865bc-dcdd-75f5-8000-570a418402c1")
 def _get_request_input() -> GetLogsRequest:
     return GetLogsRequest(
         agent_id=AGENT_ID, limit=2, cursor=None, level=SUPPORTED_LOG_LEVELS[0]
-    )
-
-
-def _get_user() -> User:
-    return User(
-        uid=USER_ID,
-        name="name",
-        email="email",
-        usage_tier_id=USER_ID,
     )
 
 
@@ -68,7 +58,6 @@ async def test_success():
     repo = AsyncMock()
     result = await service.execute(
         _get_request_input(),
-        _get_user(),
         agent_repo,
         repo,
     )
@@ -93,26 +82,6 @@ async def test_agent_not_found():
     with pytest.raises(error_responses.NotFoundAPIError) as e:
         await service.execute(
             _get_request_input(),
-            _get_user(),
-            agent_repo,
-            repo,
-        )
-        assert e is not None
-    service.get_agent_logs_use_case.execute.assert_not_called()
-
-
-async def test_invalid_agent_found():
-    service.get_agent_logs_use_case = AsyncMock()
-
-    agent_repo = AsyncMock()
-    agent_repo.get_agent.return_value = _get_agent(
-        UUID("067865d9-fe59-7fa1-8000-34ce0a855be6")
-    )
-    repo = AsyncMock()
-    with pytest.raises(error_responses.NotFoundAPIError) as e:
-        await service.execute(
-            _get_request_input(),
-            _get_user(),
             agent_repo,
             repo,
         )
@@ -142,7 +111,6 @@ async def test_uses_correct_levels():
 
     await service.execute(
         request_input,
-        _get_user(),
         agent_repo,
         repo,
     )
@@ -179,7 +147,6 @@ async def test_queries_thoughts_only():
 
     await service.execute(
         request_input,
-        _get_user(),
         agent_repo,
         repo,
     )

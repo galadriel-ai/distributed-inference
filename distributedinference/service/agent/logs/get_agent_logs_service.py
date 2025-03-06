@@ -3,7 +3,6 @@ from typing import Optional
 
 from distributedinference.domain.agent.entities import GetAgentLogsInput
 from distributedinference.domain.agent.logs import get_agent_logs_use_case
-from distributedinference.domain.user.entities import User
 from distributedinference.repository.agent_logs_repository import AgentLogsRepository
 from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.service import error_responses
@@ -19,12 +18,11 @@ DEFAULT_LIMIT = 50
 
 async def execute(
     request: GetLogsRequest,
-    user: User,
     agent_repository: AgentRepository,
     repository: AgentLogsRepository,
 ) -> GetLogsResponse:
     agent = await agent_repository.get_agent(request.agent_id, is_deleted=None)
-    if not agent or agent.user_profile_id != user.uid:
+    if not agent:
         raise error_responses.NotFoundAPIError("Agent with given agent_id not found")
 
     response = await get_agent_logs_use_case.execute(
