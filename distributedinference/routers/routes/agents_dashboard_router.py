@@ -41,7 +41,7 @@ async def agents(
 
 
 @router.get(
-    "/{agent_instance_id}",
+    "/{agent_id}",
     summary="Returns Agent TEE instance details.",
     description="Returns deployed agent info.",
     response_description="",
@@ -49,9 +49,9 @@ async def agents(
     include_in_schema=not settings.is_production(),
 )
 async def agent_details(
-    agent_instance_id: Annotated[UUID, Path(..., description="Agent ID")],
+    agent_id: Annotated[UUID, Path(..., description="Agent ID")],
     agent_repository: AgentExplorerRepository = Depends(
         dependencies.get_agent_explorer_repository
     ),
 ):
-    return await agent_details_service.execute(agent_instance_id, agent_repository)
+    return await agent_details_service.execute(agent_id, agent_repository)

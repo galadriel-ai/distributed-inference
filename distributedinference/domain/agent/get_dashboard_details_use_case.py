@@ -8,10 +8,17 @@ from distributedinference.service import error_responses
 
 
 async def execute(
-    agent_instance_id: UUID,
+    agent_id: UUID,
     agent_repository: AgentExplorerRepository,
 ) -> DeployedAgentDetails:
-    agent = await agent_repository.get_agent_instance(agent_instance_id)
+    agent = await agent_repository.get_agent(agent_id)
     if not agent:
         raise error_responses.NotFoundAPIError()
-    return agent
+    agent_instances = await agent_repository.get_agent_instances(agent_id)
+    return DeployedAgentDetails(
+        id=agent.id,
+        name=agent.name,
+        docker_image=agent.docker_image,
+        created_at=agent.created_at,
+        agent_instances=agent_instances,
+    )
