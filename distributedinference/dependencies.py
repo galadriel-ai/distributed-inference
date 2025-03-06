@@ -195,7 +195,7 @@ def init_globals():
         )
     _google_cloud_storage_client = GoogleCloudStorage()
     _tee_orchestration_repository = TeeOrchestrationRepository(
-        settings.TEE_HOST_BASE_URL
+        settings.TEE_HOST_BASE_URLS
     )
     _aws_storage_repository = AWSStorageRepository(
         settings.AGENTS_MEMORY_STORAGE_BUCKET

@@ -386,6 +386,7 @@ class AgentInstance(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     agent_id = Column(UUID(as_uuid=True), ForeignKey(Agent.id), nullable=False)
+    tee_host_base_url = Column(String(), nullable=False)
     enclave_cid = Column(String(), nullable=True)
     is_deleted = Column(Boolean, nullable=False)
     instance_env_vars = Column(JSON, nullable=True)

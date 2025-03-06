@@ -57,9 +57,7 @@ async def execute(
     agent_instance_id = str(agent_instance.id)
 
     # Construct the target URL for chat completions
-    target_url = (
-        f"{settings.TEE_HOST_BASE_URL}tee/enclave/{agent_instance_id}/chat/completions"
-    )
+    target_url = f"{agent_instance.tee_host_base_url}tee/enclave/{agent_instance_id}/chat/completions"
 
     # Get query parameters
     params = dict(request.query_params)

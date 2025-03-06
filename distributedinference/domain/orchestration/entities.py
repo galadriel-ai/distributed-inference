@@ -11,4 +11,5 @@ class TEEStatus(str, Enum):
 class TEE:
     name: str
     cid: str
+    host_base_url: str
     status: TEEStatus

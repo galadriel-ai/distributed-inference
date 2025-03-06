@@ -122,6 +122,7 @@ SQL_INSERT_AGENT_INSTANCE = """
 INSERT INTO agent_instance (
     id,
     agent_id,
+    tee_host_base_url,
     enclave_cid,
     instance_env_vars,
     is_deleted,
@@ -130,6 +131,7 @@ INSERT INTO agent_instance (
 ) VALUES (
     :id,
     :agent_id,
+    :tee_host_base_url,
     :enclave_cid,
     :instance_env_vars,
     FALSE,
@@ -142,6 +144,7 @@ SQL_GET_AGENT_INSTANCES = """
 SELECT
     id,
     agent_id,
+    tee_host_base_url,
     enclave_cid,
     instance_env_vars,
     is_deleted,
@@ -154,6 +157,7 @@ SQL_GET_AGENT_INSTANCE_BY_AGENT_ID = """
 SELECT
     id,
     agent_id,
+    tee_host_base_url,
     enclave_cid,
     instance_env_vars,
     is_deleted,
@@ -314,6 +318,7 @@ class AgentRepository:
     async def insert_agent_instance(
         self,
         agent_id: UUID,
+        tee_host_base_url: str,
         agent_instance_id: UUID,
         enclave_cid: str,
         instance_env_vars: Dict[str, Any],
@@ -321,6 +326,7 @@ class AgentRepository:
         data = {
             "id": agent_instance_id,
             "agent_id": agent_id,
+            "tee_host_base_url": tee_host_base_url,
             "enclave_cid": enclave_cid,
             "instance_env_vars": json.dumps(instance_env_vars),
             "created_at": utcnow(),
@@ -340,6 +346,7 @@ class AgentRepository:
                     AgentInstance(
                         id=row.id,
                         agent_id=row.id,
+                        tee_host_base_url=row.tee_host_base_url,
                         enclave_cid=row.enclave_cid,
                         instance_env_vars=row.instance_env_vars,
                         created_at=row.created_at,
@@ -359,6 +366,7 @@ class AgentRepository:
                 return AgentInstance(
                     id=row.id,
                     agent_id=row.id,
+                    tee_host_base_url=row.tee_host_base_url,
                     enclave_cid=row.enclave_cid,
                     instance_env_vars=row.instance_env_vars,
                     created_at=row.created_at,

@@ -4,6 +4,7 @@ from distributedinference.repository.tee_orchestration_repository import (
     TeeOrchestrationRepository,
 )
 from distributedinference.repository.aws_storage_repository import AWSStorageRepository
+from distributedinference.domain.orchestration import utils
 
 
 async def execute(
@@ -33,7 +34,8 @@ async def execute(
     agent_instance = await agent_repository.get_agent_instance(agent.id)
     if not agent_instance:
         raise ValueError(f"Agent with id {agent.id} doesn't have a TEE instance")
-    await repository.delete_tee(str(agent_instance.id))
+    tee = utils.agent_instance_to_tee(agent_instance)
+    await repository.delete_tee(tee)
     if delete_agent_instance:
         await aws_storage_repository.cleanup_user_and_bucket_access(
             str(agent_instance.id)

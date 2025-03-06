@@ -1,3 +1,5 @@
+from typing import Optional
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
@@ -22,16 +24,18 @@ class IpWhitelistMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         if request.url.path.startswith("/v1/agents/logs/") and request.method == "POST":
             ip_address = util.get_state(request, RequestStateKey.IP_ADDRESS)
-            if ip_address != _get_tee_host_ip():
+            if not _is_tee_host_ip(ip_address):
                 raise error_responses.InvalidCredentialsAPIError()
         return await call_next(request)
 
 
-def _get_tee_host_ip() -> str:
-    base_url = settings.TEE_HOST_BASE_URL
-    # For non-prod env this should return "", and ip_address should also be ""
-    if not base_url:
-        return ""
-    base_url = base_url.replace("http://", "")
-    base_url = base_url.replace("https://", "")
-    return base_url.split(":")[0]
+def _is_tee_host_ip(ip_address: Optional[str]) -> bool:
+    if not ip_address:
+        return False
+    for base_url in settings.TEE_HOST_BASE_URLS:
+        base_url = base_url.replace("http://", "")
+        base_url = base_url.replace("https://", "")
+        ip = base_url.split(":")[0]
+        if ip == ip_address:
+            return True
+    return False
