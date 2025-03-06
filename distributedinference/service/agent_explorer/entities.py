@@ -21,3 +21,14 @@ class AgentExplorerResponse(ApiResponse):
     latest_instances: List[DeployedAgentInstance] = Field(
         description="Latest deployed agent instances"
     )
+
+
+class AgentDetailsResponse(ApiResponse):
+    instance_id: UUID = Field(description="Agent instance ID")
+    name: str = Field(description="Agent instance name")
+    docker_image: str = Field(description="Docker image name")
+    is_deleted: bool = Field(
+        description="Shows if the instance was deleted - "
+        "if true agent is not deployed"
+    )
+    created_at: int = Field(description="UNIX timestamp of the agent instance creation")
