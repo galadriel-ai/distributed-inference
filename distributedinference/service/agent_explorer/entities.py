@@ -1,4 +1,5 @@
 from typing import List
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -21,6 +22,19 @@ class AgentExplorerResponse(ApiResponse):
     latest_agents: List[DeployedAgentModel] = Field(
         description="Latest deployed agent instances"
     )
+
+
+class AgentSearchResponse(ApiResponse):
+    agents: List[DeployedAgentModel] = Field(
+        description="Latest deployed agent instances"
+    )
+
+
+class AllAgentsResponse(ApiResponse):
+    agents: List[DeployedAgentModel] = Field(
+        description="Latest deployed agent instances"
+    )
+    cursor: Optional[str] = Field(description="Optional cursor for pagination")
 
 
 class AgentInstanceModel(BaseModel):

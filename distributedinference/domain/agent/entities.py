@@ -95,6 +95,12 @@ class DeployedAgent:
 
 
 @dataclass
+class AllAgentsOutput:
+    agents: List[DeployedAgent]
+    cursor: Optional[UUID]
+
+
+@dataclass
 class ExplorerAgentInstance:
     id: UUID
     enclave_cid: str
