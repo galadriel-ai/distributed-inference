@@ -209,7 +209,8 @@ TEE_MONITORING_TIMEOUT_BETWEEN_RUNS_SECONDS = int(
 
 
 # TEE orchestration settings
-TEE_HOST_BASE_URL = os.getenv("TEE_HOST_BASE_URL", None)
+_tee_host_urls = os.getenv("TEE_HOST_BASE_URLS", "")
+TEE_HOST_BASE_URLS = _tee_host_urls.split(",") if _tee_host_urls else []
 
 # Agents storage settings
 AGENTS_MEMORY_STORAGE_BUCKET = os.getenv(

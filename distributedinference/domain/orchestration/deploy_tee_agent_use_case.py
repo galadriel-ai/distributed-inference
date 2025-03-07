@@ -47,6 +47,7 @@ async def execute(
         await agent_repository.insert_agent_instance(
             agent_id=agent.id,
             agent_instance_id=agent_instance_id,
+            tee_host_base_url=tee.host_base_url,
             enclave_cid=tee.cid,
             instance_env_vars=instance_env_vars,
         )

@@ -9,16 +9,18 @@ from distributedinference import api_logger
 from distributedinference.utils.timer import async_timer
 from distributedinference.domain.orchestration.entities import TEE
 from distributedinference.domain.orchestration.entities import TEEStatus
+from distributedinference.domain.orchestration.exceptions import NoCapacityError
 
 logger = api_logger.get()
 
+MAXIMUM_TEE_COUNT_PER_HOST = 4
 TIMEOUT = 240
 
 
 class TeeOrchestrationRepository:
 
-    def __init__(self, tee_host_url: str):
-        self.base_url = tee_host_url
+    def __init__(self, tee_host_urls: str):
+        self.base_urls = tee_host_urls
 
     # pylint: disable=W0613
     @async_timer("tee_repository.create_tee", logger=logger)
@@ -30,46 +32,72 @@ class TeeOrchestrationRepository:
             "docker_hub_image": docker_hub_image,
             "env_vars": env_vars,
         }
-        response = await self._post("tee/deploy", data)
+        host_base_url = await self._get_host_with_free_capacity()
+        if not host_base_url:
+            raise NoCapacityError("No capacity to deploy TEE")
+        response = await self._post(host_base_url, "tee/deploy", data)
         enclave_cid = response["result"]["EnclaveCID"]
-        return TEE(name=tee_name, cid=enclave_cid, status=TEEStatus.RUNNING)
+        return TEE(
+            name=tee_name,
+            cid=enclave_cid,
+            host_base_url=host_base_url,
+            status=TEEStatus.RUNNING,
+        )
 
     @async_timer("tee_repository.get_all_tees", logger=logger)
     async def get_all_tees(
         self,
     ) -> List[TEE]:
         tees = []
-        response = await self._get("tee/enclaves")
+        for base_url in self.base_urls:
+            tees.extend(await self._get_host_tees(base_url))
+        return tees
+
+    @async_timer("tee_repository._get_host_tees", logger=logger)
+    async def _get_host_tees(self, host_base_url: str) -> List[TEE]:
+        tees = []
+        response = await self._get(host_base_url, "tee/enclaves")
         for tee in response.get("enclaves", []):
             tees.append(
                 TEE(
                     name=tee["enclave_name"],
                     cid=tee["enclave_cid"],
+                    host_base_url=host_base_url,
                     status=TEEStatus(tee["enclave_status"]),
                 )
             )
         return tees
 
+    @async_timer("tee_repository._get_host_with_free_capacity", logger=logger)
+    async def _get_host_with_free_capacity(self) -> Optional[str]:
+        for base_url in self.base_urls:
+            response = await self._get(base_url, "tee/enclaves")
+            if len(response.get("enclaves", [])) < MAXIMUM_TEE_COUNT_PER_HOST:
+                return base_url
+        return None
+
     @async_timer("tee_repository.delete_tee", logger=logger)
-    async def delete_tee(self, tee_name: str) -> bool:
+    async def delete_tee(self, tee: TEE) -> bool:
         data = {
-            "enclave_name": tee_name,
+            "enclave_name": tee.name,
         }
-        response = await self._post("tee/terminate", data)
+        response = await self._post(tee.host_base_url, "tee/terminate", data)
         return response.get("Terminated", False)
 
-    async def _post(self, url: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _post(
+        self, base_url: str, url: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.post(self.base_url + url, json=data)
+            response = await client.post(base_url + url, json=data)
             response.raise_for_status()
             data = response.json()
         return data
 
     async def _get(
-        self, url: str, params: Optional[Dict[str, Any]] = None
+        self, base_url: str, url: str, params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.get(self.base_url + url, params=params)
+            response = await client.get(base_url + url, params=params)
             response.raise_for_status()
             data = response.json()
         return data

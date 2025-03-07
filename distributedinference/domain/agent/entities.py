@@ -23,6 +23,7 @@ class Agent:
 class AgentInstance:
     id: UUID
     agent_id: UUID
+    tee_host_base_url: str
     enclave_cid: str
     instance_env_vars: Dict[str, Any]
     created_at: datetime
