@@ -49,3 +49,7 @@ class AgentDetailsResponse(ApiResponse):
     docker_image: str = Field(description="Docker image name")
     created_at: int = Field(description="UNIX timestamp of the agent instance creation")
     agent_instances: List[AgentInstanceModel] = Field(description="Agent instances")
+
+
+class AgentAttestationResponse(ApiResponse):
+    attestation: Optional[str] = Field(description="Agent attestation")
