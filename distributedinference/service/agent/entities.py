@@ -90,7 +90,9 @@ class Log(BaseModel):
         'defaults to "info" on an invalid value'
     )
     timestamp: int = Field(description="Log creation timestamp in seconds")
-    signature: Optional[str] = Field(description="Log signature, signed by TEE")
+    signature: Optional[str] = Field(
+        description="Log signature, signed by TEE", default=None
+    )
 
 
 class AddLogsRequest(BaseModel):
