@@ -48,6 +48,7 @@ async def test_success():
                 text="text",
                 level=SUPPORTED_LOG_LEVELS[0],
                 timestamp=2,
+                signature="asd",
             )
         ],
         cursor=None,
@@ -67,6 +68,7 @@ async def test_success():
                 text="text",
                 level=SUPPORTED_LOG_LEVELS[0],
                 timestamp=2,
+                signature="asd",
             )
         ],
         cursor=None,
@@ -98,6 +100,7 @@ async def test_uses_correct_levels():
                 text="text",
                 level=SUPPORTED_LOG_LEVELS[1],
                 timestamp=2,
+                signature=None,
             )
         ],
         cursor=None,
@@ -134,6 +137,7 @@ async def test_queries_thoughts_only():
                 text="text",
                 level=SUPPORTED_LOG_LEVEL_STANDALONE,
                 timestamp=2,
+                signature="aaaa",
             )
         ],
         cursor=None,

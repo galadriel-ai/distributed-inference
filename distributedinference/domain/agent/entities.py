@@ -58,6 +58,7 @@ class AgentLog:
     text: str
     level: str
     timestamp: int
+    signature: Optional[str]
 
 
 @dataclass

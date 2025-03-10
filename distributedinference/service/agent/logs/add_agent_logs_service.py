@@ -47,6 +47,7 @@ def _format_input(agent_id: UUID, request: AddLogsRequest) -> AgentLogInput:
                 text=log.text,
                 level=_format_log_level(log.level),
                 timestamp=_format_timestamp(log.timestamp),
+                signature=log.signature,
             )
             for log in request.logs
         ],

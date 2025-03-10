@@ -22,7 +22,11 @@ AGENT_INSTANCE_ID = UUID("067865aa-8f86-7cb9-8000-f86624c51874")
 def _get_request_input() -> AddLogsRequest:
     return AddLogsRequest(
         agent_instance_id=AGENT_INSTANCE_ID,
-        logs=[Log(text="text", level=SUPPORTED_LOG_LEVELS[0], timestamp=1)],
+        logs=[
+            Log(
+                text="text", level=SUPPORTED_LOG_LEVELS[0], timestamp=1, signature="asd"
+            )
+        ],
     )
 
 
@@ -69,6 +73,7 @@ async def test_success():
                     text="text",
                     level=SUPPORTED_LOG_LEVELS[0],
                     timestamp=1,
+                    signature="asd",
                 )
             ],
         ),
