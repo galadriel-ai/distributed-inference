@@ -29,7 +29,11 @@ async def execute(
 
     # launch the agent in a TEE
     await deploy_tee_agent_use_case.execute(
-        tee_orchestration_repository, repository, aws_storage_repository, output.agent
+        user,
+        tee_orchestration_repository,
+        repository,
+        aws_storage_repository,
+        output.agent,
     )
 
     return CreateAgentResponse(agent_id=output.agent.id)

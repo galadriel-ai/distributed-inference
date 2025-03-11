@@ -4,6 +4,7 @@ from typing import Dict
 
 from distributedinference.domain.agent.entities import Agent
 from distributedinference.domain.orchestration.entities import TEE
+from distributedinference.domain.user.entities import User
 from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.repository.aws_storage_repository import AWSStorageRepository
 from distributedinference.repository.tee_orchestration_repository import (
@@ -12,6 +13,7 @@ from distributedinference.repository.tee_orchestration_repository import (
 
 
 async def execute(
+    user: User,
     repository: TeeOrchestrationRepository,
     agent_repository: AgentRepository,
     aws_storage_repository: AWSStorageRepository,
@@ -27,6 +29,8 @@ async def execute(
     instance_env_vars: Dict[str, Any] = {}
     instance_env_vars["AGENT_ID"] = str(agent.id)
     instance_env_vars["AGENT_INSTANCE_ID"] = str(agent_instance_id)
+    if user.currently_using_api_key and not env_vars.get("GALADRIEL_API_KEY"):
+        instance_env_vars["GALADRIEL_API_KEY"] = user.currently_using_api_key
 
     # Create user and bucket access for the agent
     aws_user_credentials = await aws_storage_repository.create_user_and_bucket_access(
