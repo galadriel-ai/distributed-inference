@@ -10,6 +10,8 @@ from uuid_extensions import uuid7
 
 from distributedinference.domain.agent.entities import Agent
 from distributedinference.domain.agent.entities import AgentInstance
+from distributedinference.domain.agent.entities import Attestation
+from distributedinference.domain.agent.entities import AttestationDetails
 from distributedinference.repository.connection import SessionProvider
 from distributedinference.repository.utils import utcnow
 
@@ -148,9 +150,11 @@ SELECT
     enclave_cid,
     instance_env_vars,
     is_deleted,
+    pcr0,
     created_at,
     last_updated_at
-FROM agent_instance;
+FROM agent_instance
+WHERE (is_deleted = :is_deleted OR :is_deleted IS NULL);
 """
 
 SQL_GET_AGENT_INSTANCE_BY_AGENT_ID = """
@@ -161,6 +165,7 @@ SELECT
     enclave_cid,
     instance_env_vars,
     is_deleted,
+    pcr0,
     created_at,
     last_updated_at
 FROM agent_instance
@@ -171,6 +176,48 @@ SQL_DELETE_AGENT_INSTANCE = """
 UPDATE agent_instance
 SET is_deleted = true
 WHERE id = :id;
+"""
+
+SQL_UPDATE_PCR0 = """
+UPDATE agent_instance
+SET 
+    pcr0 = :pcr0,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
+"""
+
+SQL_INSERT_ATTESTATION = """
+INSERT INTO agent_attestation (
+    id, 
+    agent_instance_id, 
+    attestation, 
+    valid_from, 
+    valid_to, 
+    created_at, 
+    last_updated_at
+) VALUES (
+    :id, 
+    :agent_instance_id, 
+    :attestation, 
+    :valid_from, 
+    :valid_to, 
+    :created_at, 
+    :last_updated_at
+);
+"""
+
+SQL_GET_ATTESTATIONS_BY_AGENT_INSTANCE_ID = """
+SELECT
+    id,
+    agent_instance_id,
+    attestation,
+    valid_from,
+    valid_to,
+    created_at,
+    last_updated_at
+FROM agent_attestation
+WHERE agent_instance_id = :agent_instance_id
+ORDER BY id;
 """
 
 
@@ -337,10 +384,11 @@ class AgentRepository:
             await session.commit()
             return agent_instance_id
 
-    async def get_agent_instances(self) -> List[AgentInstance]:
+    async def get_agent_instances(self, is_deleted: Optional[bool] = None) -> List[AgentInstance]:
         results = []
+        data = {"is_deleted": is_deleted}
         async with self._session_provider_read.get() as session:
-            rows = await session.execute(sqlalchemy.text(SQL_GET_AGENT_INSTANCES))
+            rows = await session.execute(sqlalchemy.text(SQL_GET_AGENT_INSTANCES), data)
             for row in rows:
                 results.append(
                     AgentInstance(
@@ -349,6 +397,7 @@ class AgentRepository:
                         tee_host_base_url=row.tee_host_base_url,
                         enclave_cid=row.enclave_cid,
                         instance_env_vars=row.instance_env_vars,
+                        pcr0=row.pcr0,
                         created_at=row.created_at,
                         last_updated_at=row.last_updated_at,
                     )
@@ -369,6 +418,7 @@ class AgentRepository:
                     tee_host_base_url=row.tee_host_base_url,
                     enclave_cid=row.enclave_cid,
                     instance_env_vars=row.instance_env_vars,
+                    pcr0=row.pcr0,
                     created_at=row.created_at,
                     last_updated_at=row.last_updated_at,
                 )
@@ -379,3 +429,55 @@ class AgentRepository:
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_DELETE_AGENT_INSTANCE), data)
             await session.commit()
+
+    async def insert_agent_instance_pcr0(
+        self,
+        agent_instance_id: UUID,
+        pcr0: str,
+    ) -> None:
+        data = {
+            "id": agent_instance_id,
+            "pcr0": pcr0,
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_PCR0), data)
+            await session.commit()
+
+    async def insert_attestation(
+        self,
+        agent_instance_id: UUID,
+        attestation_details: AttestationDetails,
+    ) -> None:
+        id = uuid7()
+        data = {
+            "id": id,
+            "agent_instance_id": agent_instance_id,
+            "attestation": attestation_details.attestation,
+            "valid_from": attestation_details.valid_from,
+            "valid_to": attestation_details.valid_to,
+            "created_at": utcnow(),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_INSERT_ATTESTATION), data)
+            await session.commit()
+
+    async def get_agent_attestations(self, agent_instance_id: UUID) -> List[Attestation]:
+        data = {"agent_instance_id": agent_instance_id}
+        results = []
+        async with self._session_provider_read.get() as session:
+            rows = await session.execute(
+                sqlalchemy.text(SQL_GET_ATTESTATIONS_BY_AGENT_INSTANCE_ID), data
+            )
+            for row in rows:
+                results.append(Attestation(
+                    id=row.id,
+                    agent_instance_id=row.agent_instance_id,
+                    attestation=row.attestation,
+                    valid_from=row.valid_from,
+                    valid_to=row.valid_to,
+                    created_at=row.created_at,
+                    last_updated_at=row.last_updated_at,
+                ))
+        return results

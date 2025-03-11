@@ -26,8 +26,28 @@ class AgentInstance:
     tee_host_base_url: str
     enclave_cid: str
     instance_env_vars: Dict[str, Any]
+    pcr0: Optional[str]
     created_at: datetime
     last_updated_at: datetime
+
+
+@dataclass
+class Attestation:
+    id: UUID
+    agent_instance_id: UUID
+    attestation: str
+    valid_from: datetime
+    valid_to: datetime
+    created_at: datetime
+    last_updated_at: datetime
+
+
+@dataclass
+class AttestationDetails:
+    attestation: str
+    valid_from: datetime
+    valid_to: datetime
+    pcr0: str
 
 
 @dataclass
