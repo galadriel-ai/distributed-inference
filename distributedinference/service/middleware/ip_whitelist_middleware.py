@@ -30,6 +30,8 @@ class IpWhitelistMiddleware(BaseHTTPMiddleware):
 
 
 def _is_tee_host_ip(ip_address: Optional[str]) -> bool:
+    if not settings.is_production():
+        return True
     if not ip_address:
         return False
     for base_url in settings.TEE_HOST_BASE_URLS:

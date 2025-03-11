@@ -12,12 +12,20 @@ from distributedinference import dependencies
 from distributedinference.repository.agent_explorer_repository import (
     AgentExplorerRepository,
 )
+from distributedinference.repository.agent_repository import AgentRepository
+from distributedinference.repository.tee_orchestration_repository import (
+    TeeOrchestrationRepository,
+)
+from distributedinference.service.agent_explorer import agent_attestation_service
 from distributedinference.service.agent_explorer import agent_details_service
 from distributedinference.service.agent_explorer import (
     agent_explorer_all_agents_service,
 )
 from distributedinference.service.agent_explorer import agent_explorer_search_service
 from distributedinference.service.agent_explorer import agent_explorer_service
+from distributedinference.service.agent_explorer.entities import (
+    AgentAttestationResponse,
+)
 from distributedinference.service.agent_explorer.entities import AgentDetailsResponse
 from distributedinference.service.agent_explorer.entities import AgentExplorerResponse
 from distributedinference.service.agent_explorer.entities import AgentSearchResponse
@@ -97,3 +105,23 @@ async def agent_details(
     ),
 ):
     return await agent_details_service.execute(agent_id, agent_repository)
+
+
+@router.get(
+    "/agent/{agent_id}/attestation",
+    summary="Returns Agent TEE instance attestation.",
+    description="Returns the current up to date attestation file for the TEE.",
+    response_description="",
+    response_model=AgentAttestationResponse,
+    include_in_schema=not settings.is_production(),
+)
+async def attestation(
+    agent_id: Annotated[UUID, Path(..., description="Agent ID")],
+    agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+    tee_orchestration_repository: TeeOrchestrationRepository = Depends(
+        dependencies.get_tee_orchestration_repository
+    ),
+):
+    return await agent_attestation_service.execute(
+        agent_id, agent_repository, tee_orchestration_repository
+    )

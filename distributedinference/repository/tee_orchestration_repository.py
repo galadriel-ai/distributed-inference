@@ -2,6 +2,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from uuid import UUID
 
 import httpx
 
@@ -67,6 +68,22 @@ class TeeOrchestrationRepository:
                 )
             )
         return tees
+
+    @async_timer("tee_repository.get_attestation", logger=logger)
+    async def get_attestation(
+        self,
+        host_base_url: str,
+        agent_id: UUID,
+    ) -> Optional[str]:
+        try:
+            response = await self._get(host_base_url, f"tee/attestation/{agent_id}")
+            if attestation := response.get("attestation"):
+                return attestation
+        except Exception:
+            logger.error(
+                f"Error getting attestation for agent: {agent_id}", exc_info=True
+            )
+        return None
 
     @async_timer("tee_repository._get_host_with_free_capacity", logger=logger)
     async def _get_host_with_free_capacity(self) -> Optional[str]:

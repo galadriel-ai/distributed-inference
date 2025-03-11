@@ -41,6 +41,7 @@ async def execute(
                 text=log.text,
                 level=log.level,
                 timestamp=log.timestamp,
+                signature=log.signature,
             )
             for log in response.logs
         ],

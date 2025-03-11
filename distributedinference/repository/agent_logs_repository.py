@@ -19,14 +19,17 @@ INSERT INTO agent_logs (
     text,
     level,
     log_created_at,
+    signature,
     created_at,
     last_updated_at
 ) VALUES (
     :id,
     :agent_id,
+    :agent_instance_id,
     :text,
     :level,
     :log_created_at,
+    :signature,
     :created_at,
     :last_updated_at
 );
@@ -37,7 +40,8 @@ SELECT
     id,
     text,
     level,
-    log_created_at
+    log_created_at,
+    signature
 FROM agent_logs
 WHERE 
     id < :cursor 
@@ -78,6 +82,7 @@ class AgentLogsRepository:
                 "agent_instance_id": agent_logs.agent_instance_id,
                 "text": log.text,
                 "level": log.level,
+                "signature": log.signature,
                 "log_created_at": utils.utc_from_timestamp(log.timestamp),
                 "created_at": created_at,
                 "last_updated_at": created_at,
@@ -109,6 +114,7 @@ class AgentLogsRepository:
                         text=row.text,
                         level=row.level,
                         timestamp=int(row.log_created_at.timestamp()),
+                        signature=row.signature,
                     )
                 )
         return result
