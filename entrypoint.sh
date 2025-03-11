@@ -1,4 +1,5 @@
 #!/bin/bash
+nohup ./run_logrotate.sh &
 #cpu_units=$(getconf _NPROCESSORS_ONLN)
 #workers_to_spawn=$((cpu_units * 2 + 1))
 workers_to_spawn=1
