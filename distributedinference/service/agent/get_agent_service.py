@@ -1,10 +1,9 @@
 from uuid import UUID
 
-from distributedinference.domain.user.entities import User
 from distributedinference.domain.agent import get_agent_use_case
+from distributedinference.domain.user.entities import User
 from distributedinference.repository.agent_repository import AgentRepository
 from distributedinference.service import error_responses
-from distributedinference.service.agent.entities import GetAgentRequest
 from distributedinference.service.agent.entities import GetAgentResponse
 
 
