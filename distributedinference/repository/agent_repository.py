@@ -384,7 +384,9 @@ class AgentRepository:
             await session.commit()
             return agent_instance_id
 
-    async def get_agent_instances(self, is_deleted: Optional[bool] = None) -> List[AgentInstance]:
+    async def get_agent_instances(
+        self, is_deleted: Optional[bool] = None
+    ) -> List[AgentInstance]:
         results = []
         data = {"is_deleted": is_deleted}
         async with self._session_provider_read.get() as session:
@@ -449,9 +451,9 @@ class AgentRepository:
         agent_instance_id: UUID,
         attestation_details: AttestationDetails,
     ) -> None:
-        id = uuid7()
+        attestation_id = uuid7()
         data = {
-            "id": id,
+            "id": attestation_id,
             "agent_instance_id": agent_instance_id,
             "attestation": attestation_details.attestation,
             "valid_from": attestation_details.valid_from,
@@ -463,7 +465,9 @@ class AgentRepository:
             await session.execute(sqlalchemy.text(SQL_INSERT_ATTESTATION), data)
             await session.commit()
 
-    async def get_agent_attestations(self, agent_instance_id: UUID) -> List[Attestation]:
+    async def get_agent_attestations(
+        self, agent_instance_id: UUID
+    ) -> List[Attestation]:
         data = {"agent_instance_id": agent_instance_id}
         results = []
         async with self._session_provider_read.get() as session:
@@ -471,13 +475,15 @@ class AgentRepository:
                 sqlalchemy.text(SQL_GET_ATTESTATIONS_BY_AGENT_INSTANCE_ID), data
             )
             for row in rows:
-                results.append(Attestation(
-                    id=row.id,
-                    agent_instance_id=row.agent_instance_id,
-                    attestation=row.attestation,
-                    valid_from=row.valid_from,
-                    valid_to=row.valid_to,
-                    created_at=row.created_at,
-                    last_updated_at=row.last_updated_at,
-                ))
+                results.append(
+                    Attestation(
+                        id=row.id,
+                        agent_instance_id=row.agent_instance_id,
+                        attestation=row.attestation,
+                        valid_from=row.valid_from,
+                        valid_to=row.valid_to,
+                        created_at=row.created_at,
+                        last_updated_at=row.last_updated_at,
+                    )
+                )
         return results

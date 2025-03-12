@@ -76,12 +76,15 @@ class TeeOrchestrationRepository:
         agent_instance_id: UUID,
     ) -> Optional[str]:
         try:
-            response = await self._get(host_base_url, f"tee/attestation/{agent_instance_id}")
+            response = await self._get(
+                host_base_url, f"tee/attestation/{agent_instance_id}"
+            )
             if attestation := response.get("attestation"):
                 return attestation
         except Exception:
             logger.error(
-                f"Error getting attestation for agent instance: {agent_instance_id}", exc_info=True
+                f"Error getting attestation for agent instance: {agent_instance_id}",
+                exc_info=True,
             )
         return None
 
