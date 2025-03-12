@@ -40,6 +40,10 @@ class AllAgentsResponse(ApiResponse):
 class AgentInstanceModel(BaseModel):
     enclave_cid: str = Field(description="enclave CID")
     is_deleted: bool = Field(description="Shows if the instance was deleted")
+    pcr0: Optional[str] = Field(description="Agent instance pcr0")
+    attestation: Optional[str] = Field(
+        description="Agent instance latest found attestation"
+    )
     created_at: int = Field(description="UNIX timestamp of the agent instance creation")
 
 

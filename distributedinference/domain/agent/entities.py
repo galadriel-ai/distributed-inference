@@ -126,6 +126,8 @@ class ExplorerAgentInstance:
     id: UUID
     enclave_cid: str
     is_deleted: bool
+    pcr0: Optional[str]
+    attestation: Optional[str]
     created_at: datetime
 
 

@@ -31,6 +31,8 @@ def _map_agent_instances(
         AgentInstanceModel(
             enclave_cid=i.enclave_cid,
             is_deleted=i.is_deleted,
+            pcr0=i.pcr0,
+            attestation=i.attestation,
             created_at=int(i.created_at.timestamp()),
         )
         for i in agent_instances

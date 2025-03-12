@@ -49,12 +49,20 @@ WHERE id = :agent_id;
 
 SQL_GET_AGENT_INSTANCES_BY_AGENT_ID = """
 SELECT
-    id,
-    enclave_cid,
-    is_deleted,
-    created_at
-FROM agent_instance
-WHERE agent_id = :agent_id;
+    ai.id,
+    ai.enclave_cid,
+    ai.is_deleted,
+    ai.pcr0,
+    (
+        SELECT aa.attestation
+        FROM agent_attestation aa
+        WHERE aa.agent_instance_id = ai.id
+        ORDER BY aa.id DESC
+        LIMIT 1
+    ) AS attestation,
+    ai.created_at
+FROM agent_instance ai
+WHERE ai.agent_id = :agent_id;
 """
 
 
@@ -134,6 +142,8 @@ class AgentExplorerRepository:
                         id=row.id,
                         enclave_cid=row.enclave_cid,
                         is_deleted=row.is_deleted,
+                        pcr0=row.pcr0,
+                        attestation=row.attestation,
                         created_at=row.created_at,
                     )
                 )
