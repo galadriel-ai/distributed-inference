@@ -195,12 +195,19 @@ PEER_NODES_LIST = list(set(_peer_nodes))
 
 HOSTNAME = os.getenv("HOSTNAME", "")
 
-# Solana blockchain settings
-SOLANA_RPC_URL = os.getenv("SOLANA_DEVNET_URL", "https://api.devnet.solana.com")
-SOLANA_PROGRAM_ID = os.getenv(
-    "SOLANA_PROGRAM_ID", "HCkvLKhWQ8TTRdoSry29epRZnAoEDhP9CjmDS8jLtY9"
+# Solana devnet settings
+SOLANA_DEVNET_RPC_URL = os.getenv("SOLANA_DEVNET_RPC_URL", "https://api.devnet.solana.com")
+SOLANA_DEVNET_PROGRAM_ID = os.getenv(
+    "SOLANA_DEVNET_PROGRAM_ID", "HCkvLKhWQ8TTRdoSry29epRZnAoEDhP9CjmDS8jLtY9"
 )
-SOLANA_KEYPAIR_DIR = os.getenv("SOLANA_KEYPAIR_DIR", "solana.key")
+SOLANA_DEVNET_KEYPAIR_DIR = os.getenv("SOLANA_DEVNET_KEYPAIR_DIR", "solana_devnet.key")
+
+# Solana mainnet settings
+SOLANA_MAINNET_RPC_URL = os.getenv("SOLANA_MAINNET_RPC_URL", "https://api.mainnet-beta.solana.com")
+SOLANA_MAINNET_PROGRAM_ID = os.getenv(
+    "SOLANA_MAINNET_PROGRAM_ID", "HCkvLKhWQ8TTRdoSry29epRZnAoEDhP9CjmDS8jLtY9"
+)
+SOLANA_MAINNET_KEYPAIR_DIR = os.getenv("SOLANA_MAINNET_KEYPAIR_DIR", "solana_mainnet.key")
 
 # TEE orchestration monitoring job
 TEE_MONITORING_TIMEOUT_BETWEEN_RUNS_SECONDS = int(

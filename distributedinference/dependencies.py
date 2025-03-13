@@ -73,6 +73,8 @@ _grafana_api_repository: GrafanaApiRepository
 _tee_api_repository: TeeApiRepository
 _tee_orchestration_repository: TeeOrchestrationRepository
 _blockchain_proof_repository: BlockchainProofRepository
+_blockchain_proof_devnet_repository: BlockchainProofRepository
+_blockchain_proof_mainnet_repository: BlockchainProofRepository
 _google_cloud_storage_client: GoogleCloudStorage
 _aws_storage_repository: AWSStorageRepository
 
@@ -104,6 +106,8 @@ def init_globals():
     global _tee_api_repository
     global _tee_orchestration_repository
     global _blockchain_proof_repository
+    global _blockchain_proof_devnet_repository
+    global _blockchain_proof_mainnet_repository
     global _google_cloud_storage_client
     global _aws_storage_repository
     global _verified_completions_repository
@@ -183,16 +187,31 @@ def init_globals():
             settings.TEE_API_BASE_URL_2,
             settings.OPENAI_API_KEY,
         )
+
+    # Initialize devnet repository
     if (
-        settings.SOLANA_PROGRAM_ID
-        and settings.SOLANA_RPC_URL
-        and settings.SOLANA_KEYPAIR_DIR
+        settings.SOLANA_DEVNET_RPC_URL
+        and settings.SOLANA_DEVNET_PROGRAM_ID
+        and settings.SOLANA_DEVNET_KEYPAIR_DIR
     ):
-        _blockchain_proof_repository = BlockchainProofRepository(
-            settings.SOLANA_RPC_URL,
-            settings.SOLANA_PROGRAM_ID,
-            settings.SOLANA_KEYPAIR_DIR,
+        _blockchain_proof_devnet_repository = BlockchainProofRepository(
+            settings.SOLANA_DEVNET_RPC_URL,
+            settings.SOLANA_DEVNET_PROGRAM_ID,
+            settings.SOLANA_DEVNET_KEYPAIR_DIR,
         )
+
+    # Initialize mainnet repository
+    if (
+        settings.SOLANA_MAINNET_RPC_URL
+        and settings.SOLANA_MAINNET_PROGRAM_ID
+        and settings.SOLANA_MAINNET_KEYPAIR_DIR
+    ):
+        _blockchain_proof_mainnet_repository = BlockchainProofRepository(
+            settings.SOLANA_MAINNET_RPC_URL,
+            settings.SOLANA_MAINNET_PROGRAM_ID,
+            settings.SOLANA_MAINNET_KEYPAIR_DIR,
+        )
+
     _google_cloud_storage_client = GoogleCloudStorage()
     _tee_orchestration_repository = TeeOrchestrationRepository(
         settings.TEE_HOST_BASE_URLS
@@ -262,8 +281,12 @@ def get_tee_repository() -> TeeApiRepository:
     return _tee_api_repository
 
 
-def get_blockchain_proof_repository() -> BlockchainProofRepository:
-    return _blockchain_proof_repository
+def get_blockchain_proof_devnet_repository() -> BlockchainProofRepository:
+    return _blockchain_proof_devnet_repository
+
+
+def get_blockchain_proof_mainnet_repository() -> BlockchainProofRepository:
+    return _blockchain_proof_mainnet_repository
 
 
 def get_rate_limit_repository() -> RateLimitRepository:
