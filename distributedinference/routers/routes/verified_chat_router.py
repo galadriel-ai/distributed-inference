@@ -66,7 +66,9 @@ async def completions(
     request: ChatCompletionRequest,
     response: Response,
     user: User = Depends(authentication.validate_api_key_header),
-    rate_limit_repository: RateLimitRepository = Depends(dependencies.get_rate_limit_repository),
+    rate_limit_repository: RateLimitRepository = Depends(
+        dependencies.get_rate_limit_repository
+    ),
     tee_repository: TeeApiRepository = Depends(dependencies.get_tee_repository),
     tokens_repository: TokensRepository = Depends(dependencies.get_tokens_repository),
     tokens_queue_repository: TokensQueueRepository = Depends(
@@ -75,7 +77,9 @@ async def completions(
     blockchain_proof_repository: BlockchainProofRepository = Depends(
         dependencies.get_blockchain_proof_devnet_repository
     ),
-    verified_completions_repository=Depends(dependencies.get_verified_completions_repository),
+    verified_completions_repository=Depends(
+        dependencies.get_verified_completions_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     analytics.track_event(

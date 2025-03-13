@@ -72,7 +72,6 @@ _protocol_handler: ProtocolHandler
 _grafana_api_repository: GrafanaApiRepository
 _tee_api_repository: TeeApiRepository
 _tee_orchestration_repository: TeeOrchestrationRepository
-_blockchain_proof_repository: BlockchainProofRepository
 _blockchain_proof_devnet_repository: BlockchainProofRepository
 _blockchain_proof_mainnet_repository: BlockchainProofRepository
 _google_cloud_storage_client: GoogleCloudStorage
@@ -105,7 +104,6 @@ def init_globals():
     global _grafana_api_repository
     global _tee_api_repository
     global _tee_orchestration_repository
-    global _blockchain_proof_repository
     global _blockchain_proof_devnet_repository
     global _blockchain_proof_mainnet_repository
     global _google_cloud_storage_client
