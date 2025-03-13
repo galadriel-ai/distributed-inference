@@ -26,17 +26,17 @@ logger = api_logger.get()
 @router.post(
     "/solana",
     name="Solana Faucet",
-    description="Send 0.0001 SOL to the provided Solana address from the Galadriel faucet.",
+    description="Send a small amount of SOL to the provided Solana address from the Galadriel faucet.",
     response_model=SolanaFaucetResponseModel,
 )
 async def solana_faucet(
     request: SolanaFaucetRequestModel,
     faucet_repository: FaucetRepository = Depends(dependencies.get_faucet_repository),
     blockchain_repository: BlockchainProofRepository = Depends(
-        dependencies.get_blockchain_proof_repository
+        dependencies.get_blockchain_proof_mainnet_repository
     ),
 ) -> SolanaFaucetResponseModel:
-    """Send 0.0001 SOL to the provided Solana address from the Galadriel faucet.
+    """Send a small amount of SOL to the provided Solana address from the Galadriel faucet using mainnet.
 
     Rate limited per Solana address.
     """

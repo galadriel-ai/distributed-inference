@@ -71,12 +71,12 @@ async def execute(
         return FaucetResponse(
             success=True,
             transaction_signature=str(tx_result.value),
-            message=f"Successfully sent {FAUCET_AMOUNT} SOL",
+            message=f"Successfully sent {FAUCET_AMOUNT} SOL on Solana mainnet",
         )
     except error_responses.APIErrorResponse as e:
         raise e
     except ValueError as e:
         raise error_responses.ValidationTypeError(str(e)) from e
     except Exception as e:
-        logger.error(f"Error sending SOL: {str(e)}")
+        logger.error(f"Error sending SOL on mainnet: {str(e)}")
         raise error_responses.InternalServerAPIError()

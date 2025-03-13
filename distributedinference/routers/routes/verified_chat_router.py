@@ -75,7 +75,7 @@ async def completions(
         dependencies.get_tokens_queue_repository
     ),
     blockchain_proof_repository: BlockchainProofRepository = Depends(
-        dependencies.get_blockchain_proof_repository
+        dependencies.get_blockchain_proof_devnet_repository
     ),
     verified_completions_repository=Depends(
         dependencies.get_verified_completions_repository
