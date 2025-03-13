@@ -17,6 +17,7 @@ class Agent:
     env_vars: Dict[str, Any]
     last_updated_at: datetime
     user_profile_id: UUID
+    metadata: Optional[Dict] = None
 
 
 @dataclass
@@ -74,6 +75,11 @@ class UpdateAgentInput:
 
 
 @dataclass
+class UpdateAgentMetadataInput:
+    client_url: str
+
+
+@dataclass
 class AgentLog:
     text: str
     level: str
@@ -112,6 +118,7 @@ class DeployedAgent:
     id: UUID
     name: str
     docker_image: str
+    metadata: Optional[Dict]
     created_at: datetime
 
 

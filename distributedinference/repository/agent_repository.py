@@ -68,6 +68,7 @@ SELECT
     docker_image,
     docker_image_hash,
     env_vars,
+    agent_metadata,
     created_at,
     last_updated_at
 FROM agents
@@ -95,6 +96,7 @@ SELECT
     docker_image,
     docker_image_hash,
     env_vars,
+    agent_metadata,
     created_at,
     last_updated_at
 FROM agents
@@ -111,6 +113,15 @@ SET
     env_vars = :env_vars,
     last_updated_at = :last_updated_at
 WHERE id = :id AND is_deleted = FALSE;
+"""
+
+SQL_UPDATE_AGENT_METADATA = """
+UPDATE 
+    agents
+SET 
+    agent_metadata = :metadata,
+    last_updated_at = :last_updated_at
+WHERE id = :id;
 """
 
 SQL_DELETE_AGENT = """
@@ -291,6 +302,7 @@ class AgentRepository:
                     docker_image=row.docker_image,
                     docker_image_hash=row.docker_image_hash,
                     env_vars=row.env_vars,
+                    metadata=row.agent_metadata,
                     created_at=row.created_at,
                     last_updated_at=row.last_updated_at,
                 )
@@ -310,6 +322,7 @@ class AgentRepository:
                         docker_image=row.docker_image,
                         docker_image_hash=row.docker_image_hash,
                         env_vars=row.env_vars,
+                        metadata=row.agent_metadata,
                         created_at=row.created_at,
                         last_updated_at=row.last_updated_at,
                     )
@@ -354,6 +367,16 @@ class AgentRepository:
         }
         async with self._session_provider.get() as session:
             await session.execute(sqlalchemy.text(SQL_UPDATE_AGENT), data)
+            await session.commit()
+
+    async def update_metadata(self, agent_id: UUID, metadata: Dict) -> None:
+        data = {
+            "id": agent_id,
+            "metadata": json.dumps(metadata),
+            "last_updated_at": utcnow(),
+        }
+        async with self._session_provider.get() as session:
+            await session.execute(sqlalchemy.text(SQL_UPDATE_AGENT_METADATA), data)
             await session.commit()
 
     async def delete_agent(self, agent_id: UUID) -> None:
