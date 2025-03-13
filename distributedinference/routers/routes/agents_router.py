@@ -129,10 +129,13 @@ async def update_agent(
     agent_id: Annotated[UUID, Path(..., description="Agent ID")],
     user: User = Depends(authentication.validate_api_key_header),
     agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+    tee_orchestration_repository: TeeOrchestrationRepository = Depends(
+        dependencies.get_tee_orchestration_repository
+    ),
     analytics: Analytics = Depends(dependencies.get_analytics),
 ):
     response = await update_agent_service.execute(
-        agent_repository, user, agent_id, request
+        agent_repository, tee_orchestration_repository, user, agent_id, request
     )
     analytics.track_event(
         user.uid,
