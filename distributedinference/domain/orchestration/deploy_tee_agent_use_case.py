@@ -60,4 +60,4 @@ async def execute(
         await aws_storage_repository.cleanup_user_and_bucket_access(
             str(agent_instance_id)
         )
-        raise ValueError(f"Failed to deploy TEE for agent {agent.id}: {e}")
+        raise e

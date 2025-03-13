@@ -270,3 +270,17 @@ class UnsupportedRequestParameterError(APIErrorResponse):
 
     def to_message(self) -> str:
         return f"Unsupported request parameter: {self.message}"
+
+
+class NoCapacityError(APIErrorResponse):
+    def __init__(self):
+        pass
+
+    def to_status_code(self) -> int:
+        return status.HTTP_503_SERVICE_UNAVAILABLE
+
+    def to_code(self) -> str:
+        return "no_capacity"
+
+    def to_message(self) -> str:
+        return "No capacity to deploy the agent."

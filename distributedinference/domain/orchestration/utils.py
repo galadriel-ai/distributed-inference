@@ -8,6 +8,5 @@ def agent_instance_to_tee(agent_instance: AgentInstance) -> TEE:
         name=str(agent_instance.id),
         cid=agent_instance.enclave_cid,
         host_base_url=agent_instance.tee_host_base_url,
-        # TODO: Get status from TEE orchestration?
         status=TEEStatus.RUNNING,
     )

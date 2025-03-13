@@ -1,3 +1,4 @@
+from distributedinference.domain.orchestration import exceptions
 from distributedinference.domain.user.entities import User
 from distributedinference.domain.agent import create_agent_use_case
 from distributedinference.domain.agent.entities import CreateAgentInput
@@ -7,6 +8,7 @@ from distributedinference.repository.aws_storage_repository import AWSStorageRep
 from distributedinference.repository.tee_orchestration_repository import (
     TeeOrchestrationRepository,
 )
+from distributedinference.service import error_responses
 from distributedinference.service.agent.entities import CreateAgentRequest
 from distributedinference.service.agent.entities import CreateAgentResponse
 
@@ -28,12 +30,15 @@ async def execute(
     output = await create_agent_use_case.execute(repository, input)
 
     # launch the agent in a TEE
-    await deploy_tee_agent_use_case.execute(
-        user,
-        tee_orchestration_repository,
-        repository,
-        aws_storage_repository,
-        output.agent,
-    )
+    try:
+        await deploy_tee_agent_use_case.execute(
+            user,
+            tee_orchestration_repository,
+            repository,
+            aws_storage_repository,
+            output.agent,
+        )
+    except exceptions.NoCapacityError:
+        raise error_responses.NoCapacityError()
 
     return CreateAgentResponse(agent_id=output.agent.id)
