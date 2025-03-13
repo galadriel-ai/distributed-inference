@@ -81,6 +81,7 @@ async def lifespan(_: FastAPI):
         monitor_tee_instances.execute(
             dependencies.get_agent_repository(),
             dependencies.get_tee_orchestration_repository(),
+            dependencies.get_aws_storage_repository(),
         )
     )
     yield
