@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -53,6 +54,7 @@ class AgentDetailsResponse(ApiResponse):
     docker_image: str = Field(description="Docker image name")
     created_at: int = Field(description="UNIX timestamp of the agent instance creation")
     agent_instances: List[AgentInstanceModel] = Field(description="Agent instances")
+    metadata: Dict = Field(description="Agent's configurable metadata")
 
 
 class AgentAttestationResponse(ApiResponse):

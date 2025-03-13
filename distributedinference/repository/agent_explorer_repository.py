@@ -42,6 +42,7 @@ SELECT
     id,
     name,
     docker_image,
+    agent_metadata,
     created_at
 FROM agents
 WHERE id = :agent_id;
@@ -87,6 +88,7 @@ class AgentExplorerRepository:
                         id=row.id,
                         name=row.name,
                         docker_image=row.docker_image,
+                        metadata=None,
                         created_at=row.created_at,
                     )
                 )
@@ -110,6 +112,7 @@ class AgentExplorerRepository:
                         id=row.id,
                         name=row.name,
                         docker_image=row.docker_image,
+                        metadata=None,
                         created_at=row.created_at,
                     )
                 )
@@ -125,6 +128,7 @@ class AgentExplorerRepository:
                     id=row.id,
                     name=row.name,
                     docker_image=row.docker_image,
+                    metadata=row.agent_metadata,
                     created_at=row.created_at,
                 )
         return None

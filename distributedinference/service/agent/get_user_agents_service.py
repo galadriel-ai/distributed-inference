@@ -21,6 +21,7 @@ async def execute(repository: AgentRepository, user: User) -> GetAgentsResponse:
                 docker_image_hash=agent.docker_image_hash,
                 updated_at=agent.last_updated_at,
                 pcr0_hash="mock_hash",
+                metadata=agent.metadata,
             )
             for agent in agents
         ]

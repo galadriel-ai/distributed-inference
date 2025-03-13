@@ -19,6 +19,7 @@ async def execute(
         id=agent.id,
         name=agent.name,
         docker_image=agent.docker_image,
+        metadata=agent.metadata,
         created_at=agent.created_at,
         agent_instances=agent_instances,
     )

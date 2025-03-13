@@ -27,6 +27,7 @@ from distributedinference.service.agent import create_agent_service
 from distributedinference.service.agent import delete_agent_service
 from distributedinference.service.agent import get_agent_service
 from distributedinference.service.agent import get_user_agents_service
+from distributedinference.service.agent import update_agent_metadata_service
 from distributedinference.service.agent import update_agent_service
 from distributedinference.service.agent.entities import AddLogsRequest
 from distributedinference.service.agent.entities import AddLogsResponse
@@ -38,6 +39,8 @@ from distributedinference.service.agent.entities import GetAgentsResponse
 from distributedinference.service.agent.entities import GetLogsRequest
 from distributedinference.service.agent.entities import GetLogsResponse
 from distributedinference.service.agent.entities import SUPPORTED_LOG_LEVELS_TYPE
+from distributedinference.service.agent.entities import UpdateAgentMetadataRequest
+from distributedinference.service.agent.entities import UpdateAgentMetadataResponse
 from distributedinference.service.agent.entities import UpdateAgentRequest
 from distributedinference.service.agent.entities import UpdateAgentResponse
 from distributedinference.service.agent.logs import add_agent_logs_service
@@ -118,7 +121,7 @@ async def create_agent(
     "/{agent_id}",
     summary="Updates an agent",
     description="",
-    response_description="Agent ID",
+    response_description="Success status",
     response_model=UpdateAgentResponse,
 )
 async def update_agent(
@@ -143,7 +146,7 @@ async def update_agent(
     "/{agent_id}",
     summary="Deletes an agent",
     description="",
-    response_description="Agent ID",
+    response_description="Success status",
     response_model=DeleteAgentResponse,
 )
 async def delete_agent(
@@ -168,6 +171,25 @@ async def delete_agent(
     analytics.track_event(
         user.uid,
         AnalyticsEvent(EventName.DELETE_AGENT, {"agent_id": agent_id}),
+    )
+    return response
+
+
+@router.post(
+    "/{agent_id}/configure",
+    summary="Updates an agent's metadata",
+    description="Configure agent metadata",
+    response_description="Success status",
+    response_model=UpdateAgentMetadataResponse,
+)
+async def update_agent_metadata(
+    request: UpdateAgentMetadataRequest,
+    agent_id: Annotated[UUID, Path(..., description="Agent ID")],
+    user: User = Depends(authentication.validate_api_key_header),
+    agent_repository: AgentRepository = Depends(dependencies.get_agent_repository),
+):
+    response = await update_agent_metadata_service.execute(
+        request, agent_id, user, agent_repository
     )
     return response
 

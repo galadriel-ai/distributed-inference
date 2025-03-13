@@ -19,6 +19,7 @@ class Agent(BaseModel):
     docker_image: str = Field(description="Docker image")
     docker_image_hash: str = Field(description="Docker image hash")
     pcr0_hash: str = Field(description="PCR0")
+    metadata: Optional[Dict] = Field(default=None, description="Agent configuration")
 
 
 class GetAgentRequest(BaseModel):
@@ -52,6 +53,21 @@ class UpdateAgentRequest(BaseModel):
 
 
 class UpdateAgentResponse(ApiResponse):
+    pass
+
+
+class UpdateAgentMetadataRequest(BaseModel):
+    description: str = Field(
+        description="Agent description",
+        max_length=2000,
+    )
+    client_url: str = Field(
+        description="Link to a page where the agent can be accessed",
+        max_length=1000,
+    )
+
+
+class UpdateAgentMetadataResponse(ApiResponse):
     pass
 
 

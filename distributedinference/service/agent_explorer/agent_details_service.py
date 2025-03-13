@@ -21,6 +21,7 @@ async def execute(
         docker_image=agent.docker_image,
         created_at=int(agent.created_at.timestamp()),
         agent_instances=_map_agent_instances(agent.agent_instances),
+        metadata=agent.metadata or {},
     )
 
 
