@@ -22,5 +22,5 @@ async def execute(
         docker_image=agent.docker_image,
         docker_image_hash=agent.docker_image_hash,
         pcr0_hash="mock_hash",
-        metadata=agent.metadata
+        metadata=agent.metadata,
     )

@@ -19,9 +19,7 @@ class Agent(BaseModel):
     docker_image: str = Field(description="Docker image")
     docker_image_hash: str = Field(description="Docker image hash")
     pcr0_hash: str = Field(description="PCR0")
-    metadata: Optional[Dict] = Field(
-        default=None, description="Agent configuration"
-    )
+    metadata: Optional[Dict] = Field(default=None, description="Agent configuration")
 
 
 class GetAgentRequest(BaseModel):
