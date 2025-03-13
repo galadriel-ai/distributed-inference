@@ -77,6 +77,7 @@ class UpdateAgentInput:
 @dataclass
 class UpdateAgentMetadataInput:
     client_url: str
+    description: str
 
 
 @dataclass

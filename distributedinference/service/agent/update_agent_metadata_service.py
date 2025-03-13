@@ -21,6 +21,7 @@ async def execute(
         raise error_responses.NotFoundAPIError("Agent not found")
 
     metadata_input = UpdateAgentMetadataInput(
+        description=request.description,
         client_url=request.client_url,
     )
     await update_agent_metadata_use_case.execute(agent_id, metadata_input, repository)

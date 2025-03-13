@@ -57,8 +57,13 @@ class UpdateAgentResponse(ApiResponse):
 
 
 class UpdateAgentMetadataRequest(BaseModel):
+    description: str = Field(
+        description="Agent description",
+        max_length=2000,
+    )
     client_url: str = Field(
-        description="Link to a page where the agent can be accessed"
+        description="Link to a page where the agent can be accessed",
+        max_length=1000,
     )
 
 
