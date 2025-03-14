@@ -31,14 +31,30 @@ async def execute(
 
     # launch the agent in a TEE
     try:
+        aws_user_credentials = (
+            await aws_storage_repository.create_user_and_bucket_access(
+                str(output.agent.id)
+            )
+        )
+        if aws_user_credentials is None:
+            raise ValueError(
+                f"Failed to create user and bucket access for agent {output.agent.id}"
+            )
         await deploy_tee_agent_use_case.execute(
             user,
             tee_orchestration_repository,
             repository,
-            aws_storage_repository,
+            aws_user_credentials,
             output.agent,
         )
     except exceptions.NoCapacityError:
+        await aws_storage_repository.cleanup_user_and_bucket_access(
+            str(output.agent.id)
+        )
         raise error_responses.NoCapacityError()
-
+    except Exception as e:
+        await aws_storage_repository.cleanup_user_and_bucket_access(
+            str(output.agent.id)
+        )
+        raise e
     return CreateAgentResponse(agent_id=output.agent.id)

@@ -16,23 +16,23 @@ class AWSStorageRepository:
 
     @async_timer("aws_storage_repository.create_user_and_bucket_access", logger=logger)
     async def create_user_and_bucket_access(
-        self, agent_instance_id: str
+        self, agent_id: str
     ) -> Optional[Dict[str, str]]:
-        folder_name = agent_instance_id
+        folder_name = agent_id
         loop = asyncio.get_event_loop()
 
         try:
             # Create the IAM user
-            logger.info(f"Creating IAM user: {agent_instance_id}")
+            logger.info(f"Creating IAM user: {agent_id}")
             await loop.run_in_executor(
-                None, lambda: self.iam_client.create_user(UserName=agent_instance_id)
+                None, lambda: self.iam_client.create_user(UserName=agent_id)
             )
 
             # Create access keys for the IAM user
             logger.info("Creating access keys for the user...")
             access_key_response = await loop.run_in_executor(
                 None,
-                lambda: self.iam_client.create_access_key(UserName=agent_instance_id),
+                lambda: self.iam_client.create_access_key(UserName=agent_id),
             )
             access_key = access_key_response["AccessKey"]["AccessKeyId"]
             secret_key = access_key_response["AccessKey"]["SecretAccessKey"]
@@ -59,33 +59,36 @@ class AWSStorageRepository:
                     }
                 ],
             }
-            policy_name = f"{agent_instance_id}_policy"
+            policy_name = f"{agent_id}_policy"
             await loop.run_in_executor(
                 None,
                 lambda: self.iam_client.put_user_policy(
-                    UserName=agent_instance_id,
+                    UserName=agent_id,
                     PolicyName=policy_name,
                     PolicyDocument=json.dumps(folder_policy),
                 ),
             )
 
-            return {"access_key": access_key, "secret_key": secret_key}
+            return {
+                "AWS_ACCESS_KEY_ID": access_key,
+                "AWS_SECRET_ACCESS_KEY": secret_key,
+            }
 
         except Exception as e:
             logger.error(f"Error creating user and bucket access: {e}")
             return None
 
     @async_timer("aws_storage_repository.cleanup_user_and_bucket_access", logger=logger)
-    async def cleanup_user_and_bucket_access(self, agent_instance_id: str) -> bool:
-        folder_name = agent_instance_id
+    async def cleanup_user_and_bucket_access(self, agent_id: str) -> bool:
+        folder_name = agent_id
         loop = asyncio.get_event_loop()
 
         try:
             # Detach and delete inline policies for the user
-            logger.info(f"Deleting policies for user: {agent_instance_id}")
+            logger.info(f"Deleting policies for user: {agent_id}")
             policies_response = await loop.run_in_executor(
                 None,
-                lambda: self.iam_client.list_user_policies(UserName=agent_instance_id),
+                lambda: self.iam_client.list_user_policies(UserName=agent_id),
             )
             policies = policies_response["PolicyNames"]
             for policy_name in policies:
@@ -93,15 +96,15 @@ class AWSStorageRepository:
                     None,
                     # pylint: disable=cell-var-from-loop
                     lambda: self.iam_client.delete_user_policy(
-                        UserName=agent_instance_id, PolicyName=policy_name
+                        UserName=agent_id, PolicyName=policy_name
                     ),
                 )
 
             # Delete access keys for the user
-            logger.info(f"Deleting access keys for user: {agent_instance_id}")
+            logger.info(f"Deleting access keys for user: {agent_id}")
             access_keys_response = await loop.run_in_executor(
                 None,
-                lambda: self.iam_client.list_access_keys(UserName=agent_instance_id),
+                lambda: self.iam_client.list_access_keys(UserName=agent_id),
             )
             access_keys = access_keys_response["AccessKeyMetadata"]
             for access_key in access_keys:
@@ -109,15 +112,15 @@ class AWSStorageRepository:
                     None,
                     # pylint: disable=cell-var-from-loop
                     lambda: self.iam_client.delete_access_key(
-                        UserName=agent_instance_id,
+                        UserName=agent_id,
                         AccessKeyId=access_key["AccessKeyId"],
                     ),
                 )
 
             # Delete the IAM user
-            logger.info(f"Deleting IAM user: {agent_instance_id}")
+            logger.info(f"Deleting IAM user: {agent_id}")
             await loop.run_in_executor(
-                None, lambda: self.iam_client.delete_user(UserName=agent_instance_id)
+                None, lambda: self.iam_client.delete_user(UserName=agent_id)
             )
 
             # Delete the S3 folder

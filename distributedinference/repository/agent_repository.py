@@ -165,7 +165,8 @@ SELECT
     created_at,
     last_updated_at
 FROM agent_instance
-WHERE (is_deleted = :is_deleted OR :is_deleted IS NULL);
+WHERE (is_deleted = :is_deleted OR :is_deleted IS NULL)
+ORDER BY created_at DESC;
 """
 
 SQL_GET_AGENT_INSTANCE_BY_AGENT_ID = """

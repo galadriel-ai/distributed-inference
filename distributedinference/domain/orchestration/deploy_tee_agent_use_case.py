@@ -1,7 +1,7 @@
 from uuid_extensions import uuid7
 from typing import Any
 from typing import Dict
-
+from typing import Optional
 from distributedinference.domain.agent.entities import Agent
 from distributedinference.domain.orchestration.entities import TEE
 from distributedinference.domain.user.entities import User
@@ -16,7 +16,7 @@ async def execute(
     user: User,
     repository: TeeOrchestrationRepository,
     agent_repository: AgentRepository,
-    aws_storage_repository: AWSStorageRepository,
+    aws_user_credentials: Optional[Dict[str, Any]],
     agent: Agent,
 ) -> TEE:
     agent_instance = await agent_repository.get_agent_instance(agent.id)
@@ -32,32 +32,20 @@ async def execute(
     if user.currently_using_api_key and not env_vars.get("GALADRIEL_API_KEY"):
         instance_env_vars["GALADRIEL_API_KEY"] = user.currently_using_api_key
 
-    # Create user and bucket access for the agent
-    aws_user_credentials = await aws_storage_repository.create_user_and_bucket_access(
-        str(agent_instance_id)
-    )
-    if aws_user_credentials is None:
-        raise ValueError(
-            f"Failed to create user and bucket access for agent {agent.id}"
-        )
-    instance_env_vars.update(aws_user_credentials)
+    if aws_user_credentials is not None:
+        instance_env_vars.update(aws_user_credentials)
     env_vars.update(instance_env_vars)
-    try:
-        tee = await repository.create_tee(
-            tee_name=str(agent_instance_id),
-            docker_hub_image=agent.docker_image,
-            env_vars=env_vars,
-        )
-        await agent_repository.insert_agent_instance(
-            agent_id=agent.id,
-            agent_instance_id=agent_instance_id,
-            tee_host_base_url=tee.host_base_url,
-            enclave_cid=tee.cid,
-            instance_env_vars=instance_env_vars,
-        )
-        return tee
-    except Exception as e:
-        await aws_storage_repository.cleanup_user_and_bucket_access(
-            str(agent_instance_id)
-        )
-        raise e
+
+    tee = await repository.create_tee(
+        tee_name=str(agent_instance_id),
+        docker_hub_image=agent.docker_image,
+        env_vars=env_vars,
+    )
+    await agent_repository.insert_agent_instance(
+        agent_id=agent.id,
+        agent_instance_id=agent_instance_id,
+        tee_host_base_url=tee.host_base_url,
+        enclave_cid=tee.cid,
+        instance_env_vars=instance_env_vars,
+    )
+    return tee

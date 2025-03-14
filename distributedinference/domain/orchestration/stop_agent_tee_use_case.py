@@ -14,9 +14,7 @@ logger = api_logger.get()
 async def execute(
     repository: TeeOrchestrationRepository,
     agent_repository: AgentRepository,
-    aws_storage_repository: AWSStorageRepository,
     agent: Agent,
-    delete_agent_instance: bool = False,
 ) -> None:
     """
     Stop a TEE instance for the given agent and optionally clean up associated resources.
@@ -24,10 +22,7 @@ async def execute(
     Args:
         repository (TeeOrchestrationRepository): Repository for TEE operations
         agent_repository (AgentRepository): Repository for agent operations
-        aws_storage_repository (AWSStorageRepository): Repository for AWS storage operations
         agent (Agent): The agent whose TEE instance should be stopped
-        delete_agent_instance (bool, optional): Whether to delete the agent instance
-            and clean up AWS resources. Defaults to False. This is set to True when the agent is deleted.
 
     Raises:
         AgentInstanceNotFoundError: If the agent doesn't have a running instance
@@ -46,8 +41,4 @@ async def execute(
     except Exception as e:
         # Probably the TEE is already stopped, ignore the error, but log it
         logger.error(f"Error deleting TEE: {e}")
-    if delete_agent_instance:
-        await aws_storage_repository.cleanup_user_and_bucket_access(
-            str(agent_instance.id)
-        )
-        await agent_repository.delete_agent_instance(agent_instance.id)
+    await agent_repository.delete_agent_instance(agent_instance.id)

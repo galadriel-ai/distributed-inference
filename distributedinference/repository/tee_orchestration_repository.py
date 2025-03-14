@@ -108,16 +108,34 @@ class TeeOrchestrationRepository:
         self, base_url: str, url: str, data: Dict[str, Any]
     ) -> Dict[str, Any]:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.post(base_url + url, json=data)
-            response.raise_for_status()
-            data = response.json()
+            try:
+                response = await client.post(base_url + url, json=data)
+                response.raise_for_status()
+                data = response.json()
+            except httpx.HTTPStatusError as e:
+                try:
+                    error_details = e.response.json().get(
+                        "detail", "No detail provided"
+                    )
+                except Exception:
+                    error_details = e.response.text  # Fallback to raw text if not JSON
+                raise RuntimeError(error_details) from e
         return data
 
     async def _get(
         self, base_url: str, url: str, params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.get(base_url + url, params=params)
-            response.raise_for_status()
-            data = response.json()
+            try:
+                response = await client.get(base_url + url, params=params)
+                response.raise_for_status()
+                data = response.json()
+            except httpx.HTTPStatusError as e:
+                try:
+                    error_details = e.response.json().get(
+                        "detail", "No detail provided"
+                    )
+                except Exception:
+                    error_details = e.response.text  # Fallback to raw text if not JSON
+                raise RuntimeError(error_details) from e
         return data
